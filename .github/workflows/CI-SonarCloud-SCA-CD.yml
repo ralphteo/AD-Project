@@ -80,13 +80,11 @@ jobs:
 
       # ---- Upload Sonar Artifacts (GitHubActions UI) ----
       - name: Upload SonarCloud artifacts
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sonarcloud-artifacts
-          if-no-files-found: error
           path: |
-            ADWebApplication/.sonarqube/**
+            ADWebApplication/.sonarqube/out
             ADWebApplication/coverage.opencover.xml
 
       # ---- OWASP Dependency-Check ----
