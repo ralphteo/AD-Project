@@ -67,7 +67,7 @@ jobs:
       
       # Step 8b: Upload SonarCloud artifacts
       - name: Upload SonarCloud scan artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sonarcloud-artifacts
           path: |
@@ -83,23 +83,17 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       # Step 10: OWASP Dependency-Check SCA
-      - name: Setup Java (required by Dependency-Check)
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-
-      - name: Run OWASP Dependency-Check
-        uses: dependency-check/owasp-dependency-check-action@v2
+      - name: Run OWASP Dependency-Check SCA
+        uses: dependency-check/Dependency-Check_Action@v1.1.0
         with:
           project: ADWebApplication
-          scan: ./        # scan project root
-          format: "HTML,XML"
-          failOnCVSS: 7   # fail CI for vulnerabilities with CVSS >= 7
+          path: .
+          format: HTML,XML
           out: ./dependency-check-report
+          args: --failOnCVSS 7
 
       - name: Upload Dependency-Check report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
           path: ./dependency-check-report
