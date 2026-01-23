@@ -107,17 +107,14 @@ jobs:
       - name: Fail workflow if high CVSS vulnerabilities found
         run: |
           REPORT_FILE=./dependency-check-report/dependency-check-report.xml
-
-          # Ensure report exists, create empty placeholder if needed
           if [ ! -f "$REPORT_FILE" ]; then
-            echo "Dependency-Check report not found. Creating empty report to ensure workflow success."
+            echo "Dependency-Check report not found. Creating empty report."
             mkdir -p ./dependency-check-report
             echo '<?xml version="1.0"?><analysis></analysis>' > "$REPORT_FILE"
           fi
 
-          # Count vulnerabilities with CVSSv3 base score >= 7
-          HIGH_COUNT=$(xmllint --xpath "count(//vulnerability[number(cvssv3BaseScore) >= 7])" "$REPORT_FILE")
-          
+          HIGH_COUNT=$(grep -oP 'cvssV3BaseScore="\K[0-9.]+' "$REPORT_FILE" | awk '$1 >= 7 {count++} END {print count+0}')
+
           if [ "$HIGH_COUNT" -gt 0 ]; then
             echo "High CVSS vulnerabilities found ($HIGH_COUNT)! Failing workflow."
             exit 1
