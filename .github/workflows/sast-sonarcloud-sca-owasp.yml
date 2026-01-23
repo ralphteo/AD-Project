@@ -106,14 +106,20 @@ jobs:
       # Step 12: Fail workflow if high CVSS vulnerabilities found
       - name: Fail workflow if high CVSS vulnerabilities found
         run: |
-          REPORT_FILE=./dependency-check-report/dependency-check-report.xml
+          REPORT_DIR=./dependency-check-report
+          REPORT_FILE="$REPORT_DIR/dependency-check-report.xml"
+
+          # Ensure the report folder exists
+          mkdir -p "$REPORT_DIR"
+
+          # Create empty report if missing
           if [ ! -f "$REPORT_FILE" ]; then
             echo "Dependency-Check report not found. Creating empty report."
-            mkdir -p ./dependency-check-report
             echo '<?xml version="1.0"?><analysis></analysis>' > "$REPORT_FILE"
           fi
 
-          HIGH_COUNT=$(grep -oP 'cvssV3BaseScore="\K[0-9.]+' "$REPORT_FILE" | awk '$1 >= 7 {count++} END {print count+0}')
+          # Count high CVSS vulnerabilities without using -P (PCRE)
+          HIGH_COUNT=$(awk 'match($0, /cvssV3BaseScore="([0-9.]+)"/, a) && a[1] >= 7 {c++} END {print c+0}' "$REPORT_FILE")
 
           if [ "$HIGH_COUNT" -gt 0 ]; then
             echo "High CVSS vulnerabilities found ($HIGH_COUNT)! Failing workflow."
