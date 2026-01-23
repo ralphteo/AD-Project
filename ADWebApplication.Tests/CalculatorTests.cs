@@ -7,8 +7,7 @@ public class CalculatorTests
     [Fact]
     public void Add_ReturnsCorrectSum()
     {
-        var calc = new Calculator();
-        var result = calc.Add(2, 3);
+        var result = Calculator.Add(2, 3);
         Assert.Equal(5, result);
     }
 }

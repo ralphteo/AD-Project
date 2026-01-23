@@ -21,6 +21,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+#pragma warning disable S6966 // Await RunAsync instead
 app.Run();
-
-public partial class Program { }
+#pragma warning restore S6966
