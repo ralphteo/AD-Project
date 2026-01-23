@@ -1,2 +1,4 @@
 <Solution>
+  <Project Path="ADWebApplication/ADWebApplication.csproj" />
+  <Project Path="ADWebApplication.Tests/ADWebApplication.Tests.csproj" />
 </Solution>
