@@ -14,7 +14,9 @@ env:
 
 jobs:
   build-and-deploy:
-    if: ${{ github.event.workflow_run.conclusion != 'failure' }}
+    if: |
+      github.event.workflow_run.conclusion != 'failure' &&
+      github.event.workflow_run.event == 'push'
     runs-on: windows-latest
 
     steps:
