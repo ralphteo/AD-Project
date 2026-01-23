@@ -1,36 +1,41 @@
-name: CI with SonarCloud + SCA
+name: CI + SCA + Deploy
 
 on:
   push:
     branches: [ main ]
   pull_request:
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: in5nite
+  DOTNET_VERSION: '10.0.x'
+  PROJECT_PATH: './ADWebApplication/ADWebApplication.csproj'
 
 jobs:
+  # ----------------------------
+  # JOB 1: CI + SonarCloud + SCA
+  # ----------------------------
   build-and-scan:
     runs-on: ubuntu-latest
-    
+
     defaults:
       run:
         working-directory: ADWebApplication
 
     steps:
-      # Step 1: Checkout source code
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # REQUIRED for SonarCloud
+          fetch-depth: 0
 
-      # Step 2: Set up .NET
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # Step 3: Install SonarScanner for .NET
       - name: Install SonarScanner
         run: dotnet tool install --global dotnet-sonarscanner
 
-      # Step 4: Begin SonarCloud analysis
       - name: SonarCloud Begin
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -42,15 +47,12 @@ jobs:
           /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
           /d:sonar.coverage.exclusions="**/Program.cs"
 
-      # Step 5: Restore dependencies
       - name: Restore
         run: dotnet restore
 
-      # Step 6: Build
       - name: Build
         run: dotnet build --no-restore
 
-      # Step 7: Test with coverage
       - name: Test
         run: >
           dotnet test
@@ -59,22 +61,11 @@ jobs:
           /p:CoverletOutputFormat=opencover
           /p:CoverletOutput=./coverage.opencover.xml
 
-      # Step 8a: End SonarCloud analysis
       - name: SonarCloud End
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end
-      
-      # Step 8b: Upload SonarCloud artifacts
-      - name: Upload SonarCloud scan artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: sonarcloud-artifacts
-          path: |
-            ADWebApplication/.sonarqube/out
-            ADWebApplication/coverage.opencover.xml
 
-      # Step 9: Quality Gate enforcement
       - name: SonarCloud Quality Gate
         uses: SonarSource/sonarqube-quality-gate-action@v1
         with:
@@ -82,7 +73,6 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # Step 10: OWASP Dependency-Check SCA
       - name: Run OWASP Dependency-Check SCA
         uses: dependency-check/Dependency-Check_Action@main
         with:
@@ -90,11 +80,51 @@ jobs:
           path: .
           format: 'ALL'
           out: ./dependency-check-report
-          args: --failOnCVSS 7
-                --suppression dependency-check-suppressions.xml
+          args: >
+            --failOnCVSS 7
+            --suppression dependency-check-suppressions.xml
 
       - name: Upload Dependency-Check report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
           path: ./dependency-check-report
+
+  # ----------------------------
+  # JOB 2: BUILD & DEPLOY
+  # ----------------------------
+  deploy:
+    needs: build-and-scan
+    runs-on: windows-latest
+
+    # Deploy ONLY on push to main AND if CI succeeded
+    if: |
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.build-and-scan.result == 'success'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build
+        run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output publish
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: publish
