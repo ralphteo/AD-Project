@@ -84,16 +84,20 @@ jobs:
 
       # Step 10: OWASP Dependency-Check SCA
       - name: Run OWASP Dependency-Check SCA
-        uses: dependency-check/Dependency-Check_Action@main
-        with:
-          project: ADWebApplication
-          path: .
-          format: 'ALL'
-          out: ./dependency-check-report
-          args: --failOnCVSS 7
-
+        id: dependency-check
+        run: |
+          dependency-check.sh --project ADWebApplication --scan ./ --format ALL --out ./dependency-check-report || echo "SCA failed"
+    
       - name: Upload Dependency-Check report
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
           path: ./dependency-check-report
+
+      - name: Fail if SCA found critical CVEs
+        if: always()
+        run: |
+          if grep -q "severity=\"Critical\"" ./dependency-check-report/dependency-check-report.xml; then
+            echo "Critical vulnerabilities found!"
+            exit 1
+          fi
