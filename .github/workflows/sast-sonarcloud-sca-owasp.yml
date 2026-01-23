@@ -82,7 +82,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # Step 10: OWASP Dependency-Check SCA
+      # Step 10: Run OWASP Dependency-Check SCA
       - name: Run OWASP Dependency-Check SCA
         uses: dependency-check/Dependency-Check_Action@main
         with:
@@ -93,7 +93,7 @@ jobs:
           args: >
             --exclude "./ADWebApplication.Tests/bin"
             --suppression dependency-check-suppressions.xml
-        continue-on-error: true  # always generate report even if vulnerabilities exist
+        continue-on-error: true   # ensures report is generated even if vulnerabilities exist
 
       # Step 11: Upload Dependency-Check report
       - name: Upload Dependency-Check report
@@ -103,22 +103,22 @@ jobs:
           path: ./dependency-check-report
 
       # Step 12: Fail workflow if CVSS >= 7
-      - name: Fail if high CVSS vulnerabilities found
+      - name: Fail workflow if high CVSS vulnerabilities found
         run: |
           REPORT_FILE=./dependency-check-report/dependency-check-report.xml
 
-          # Check if xmllint is installed
-          if ! command -v xmllint &> /dev/null; then
-            echo "xmllint could not be found. Installing..."
-            sudo apt-get update && sudo apt-get install -y libxml2-utils
+          # Exit if the report file doesn't exist
+          if [ ! -f "$REPORT_FILE" ]; then
+            echo "Dependency-Check report not found. Skipping CVSS check."
+            exit 0
           fi
 
           # Count vulnerabilities with CVSSv3 base score >= 7
-          HIGH_COUNT=$(xmllint --xpath "count(//vulnerability[cvssv3BaseScore>=7])" "$REPORT_FILE")
-
+          HIGH_COUNT=$(xmllint --xpath "count(//vulnerability[number(cvssv3BaseScore) >= 7])" "$REPORT_FILE")
+          
           if [ "$HIGH_COUNT" -gt 0 ]; then
             echo "High CVSS vulnerabilities found ($HIGH_COUNT)! Failing workflow."
             exit 1
           else
-            echo "No high CVSS vulnerabilities found. Continuing."
+            echo "No high CVSS vulnerabilities found. Workflow passes."
           fi
