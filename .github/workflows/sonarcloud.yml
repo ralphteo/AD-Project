@@ -33,7 +33,7 @@ jobs:
         run: >
           dotnet sonarscanner begin
           /k:"GDipSA-Team-5_AD-Project"   # project key
-          /d:sonar.organization="gdipsa-team-5"   # organisation key
+          /o:"gdipsa-team-5"   # organisation key
           /d:sonar.host.url="https://sonarcloud.io"
           /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
 
