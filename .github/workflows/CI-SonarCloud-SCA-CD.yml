@@ -86,7 +86,7 @@ jobs:
           name: sonarcloud-artifacts
           if-no-files-found: error
           path: |
-            ADWebApplication/.sonarqube
+            ADWebApplication/.sonarqube/**
             ADWebApplication/coverage.opencover.xml
 
       # ---- OWASP Dependency-Check ----
