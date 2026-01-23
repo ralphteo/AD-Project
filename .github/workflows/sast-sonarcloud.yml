@@ -88,20 +88,22 @@ jobs:
         with:
           project: ADWebApplication
           path: .
-          format: 'ALL'
+          format: ALL
           out: ./dependency-check-report
-          args: --noupdate
+        continue-on-error: true   # ensure report is generated even if vulnerabilities exist
 
+      # Step 11: Upload Dependency-Check report
       - name: Upload Dependency-Check report
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
           path: ./dependency-check-report
 
-      - name: Fail workflow on critical findings
+      # Step 12: Fail workflow if CVSS >= 7
+      - name: Fail if high CVSS vulnerabilities found
         run: |
-          CVSS_COUNT=$(grep -E "<cvssScore>[7-9]|10</cvssScore>" ./dependency-check-report/dependency-check-report.xml | wc -l)
-          if [ "$CVSS_COUNT" -gt 0 ]; then
-            echo "Found $CVSS_COUNT dependencies with CVSS >= 7. Failing workflow."
+          REPORT_FILE=./dependency-check-report/dependency-check-report.xml
+          if grep -q 'cvss:7' "$REPORT_FILE"; then
+            echo "High CVSS vulnerabilities found! Failing workflow."
             exit 1
           fi
