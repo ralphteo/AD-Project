@@ -64,10 +64,13 @@ jobs:
           mkdir -p coverage
 
           dotnet test ./ADWebApplication.Tests/ADWebApplication.Tests.csproj \
-            /p:CollectCoverage=true \
-            /p:CoverletOutput=coverage/coverage.opencover.xml \
-            /p:CoverletOutputFormat=opencover
+          /p:CollectCoverage=true \
+          /p:CoverletOutput=${{ github.workspace }}/coverage/coverage.opencover.xml \
+          /p:CoverletOutputFormat=opencover
 
+      - name: Debug coverage location
+        run: find . -name "coverage.opencover.xml"
+        
       # ---- Debug: List coverage directory ----
       - name: List coverage directory
         run: ls -la coverage
