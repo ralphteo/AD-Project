@@ -141,7 +141,7 @@ jobs:
 
       # ---- Run ZAP Baseline Scan ----
       - name: Run OWASP ZAP Baseline Scan
-        uses: zaproxy/action-baseline@0fbb3b06d27f1cb8c70a5c26c0f66f1a9c0c8f15
+        uses: zaproxy/action-baseline@de8ad96bb3d14f3a97e94f4c9fcd5b5ef7efc531
         with:
           target: 'http://localhost:5000'
           fail_action: false
