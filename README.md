@@ -1,8 +1,11 @@
 # AD-Project
 Team 5 Gdip SA - AD Project
-// Web Application Component //
-// Web URL: https://in5nite-e8d9b0g5cad9hrbg.southeastasia-01.azurewebsites.net/ //
+<br>// Web Application Component //
+<br>// Web URL: https://in5nite-e8d9b0g5cad9hrbg.southeastasia-01.azurewebsites.net/ //
 
+<br>//CI - GitHub Repos/Actions, SonarQube Cloud SAST, OWASP SCA //
+<br>//CD - Microsfot Azure Web App (zip package) //
+<br>
 - The Cloud Web App version is a clone of the code from Github Repository "main" branch
 - The YML build file is in ".github", and will run everytime you push to/merge into Github "main" branch
 - Do not remove the "yaml" file in .github
