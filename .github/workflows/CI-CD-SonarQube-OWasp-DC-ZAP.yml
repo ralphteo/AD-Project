@@ -25,16 +25,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ---- .NET Setup ----
+      # ---- Setup .NET ----
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # ---- Sonar Scanner ----
+      # ---- Install SonarScanner ----
       - name: Install SonarScanner
         run: dotnet tool install --global dotnet-sonarscanner
 
+      # ---- SonarCloud Begin ----
       - name: SonarCloud Begin
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -46,22 +47,23 @@ jobs:
             /d:sonar.cs.opencover.reportsPaths="coverage/coverage.opencover.xml" \
             /d:sonar.coverage.exclusions="**/Program.cs"
 
-      # ---- Build & Test ----
-      - name: Restore
+      # ---- Restore & Build main project ----
+      - name: Restore Main Project
         run: dotnet restore ${{ env.PROJECT_PATH }}
 
-      - name: Build
+      - name: Build Main Project
         run: dotnet build ${{ env.PROJECT_PATH }} --no-restore
+
+      # ---- Build Test Project ----
+      - name: Build Test Project
+        run: dotnet build ./ADWebApplication.Tests/ADWebApplication.Tests.csproj
 
       # ---- Run Tests with Coverage ----
       - name: Test with Coverage
         run: |
-          # ensure coverage directory exists
           mkdir -p coverage
 
-          # run tests and generate coverage (without .xml in CoverletOutput)
           dotnet test ./ADWebApplication.Tests/ADWebApplication.Tests.csproj \
-            --no-build \
             /p:CollectCoverage=true \
             /p:CoverletOutput=coverage/coverage \
             /p:CoverletOutputFormat=opencover
@@ -70,11 +72,12 @@ jobs:
       - name: List coverage directory
         run: ls -la coverage
 
-      # ---- Check if coverage file exists ----
+      # ---- Check coverage file ----
       - name: Check coverage file
         run: |
           test -f coverage/coverage.opencover.xml && echo "Coverage file found" || exit 1
 
+      # ---- SonarCloud End ----
       - name: SonarCloud End
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
