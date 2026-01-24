@@ -75,7 +75,7 @@ jobs:
 
       # ---- Sonar Quality Gate ----
       - name: SonarCloud Quality Gate
-        uses: SonarSource/sonarqube-quality-gate-action@v1
+        uses: SonarSource/sonarqube-quality-gate-action@cb3ed20f9fec62b4c3b8ad9e77656c6adaade913
         with:
           scanMetadataReportFile: .sonarqube/out/.sonar/report-task.txt
         env:
@@ -92,7 +92,7 @@ jobs:
 
       # ---- OWASP Dependency-Check ----
       - name: Run OWASP Dependency-Check SCA
-        uses: dependency-check/Dependency-Check_Action@main
+        uses: dependency-check/Dependency-Check_Action@1fff968cc07f8ab647fb53e3ada00bc2cb4f947f
         with:
           project: ADWebApplication
           path: .
@@ -141,7 +141,7 @@ jobs:
         run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output publish
 
       - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@55cf31b49e675aa17be3df3f6c1c54170f250cc5
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
