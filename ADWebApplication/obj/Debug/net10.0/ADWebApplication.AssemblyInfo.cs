@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ADWebApplication")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+da82aeaa816357f8bb1c9ccae0d3c47a7635e7e2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9368e3e7b97a264cf563cd0c9788e49a32e2b4b9")]
 [assembly: System.Reflection.AssemblyProductAttribute("ADWebApplication")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ADWebApplication")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
