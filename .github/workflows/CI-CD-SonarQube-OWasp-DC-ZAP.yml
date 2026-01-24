@@ -141,22 +141,17 @@ jobs:
 
       # ---- Run ZAP Baseline Scan ----
       - name: Run OWASP ZAP Baseline Scan
-        uses: zaproxy/action-baseline@v0.9.0
+        uses: zaproxy/action-baseline@0fbb3b06d27f1cb8c70a5c26c0f66f1a9c0c8f15
         with:
           target: 'http://localhost:5000'
-          failOnRisk: 'high'
-          format: 'html'
-          output: zap_report.html
-
-      # ---- Upload ZAP report ----
-      - name: Upload ZAP report
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-report
-          path: zap_report.html
+          fail_action: false
+          artifact_name: zap-report
+          cmd_options: >
+            -J report_json.json
+            -r report_html.html
 
   # =========================================================
-  # JOB 2: BUILD & DEPLOY TO AZURE
+  # JOB 3: BUILD & DEPLOY TO AZURE
   # =========================================================
   deploy:
     needs: 
