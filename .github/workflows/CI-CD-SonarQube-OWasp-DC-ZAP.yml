@@ -92,7 +92,7 @@ jobs:
 
       # ---- OWASP Dependency-Check ----
       - name: Run OWASP Dependency-Check SCA
-        uses: dependency-check/Dependency-Check_Action@1fff968cc07f8ab647fb53e3ada00bc2cb4f947f
+        uses: dependency-check/Dependency-Check_Action@1.1.0
         with:
           project: ADWebApplication
           path: .
