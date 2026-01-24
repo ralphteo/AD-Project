@@ -75,7 +75,7 @@ jobs:
 
       # ---- Sonar Quality Gate ----
       - name: SonarCloud Quality Gate
-        uses: SonarSource/sonarqube-quality-gate-action@main
+        uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
         with:
           scanMetadataReportFile: .sonarqube/out/.sonar/report-task.txt
         env:
@@ -92,7 +92,7 @@ jobs:
 
       # ---- OWASP Dependency-Check ----
       - name: Run OWASP Dependency-Check SCA
-        uses: dependency-check/Dependency-Check_Action@main
+        uses: dependency-check/Dependency-Check_Action@v1.1.0
         with:
           project: ADWebApplication
           path: .
