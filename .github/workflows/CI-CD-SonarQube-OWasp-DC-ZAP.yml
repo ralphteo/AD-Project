@@ -158,13 +158,15 @@ jobs:
     needs: 
       - build-and-sast-sca-scan
       - dast-scan
-    runs-on: windows-latest
+
     if: |
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
       needs.build-and-sast-sca-scan.result == 'success' &&
       needs.dast-scan.result == 'success'
-
+      
+    environment: production
+    runs-on: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
