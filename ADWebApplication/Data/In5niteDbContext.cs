@@ -24,6 +24,14 @@ namespace ADWebApplication.Data
                 .WithOne(r => r.User)
                 .HasForeignKey<RewardWallet>(r => r.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PublicUser>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
+            modelBuilder.Entity<PublicUser>()
+                .Property(u => u.Role)
+                .HasConversion<string>();
         }
     }
 }
