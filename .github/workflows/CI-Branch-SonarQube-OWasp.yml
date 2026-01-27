@@ -3,13 +3,13 @@ name: CI-Branch + SonarCloud + SCA
 on:
   push:
     branches: 
-    - 
+    - angeline/backend
   pull_request:
   workflow_dispatch:
 
 env:
   AZURE_WEBAPP_NAME: in5nite
-  DOTNET_VERSION: '10.0.x'
+  DOTNET_VERSION: '8.0.x'
   PROJECT_PATH: './ADWebApplication/ADWebApplication.csproj'
 
 jobs:

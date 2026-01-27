@@ -1,0 +1,90 @@
+using ADWebApplication.Data;
+using ADWebApplication.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace ADWebApplication.Controllers;
+
+[ApiController]
+[Route("api/auth")]
+public class AuthController : ControllerBase
+{
+    private readonly In5niteDbContext _db;
+
+    public AuthController(In5niteDbContext db)
+    {
+        _db = db;
+    }
+
+    [HttpPost("register")]
+    public async Task<ActionResult<RegisterResponse>> Register([FromBody] RegisterRequest request)
+    {
+        var email = request.Email.Trim().ToLowerInvariant();
+        var emailExists = await _db.PublicUser.AnyAsync(u => u.Email == email);
+        if (emailExists)
+        {
+            return Conflict(new RegisterResponse
+            {
+                Success = false,
+                Message = "Email already registered"
+            });
+        }
+
+        var user = new PublicUser
+        {
+            Email = email,
+            Name = request.FullName.Trim(),
+            PhoneNumber = request.Phone.Trim(),
+            Address = request.Address.Trim(),
+            ReferralCode = request.ReferralCode?.Trim(),
+            Role = UserRole.USER,
+            Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            RewardWallet = new RewardWallet
+            {
+                Points = 0
+            }
+        };
+
+        _db.PublicUser.Add(user);
+        await _db.SaveChangesAsync();
+
+        return Ok(new RegisterResponse
+        {
+            Success = true,
+            Message = "Registered",
+            UserId = user.Id
+        });
+    }
+
+    [HttpPost("login")]
+    public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
+    {
+        var email = request.Email.Trim().ToLowerInvariant();
+        var user = await _db.PublicUser.FirstOrDefaultAsync(u => u.Email == email);
+        if (user == null)
+        {
+            return Unauthorized(new LoginResponse
+            {
+                Success = false,
+                Message = "Invalid email or password"
+            });
+        }
+
+        var validPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
+        if (!validPassword)
+        {
+            return Unauthorized(new LoginResponse
+            {
+                Success = false,
+                Message = "Invalid email or password"
+            });
+        }
+
+        return Ok(new LoginResponse
+        {
+            Success = true,
+            Message = "Logged in",
+            UserId = user.Id
+        });
+    }
+}
