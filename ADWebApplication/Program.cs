@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using In5nite.Data;
+using ADWebApplication.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 

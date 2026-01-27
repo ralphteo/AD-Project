@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using ADWebApplication.Models;
 
-namespace In5nite.Data
+namespace ADWebApplication.Data
 {
     public class In5niteDbContext : DbContext
     {
@@ -9,7 +10,20 @@ namespace In5nite.Data
         {
         }
 
+        public DbSet<PublicUser> PublicUser { get; set; }
+        public DbSet<RewardWallet> RewardWallet { get; set; }
+
         // public DbSet<CollectionBin> CollectionBins { get; set; }
         // public DbSet<DisposalLog> DisposalLogs { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            //one user to one wallet
+            modelBuilder.Entity<PublicUser>()
+                .HasOne(u => u.RewardWallet)
+                .WithOne(r => r.User)
+                .HasForeignKey<RewardWallet>(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        }
     }
 }
