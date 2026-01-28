@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using ADWebApplication.Models;
 
 public class PublicUser
 {
@@ -8,19 +7,20 @@ public class PublicUser
     [Column("userId")]
     public int Id { get; set; }
 
+    [Column("email")]
     public string Email { get; set; } = string.Empty;
+
+    [Column("name")]
     public string Name { get; set; } = string.Empty;
+
     [Column("phoneNumber")]
     public string? PhoneNumber { get; set; }
 
-    [Column("Address")]
-    public string? Address { get; set; }
+    [Column("regionId")]
+    public int? RegionId { get; set; }
 
-    [Column("ReferralCode")]
-    public string? ReferralCode { get; set; }
-
-    [Column("role")]
-    public UserRole Role { get; set; } = UserRole.USER;
+    [Column("isActive")]
+    public bool IsActive { get; set; }
 
     [Column("passwordHash")]
     public string Password { get; set; } = string.Empty;

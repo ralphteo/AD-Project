@@ -70,6 +70,9 @@ public class TestController : Controller
         {
             Email = testEmail,
             Name = "Test User",
+            PhoneNumber = "00000000",
+            RegionId = null,
+            IsActive = true,
             Password = "Test",
             RewardWallet = new RewardWallet
             {

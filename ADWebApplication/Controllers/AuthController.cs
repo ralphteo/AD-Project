@@ -35,9 +35,8 @@ public class AuthController : ControllerBase
             Email = email,
             Name = request.FullName.Trim(),
             PhoneNumber = request.Phone.Trim(),
-            Address = request.Address.Trim(),
-            ReferralCode = request.ReferralCode?.Trim(),
-            Role = UserRole.USER,
+            RegionId = request.RegionId,
+            IsActive = true,
             Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
             RewardWallet = new RewardWallet
             {
@@ -67,6 +66,15 @@ public class AuthController : ControllerBase
             {
                 Success = false,
                 Message = "Invalid email or password"
+            });
+        }
+
+        if (!user.IsActive)
+        {
+            return Unauthorized(new LoginResponse
+            {
+                Success = false,
+                Message = "Account inactive"
             });
         }
 

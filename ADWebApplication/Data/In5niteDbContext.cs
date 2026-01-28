@@ -28,10 +28,6 @@ namespace ADWebApplication.Data
             modelBuilder.Entity<PublicUser>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
-
-            modelBuilder.Entity<PublicUser>()
-                .Property(u => u.Role)
-                .HasConversion<string>();
         }
     }
 }
