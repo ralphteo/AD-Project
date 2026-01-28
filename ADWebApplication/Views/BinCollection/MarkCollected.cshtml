@@ -1,0 +1,144 @@
+@model BinCollectionViewModel
+
+<div class="container mt-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Route Collection</h5>
+        </div>
+
+        <div class="card-body">
+            <form id="collectionForm" asp-action="MarkCollected" method="post">
+
+                <!-- Route Plan -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Route Plan</label>
+                    <select asp-for="SelectedRoutePlanId"
+                            class="form-select"
+                            id="routePlanSelect">
+                        <option value="">-- Select Route --</option>
+                        @foreach (var rp in Model.RoutePlans)
+                        {
+                            <option value="@rp.RoutetId">
+                                Route @rp.RoutetId (@rp.RouteStatus)
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Section is hidden until a route is selected -->
+                <div id="collectionSection" style="display:none;">
+
+                    <!-- Route Stop -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Route Stop</label>
+                        <select asp-for="SelectedRouteStopId"
+                                class="form-select"
+                                id="routeStopSelect">
+                            <option value="">-- Select Stop --</option>
+                        </select>
+                        <span asp-validation-for="SelectedRouteStopId" class="text-danger"></span>
+                    </div>
+                    <div id="stopError" class="text-danger mb-3" style="display:none;">
+                        Please select a Route Stop.
+                    </div>
+
+                    <!-- Collection Details -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Collection Time</label>
+                        <input asp-for="CollectionDetails.CollectionDateTimeLocal"
+                               class="form-control"
+                               type="datetime-local"
+                               value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Bin Fill Level (cm)</label>
+                        <input asp-for="CollectionDetails.BinFillHeight"
+                               class="form-control"
+                               type="number"
+                               min="0" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Issues</label>
+                        <textarea asp-for="CollectionDetails.IssueLog"
+                                  class="form-control"
+                                  rows="3"></textarea>
+                    </div>
+
+                    <input type="hidden" id="timezoneOffset" name="TimezoneOffset" />
+
+                    <button id="submitBtn" type="submit" class="btn btn-success w-100">
+                        Submit Collection
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+
+<script>
+    // Dynamic loading of route stops based on selected route plan
+    const routePlanSelect = document.getElementById("routePlanSelect");
+    const collectionSection = document.getElementById("collectionSection");
+    const stopSelect = document.getElementById("routeStopSelect");
+
+    routePlanSelect.addEventListener("change", function () {
+        const routePlanId = this.value;
+
+        if (!routePlanId) {
+            collectionSection.style.display = "none";
+            stopSelect.innerHTML = `<option value="">-- Select Stop --</option>`;
+            return;
+        }
+
+        collectionSection.style.display = "block";
+
+        fetch(`/BinCollection/GetRouteStops?routePlanId=${routePlanId}`)
+            .then(response => response.json())
+            .then(data => {
+                stopSelect.innerHTML = `<option value="">-- Select Stop --</option>`;
+
+                data.forEach(stop => {
+                    stopSelect.innerHTML += `
+                        <option value="${stop.stopId}">
+                            ${stop.stopSequence} - ${stop.locationName}
+                        </option>`;
+                });
+            });
+    });
+
+    // Form validation and confirmation
+    const form = document.getElementById("collectionForm");
+    const stopError = document.getElementById("stopError");
+
+    form.addEventListener("submit", function (e) {
+        // Hide previous error
+        stopError.style.display = "none";
+
+        // Check if route stop is selected
+        if (!stopSelect.value) {
+            e.preventDefault(); // stop form submission
+            stopError.style.display = "block";
+            stopError.textContent = "Please select a Route Stop.";
+            return;
+        }
+
+        // Confirm dialog
+        const confirmSubmit = confirm("Are you sure you want to submit this collection?");
+        if (!confirmSubmit) {
+            e.preventDefault();
+        }
+    });
+
+    // Set timezone offset on page load
+    window.addEventListener('DOMContentLoaded', () => {
+        document.getElementById("timezoneOffset").value = new Date().getTimezoneOffset();
+    });
+    
+</script>
+

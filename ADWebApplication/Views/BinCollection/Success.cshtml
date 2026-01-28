@@ -1,0 +1,42 @@
+@{
+    ViewData["Title"] = "Collection Submitted";
+}
+
+<!-- Auto-redirect after 15 seconds -->
+<meta http-equiv="refresh"
+      content="15;url=@Url.Action("MarkCollected","BinCollection")" />
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+
+            <div class="card shadow-sm text-center">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Success</h5>
+                </div>
+
+                <div class="card-body">
+                    <!-- Success Icon -->
+                    <div class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success fs-1"></i>
+                    </div>
+
+                    <h5 class="mb-3">
+                        Collection details submitted successfully
+                    </h5>
+
+                    <p class="text-muted mb-4">
+                        You will be redirected back to the collection form shortly.
+                    </p>
+
+                    <a asp-action="MarkCollected"
+                       asp-controller="BinCollection"
+                       class="btn btn-success px-4">
+                        OK
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
