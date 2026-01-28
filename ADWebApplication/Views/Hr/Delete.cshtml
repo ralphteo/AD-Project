@@ -1,4 +1,4 @@
-@model ADWebApplication.Models.EmpAccount
+@model ADWebApplication.Models.Employee
 @{
     ViewData["Title"] = "HR - Delete Employee";
     Layout = null;
@@ -18,18 +18,24 @@
         <p class="text-gray-500 mb-6">This action cannot be undone.</p>
 
         <div class="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6">
-            Are you sure you want to delete <b>@Model.FullName</b> (@Model.Username) — Role: <b>@roleName</b>?
+            Are you sure you want to delete
+            <b>@Model.FullName</b>
+            (<b>@Model.Username</b>) — Role:
+            <b>@roleName</b>?
         </div>
 
-        <form asp-action="DeleteConfirmed" method="post" class="space-y-3">
+        <form asp-action="Delete" method="post" class="space-y-3">
             @Html.AntiForgeryToken()
-            <input type="hidden" name="id" value="@Model.Id" />
 
-            <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700">
+            <input type="hidden" name="username" value="@Model.Username" />
+
+            <button type="submit"
+                    class="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700">
                 Yes, Delete
             </button>
 
-            <a href="@Url.Action("Index","Hr")" class="block text-center w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200">
+            <a href="@Url.Action("Index","Hr")"
+               class="block text-center w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200">
                 Cancel
             </a>
         </form>

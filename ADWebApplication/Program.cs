@@ -63,54 +63,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<EmpDbContext>();
 
-    // Create tables if you already have migrations:
-    db.Database.Migrate();
 
-    // 1) Ensure Roles exist
-    if (!db.Roles.Any())
-    {
-        db.Roles.Add(new Role { Name = "HR" });
-        db.Roles.Add(new Role { Name = "Admin" });
-        db.Roles.Add(new Role { Name = "Collector" });
-        db.SaveChanges();
-    }
-
-    // 2) Ensure HR user exists
-    var hrUser = db.EmpAccounts.FirstOrDefault(u => u.Username == "hr001");
-    if (hrUser == null)
-    {
-        hrUser = new EmpAccount
-        {
-            Username = "Hr001",                     
-            FullName = "Team5",
-            Email = "nyetsinhtut28596@gmail.com",      
-            PhoneNumber = "91234567",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Hr@12345"),
-            IsActive = true
-        };
-
-        db.EmpAccounts.Add(hrUser);
-        db.SaveChanges();
-    }
-
-    // 3) Assign HR role
-    var hrRole = db.Roles.First(r => r.Name == "HR");
-
-    bool hasRole = db.EmpRoles.Any(ur => ur.EmpAccountId == hrUser.Id && ur.RoleId == hrRole.Id);
-    if (!hasRole)
-    {
-        db.EmpRoles.Add(new EmpRole
-        {
-            EmpAccountId = hrUser.Id,
-            RoleId = hrRole.Id
-        });
-        db.SaveChanges();
-    }
-}
 app.MapGet("/health", async (In5niteDbContext db) =>
 {
     try
@@ -127,6 +81,11 @@ app.MapGet("/health", async (In5niteDbContext db) =>
         });
     }
 });
+app.MapGet("/emp-test", async (EmpDbContext db) =>
+{
+    var count = await db.Employees.CountAsync();
+    return Results.Ok(new { employeeCount = count });
+});
 
 if (!app.Environment.IsDevelopment())
 {
@@ -134,7 +93,41 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
     app.UseHttpsRedirection();
 }
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<EmpDbContext>();
 
+    if (!db.Roles.Any(r => r.Name == "HR"))
+    {
+        db.Roles.Add(new Role { Name = "HR" });
+        db.SaveChanges();
+    }
+
+    var hrRoleId = db.Roles.First(r => r.Name == "HR").RoleId;
+
+    var hr = db.Employees.FirstOrDefault(e => e.Username == "HR-001");
+    if (hr == null)
+    {
+        hr = new Employee
+        {
+            Username = "HR-001",
+            FullName = "Team5 HR",
+            Email = "nyetsinhtut28596@gmail.com",
+            IsActive = true,
+            RoleId = hrRoleId,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Hr@12345")
+        };
+        db.Employees.Add(hr);
+    }
+    else
+    {
+        hr.IsActive = true;
+        hr.RoleId = hrRoleId;
+        hr.PasswordHash = BCrypt.Net.BCrypt.HashPassword("Hr@12345");
+    }
+
+    db.SaveChanges();
+}
 app.UseRouting();
 app.UseCors("AllowAndroid");
 app.UseSession();

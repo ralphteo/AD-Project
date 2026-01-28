@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using ADWebApplication.Data;
 using ADWebApplication.Models;
 using ADWebApplication.ViewModels;
@@ -13,215 +12,190 @@ namespace ADWebApplication.Controllers
     {
         private readonly EmpDbContext _db;
 
-        public HrController(EmpDbContext empDb)
+        public HrController(EmpDbContext db)
         {
-            _db = empDb;
+            _db = db;
         }
-    
-    [HttpGet]
-    public async Task<IActionResult> Index()
-    {
-        var employees = await _db.EmpAccounts
-            .OrderBy(e => e.Username)
-            .Select(e => new EmployeeRowViewModel
-            {
-                Id = e.Id,
-                FullName = e.FullName,
-                Username = e.Username,
-                Email = e.Email,
-                PhoneNumber = e.PhoneNumber,
-                IsActive = e.IsActive,
-                RoleName = _db.EmpRoles
-                    .Where(er => er.EmpAccountId == e.Id)
-                    .Select(er => er.Role.Name)
-                    .FirstOrDefault() ?? "-"
-            })
-            .ToListAsync();
 
-        return View(employees);
-    }
-       [HttpGet]
+        // LIST
+        [HttpGet]
+   [HttpGet]
+public async Task<IActionResult> Index()
+{
+    var list = await _db.Employees
+        .Include(e => e.Role)
+        .OrderBy(e => e.Username)
+        .Select(e => new EmployeeRowViewModel
+        {
+            Id = e.Id,
+
+            Username = e.Username,
+            FullName = e.FullName,
+            Email = e.Email,
+            IsActive = e.IsActive,
+            RoleName = e.Role != null ? e.Role.Name : "-"
+        })
+        .ToListAsync();
+
+    return View(list);
+}
+
+        // CREATE (GET)
+        [HttpGet]
         public async Task<IActionResult> CreateEmployee()
         {
             ViewBag.Roles = await _db.Roles
                 .Where(r => r.Name != "HR")
-                .Select(r => r.Name)
+                .OrderBy(r => r.Name)
                 .ToListAsync();
 
             return View(new CreateEmployeeViewModel());
         }
 
+        // CREATE (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateEmployee(CreateEmployeeViewModel model)
+        public async Task<IActionResult> CreateEmployee(CreateEmployeeViewModel vm)
         {
             ViewBag.Roles = await _db.Roles
                 .Where(r => r.Name != "HR")
-                .Select(r => r.Name)
+                .OrderBy(r => r.Name)
                 .ToListAsync();
 
-            if (!ModelState.IsValid) return View(model);
+            if (!ModelState.IsValid) return View(vm);
 
-            bool exists = await _db.EmpAccounts.AnyAsync(u => u.Username == model.Username);
-            if (exists)
+            var username = vm.Username.Trim();
+
+            if (await _db.Employees.AnyAsync(e => e.Username == username))
             {
-                ModelState.AddModelError(nameof(model.Username), "This Employee ID already exists.");
-                return View(model);
+                ModelState.AddModelError(nameof(vm.Username), "Employee ID already exists");
+                return View(vm);
             }
 
-            var role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == model.RoleName);
+            // validate role
+            var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleId == vm.RoleId && r.Name != "HR");
             if (role == null)
             {
-                ModelState.AddModelError(nameof(model.RoleName), "Invalid role.");
-                return View(model);
+                ModelState.AddModelError(nameof(vm.RoleId), "Invalid role");
+                return View(vm);
             }
 
-            var user = new EmpAccount
+            var emp = new Employee
             {
-                Username = model.Username,
-                FullName = model.FullName,
-                Email = model.Email,
-                PhoneNumber = model.PhoneNumber,
-                IsActive = true,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password)
-
+                Username = username,
+                FullName = vm.FullName.Trim(),
+                Email = vm.Email.Trim(),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(vm.Password),
+                RoleId = role.RoleId,
+                IsActive = true
             };
 
-            _db.EmpAccounts.Add(user);
+            _db.Employees.Add(emp);
             await _db.SaveChangesAsync();
 
-            _db.EmpRoles.Add(new EmpRole { EmpAccountId = user.Id, RoleId = role.Id });
+            TempData["Message"] = "Employee created";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // EDIT (GET) - use Username PK
+        [HttpGet]
+        public async Task<IActionResult> Edit(string username)
+        {
+            if (string.IsNullOrWhiteSpace(username)) return NotFound();
+
+            var emp = await _db.Employees
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Username == username);
+
+            if (emp == null) return NotFound();
+
+            ViewBag.Roles = await _db.Roles
+                .Where(r => r.Name != "HR")
+                .OrderBy(r => r.Name)
+                .ToListAsync();
+
+            var vm = new EditEmployeeViewModel
+            {
+                Username = emp.Username,
+                FullName = emp.FullName,
+                Email = emp.Email,
+                RoleId = emp.RoleId,
+                IsActive = emp.IsActive
+            };
+
+            return View(vm);
+        }
+
+        // EDIT (POST)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(EditEmployeeViewModel vm)
+        {
+            ViewBag.Roles = await _db.Roles
+                .Where(r => r.Name != "HR")
+                .OrderBy(r => r.Name)
+                .ToListAsync();
+
+            if (!ModelState.IsValid) return View(vm);
+
+            var emp = await _db.Employees.FirstOrDefaultAsync(e => e.Username == vm.Username);
+            if (emp == null) return NotFound();
+
+            // validate role
+            var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleId == vm.RoleId && r.Name != "HR");
+            if (role == null)
+            {
+                ModelState.AddModelError(nameof(vm.RoleId), "Invalid role");
+                return View(vm);
+            }
+
+            emp.FullName = vm.FullName.Trim();
+            emp.Email = vm.Email.Trim();
+            emp.RoleId = vm.RoleId;
+            emp.IsActive = vm.IsActive;
+
+            // optional password reset
+            if (!string.IsNullOrWhiteSpace(vm.NewPassword))
+            {
+                emp.PasswordHash = BCrypt.Net.BCrypt.HashPassword(vm.NewPassword);
+            }
+
             await _db.SaveChangesAsync();
 
-            TempData["Message"] = "Employee created successfully.";
-            return RedirectToAction(nameof(CreateEmployee));
+            TempData["Message"] = "Employee updated";
+            return RedirectToAction(nameof(Index));
         }
 
-    // GET Edit page
-    [HttpGet]
-    public async Task<IActionResult> Edit(int id)
-    {
-        var emp = await _db.EmpAccounts.FirstOrDefaultAsync(e => e.Id == id);
-        if (emp == null) return NotFound();
-
-        var roleName = await _db.EmpRoles
-            .Where(er => er.EmpAccountId == id)
-            .Select(er => er.Role.Name)
-            .FirstOrDefaultAsync() ?? "";
-
-        var vm = new EditEmployeeViewModel
+        // DELETE (GET) - use Username PK
+        [HttpGet]
+        public async Task<IActionResult> Delete(string username)
         {
-            Id = emp.Id,
-            FullName = emp.FullName,
-            Username = emp.Username,
-            Email = emp.Email,
-            PhoneNumber = emp.PhoneNumber,
-            IsActive = emp.IsActive,
-            RoleName = roleName
-        };
+            if (string.IsNullOrWhiteSpace(username)) return NotFound();
 
-        ViewBag.Roles = await _db.Roles
-            .Where(r => r.Name != "HR") // usually HR shouldn't assign HR
-            .Select(r => r.Name)
-            .ToListAsync();
+            var emp = await _db.Employees
+                .Include(e => e.Role)
+                .FirstOrDefaultAsync(e => e.Username == username);
 
-        return View(vm);
-    }
+            if (emp == null) return NotFound();
 
-    // POST Save Edit
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(EditEmployeeViewModel vm)
-    {
-        if (!ModelState.IsValid)
-        {
-            ViewBag.Roles = await _db.Roles.Where(r => r.Name != "HR").Select(r => r.Name).ToListAsync();
-            return View(vm);
+            return View(emp);
         }
 
-        var emp = await _db.EmpAccounts.FirstOrDefaultAsync(e => e.Id == vm.Id);
-        if (emp == null) return NotFound();
-
-        // Unique username check (if HR edits EmployeeId)
-        bool usernameTaken = await _db.EmpAccounts.AnyAsync(e => e.Username == vm.Username && e.Id != vm.Id);
-        if (usernameTaken)
+        // DELETE (POST)
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(string username)
         {
-            ModelState.AddModelError("Username", "Employee ID already exists.");
-            ViewBag.Roles = await _db.Roles.Where(r => r.Name != "HR").Select(r => r.Name).ToListAsync();
-            return View(vm);
+            if (string.IsNullOrWhiteSpace(username)) return NotFound();
+
+            var emp = await _db.Employees.FirstOrDefaultAsync(e => e.Username == username);
+            if (emp == null) return NotFound();
+
+            _db.Employees.Remove(emp);
+            await _db.SaveChangesAsync();
+
+            TempData["Message"] = "Employee deleted";
+            return RedirectToAction(nameof(Index));
         }
-
-        // Update fields
-        emp.FullName = vm.FullName;
-        emp.Username = vm.Username;
-        emp.Email = vm.Email;
-        emp.PhoneNumber = vm.PhoneNumber;
-        emp.IsActive = vm.IsActive;
-
-        // Update role
-        var role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == vm.RoleName);
-        if (role == null)
-        {
-            ModelState.AddModelError("RoleName", "Invalid role.");
-            ViewBag.Roles = await _db.Roles.Where(r => r.Name != "HR").Select(r => r.Name).ToListAsync();
-            return View(vm);
-        }
-
-        var empRole = await _db.EmpRoles.FirstOrDefaultAsync(er => er.EmpAccountId == emp.Id);
-        if (empRole == null)
-        {
-            _db.EmpRoles.Add(new EmpRole { EmpAccountId = emp.Id, RoleId = role.Id });
-        }
-        else
-        {
-            empRole.RoleId = role.Id;
-        }
-
-        // reset password
-        if (!string.IsNullOrWhiteSpace(vm.NewPassword))
-        {
-            emp.PasswordHash = BCrypt.Net.BCrypt.HashPassword(vm.NewPassword);
-        }
-
-        await _db.SaveChangesAsync();
-        TempData["Message"] = "Employee updated successfully.";
-        return RedirectToAction(nameof(Index));
-    }
-
-    // GET Delete confirmation page
-    [HttpGet]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var emp = await _db.EmpAccounts.FirstOrDefaultAsync(e => e.Id == id);
-        if (emp == null) return NotFound();
-
-        var roleName = await _db.EmpRoles
-            .Where(er => er.EmpAccountId == id)
-            .Select(er => er.Role.Name)
-            .FirstOrDefaultAsync() ?? "-";
-
-        ViewBag.RoleName = roleName;
-        return View(emp);
-    }
-
-    // POST Delete
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id)
-    {
-        var emp = await _db.EmpAccounts.FirstOrDefaultAsync(e => e.Id == id);
-        if (emp == null) return NotFound();
-
-        // Remove role rows first (FK safe)
-        var roles = await _db.EmpRoles.Where(er => er.EmpAccountId == id).ToListAsync();
-        _db.EmpRoles.RemoveRange(roles);
-
-        _db.EmpAccounts.Remove(emp);
-
-        await _db.SaveChangesAsync();
-        TempData["Message"] = "Employee deleted successfully.";
-        return RedirectToAction(nameof(Index));
     }
 }
-}
-

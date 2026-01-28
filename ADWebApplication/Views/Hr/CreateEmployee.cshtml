@@ -47,44 +47,39 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Telephone</label>
-                <input asp-for="PhoneNumber" class="w-full px-4 py-3 border rounded-lg" />
-                <span asp-validation-for="PhoneNumber" class="text-red-600 text-sm"></span>
-            </div>
-
-            <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <select asp-for="RoleName" class="w-full px-4 py-3 border rounded-lg">
-                    <option value="">-- Select Role --</option>
-                    @foreach (var r in (List<string>)ViewBag.Roles)
-                    {
-                        <option value="@r">@r</option>
-                    }
-                </select>
-                <span asp-validation-for="RoleName" class="text-red-600 text-sm"></span>
+                <select asp-for="RoleId" class="w-full px-4 py-3 border rounded-lg">
+    <option value="">-- Select Role --</option>
+    @foreach (var r in (List<ADWebApplication.Models.Role>)ViewBag.Roles)
+    {
+        <option value="@r.RoleId">@r.Name</option>
+    }
+</select>
+                <span asp-validation-for="RoleId" class="text-red-600 text-sm"></span>
             </div>
-            <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-        <input asp-for="Password" type="password"
-            class="w-full px-4 py-3 border rounded-lg" />
-        <span asp-validation-for="Password" class="text-red-600 text-sm"></span>
-        </div>
 
-        <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-        <input asp-for="ConfirmPassword" type="password"
-           class="w-full px-4 py-3 border rounded-lg" />
-        <span asp-validation-for="ConfirmPassword" class="text-red-600 text-sm"></span>
-        </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input asp-for="Password" type="password" class="w-full px-4 py-3 border rounded-lg" />
+                <span asp-validation-for="Password" class="text-red-600 text-sm"></span>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <input asp-for="ConfirmPassword" type="password" class="w-full px-4 py-3 border rounded-lg" />
+                <span asp-validation-for="ConfirmPassword" class="text-red-600 text-sm"></span>
+            </div>
 
             <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
                 Create Employee
             </button>
         </form>
+
         <a href="@Url.Action("Index","Hr")"
-            class="block w-full text-center bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 mt-3">
+           class="block w-full text-center bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 mt-3">
             Employee List
         </a>
+
         <form method="post" action="@Url.Action("Logout","EmpAuth")" class="mt-4">
             @Html.AntiForgeryToken()
             <button type="submit" class="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200">

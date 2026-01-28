@@ -38,7 +38,6 @@
                         <th class="py-3">Employee ID</th>
                         <th>Full Name</th>
                         <th>Email</th>
-                        <th>Phone</th>
                         <th>Role</th>
                         <th>Status</th>
                         <th class="text-right">Actions</th>
@@ -51,7 +50,6 @@
                         <td class="py-3 font-medium">@e.Username</td>
                         <td>@e.FullName</td>
                         <td>@e.Email</td>
-                        <td>@e.PhoneNumber</td>
                         <td>@e.RoleName</td>
                         <td>
                             @if (e.IsActive)
@@ -60,8 +58,8 @@
                             { <span class="px-2 py-1 rounded bg-gray-100 text-gray-600 border">Inactive</span> }
                         </td>
                         <td class="text-right space-x-2">
-                            <a class="text-blue-600 hover:underline" href="@Url.Action("Edit","Hr", new { id = e.Id })">Edit</a>
-                            <a class="text-red-600 hover:underline" href="@Url.Action("Delete","Hr", new { id = e.Id })">Delete</a>
+                            <a class="text-blue-600 hover:underline" href="@Url.Action("Edit","Hr", new { username = e.Username })">Edit</a>
+                            <a class="text-red-600 hover:underline" href="@Url.Action("Delete","Hr", new { username = e.Username })">Delete</a>
                         </td>
                     </tr>
                 }
