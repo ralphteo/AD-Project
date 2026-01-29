@@ -30,4 +30,5 @@ namespace ADWebApplication.Models;
         [Column("roleId")]
         public int RoleId { get; set; }
         public Role Role { get; set; } = null!;
+
     }
