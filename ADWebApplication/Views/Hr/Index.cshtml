@@ -1,0 +1,79 @@
+@model List<ADWebApplication.ViewModels.EmployeeRowViewModel>
+@{
+    ViewData["Title"] = "HR - Employees";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewData["Title"]</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+<div class="min-h-screen bg-gray-50 p-6">
+    <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow p-6 border">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">HR Portal</h1>
+                <p class="text-gray-500">Employee list</p>
+            </div>
+            <a href="@Url.Action("CreateEmployee","Hr")"
+               class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700">
+                + Create Employee
+            </a>
+        </div>
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="bg-green-50 text-green-700 border border-green-200 rounded-lg p-3 mb-4">
+                @TempData["Message"]
+            </div>
+        }
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="text-left text-gray-500">
+                    <tr class="border-b">
+                        <th class="py-3">Employee ID</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var e in Model)
+                {
+                    <tr class="border-b">
+                        <td class="py-3 font-medium">@e.Username</td>
+                        <td>@e.FullName</td>
+                        <td>@e.Email</td>
+                        <td>@e.RoleName</td>
+                        <td>
+                            @if (e.IsActive)
+                            { <span class="px-2 py-1 rounded bg-green-50 text-green-700 border border-green-200">Active</span> }
+                            else
+                            { <span class="px-2 py-1 rounded bg-gray-100 text-gray-600 border">Inactive</span> }
+                        </td>
+                        <td class="text-right space-x-2">
+                            <a class="text-blue-600 hover:underline" href="@Url.Action("Edit","Hr", new { username = e.Username })">Edit</a>
+                            <a class="text-red-600 hover:underline" href="@Url.Action("Delete","Hr", new { username = e.Username })">Delete</a>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+
+        <form method="post" action="@Url.Action("Logout","EmpAuth")" class="mt-6">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200">
+                Logout
+            </button>
+        </form>
+    </div>
+</div>
+</body>
+</html>
