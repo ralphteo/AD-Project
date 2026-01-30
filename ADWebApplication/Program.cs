@@ -28,6 +28,12 @@ builder.Services.AddDbContext<EmpDbContext>(options =>
         new MySqlServerVersion(new Version(8, 0, 36))
     )
 );
+builder.Services.AddDbContext<LogDisposalDbContext>(options =>
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        new MySqlServerVersion(new Version(8, 0, 36))
+    )
+);
 // Session (needed for OTP)
 builder.Services.AddSession(opt =>
 {
