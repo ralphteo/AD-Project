@@ -1,7 +1,9 @@
 using ADWebApplication.Models;
 using ADWebApplication.Data;
+using ADWebApplication.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ADWebApplication.Controllers
 {
@@ -116,6 +118,259 @@ namespace ADWebApplication.Controllers
                 }
             };
             return route;
+        }
+
+        // ============================================
+        // ROUTE ASSIGNMENT FEATURE
+        // ============================================
+
+        /// <summary>
+        /// Display collector's route assignments with search and filter
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> MyRouteAssignments(
+            string? search,
+            int? regionId,
+            DateTime? date,
+            string? status,
+            int page = 1,
+            int pageSize = 10)
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username))
+            {
+                return Unauthorized();
+            }
+
+            // Base query - get all assignments for this collector
+            var query = _db.RouteAssignments
+                .Include(ra => ra.RoutePlans)
+                    .ThenInclude(rp => rp.RouteStops)
+                        .ThenInclude(rs => rs.CollectionBin)
+                            .ThenInclude(cb => cb.Region)
+                .Include(ra => ra.RoutePlans)
+                    .ThenInclude(rp => rp.RouteStops)
+                        .ThenInclude(rs => rs.CollectionDetails)
+                .Where(ra => ra.AssignedTo == username);
+
+            // Apply search filter (search by route ID or location name)
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(ra =>
+                    ra.RoutePlans.Any(rp =>
+                        rp.RouteId.ToString().Contains(search) ||
+                        rp.RouteStops.Any(rs =>
+                            rs.CollectionBin != null &&
+                            rs.CollectionBin.LocationName != null &&
+                            rs.CollectionBin.LocationName.Contains(search)
+                        )
+                    )
+                );
+            }
+
+            // Apply region filter
+            if (regionId.HasValue)
+            {
+                query = query.Where(ra => ra.RoutePlans.Any(rp =>
+                    rp.RouteStops.Any(rs => rs.CollectionBin.RegionId == regionId)));
+            }
+
+            // Apply date filter (use RoutePlan.PlannedDate)
+            if (date.HasValue)
+            {
+                query = query.Where(ra => ra.RoutePlans.Any(rp => rp.PlannedDate.Date == date.Value.Date));
+            }
+
+            // Apply status filter (use RoutePlan.RouteStatus)
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query = query.Where(ra => ra.RoutePlans.Any(rp => rp.RouteStatus == status));
+            }
+
+            // Get total count for pagination
+            var totalItems = await query.CountAsync();
+
+            // Get paginated results (order by PlannedDate from RoutePlan)
+            var assignments = await query
+                .SelectMany(ra => ra.RoutePlans.Select(rp => new { Assignment = ra, RoutePlan = rp }))
+                .OrderByDescending(x => x.RoutePlan.PlannedDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Map to display items
+            var displayItems = assignments.Select(x => new RouteAssignmentDisplayItem
+            {
+                AssignmentId = x.Assignment.AssignmentId,
+                AssignedBy = x.Assignment.AssignedBy,
+                AssignedTo = x.Assignment.AssignedTo,
+                Status = x.RoutePlan.RouteStatus ?? "Pending",  // Use RoutePlan.RouteStatus
+                RouteId = x.RoutePlan.RouteId,
+                PlannedDate = x.RoutePlan.PlannedDate,
+                RouteStatus = x.RoutePlan.RouteStatus,
+                RegionName = x.RoutePlan.RouteStops.FirstOrDefault()?.CollectionBin?.Region?.RegionName,
+                TotalStops = x.RoutePlan.RouteStops.Count,
+                CompletedStops = x.RoutePlan.RouteStops.Count(rs => rs.CollectionDetails.Any(cd => cd.CollectionStatus == "Collected"))
+            }).ToList();
+
+            // Get available regions for dropdown
+            var availableRegions = await _db.Regions.ToListAsync();
+
+            // Create ViewModel
+            var viewModel = new RouteAssignmentSearchViewModel
+            {
+                Assignments = displayItems,
+                CurrentPage = page,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                SearchTerm = search,
+                SelectedRegionId = regionId,
+                SelectedDate = date,
+                SelectedStatus = status,
+                AvailableRegions = availableRegions
+            };
+
+            return View(viewModel);
+        }
+
+        /// <summary>
+        /// Display detailed view of a specific route assignment
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> RouteAssignmentDetails(int id)
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username))
+            {
+                return Unauthorized();
+            }
+
+            var assignment = await _db.RouteAssignments
+                .Include(ra => ra.RoutePlans)
+                    .ThenInclude(rp => rp.RouteStops)
+                        .ThenInclude(rs => rs.CollectionBin)
+                            .ThenInclude(cb => cb.Region)
+                .Include(ra => ra.RoutePlans)
+                    .ThenInclude(rp => rp.RouteStops)
+                        .ThenInclude(rs => rs.CollectionDetails)
+                .Where(ra => ra.AssignmentId == id && ra.AssignedTo == username)
+                .FirstOrDefaultAsync();
+
+            if (assignment == null)
+            {
+                return NotFound();
+            }
+
+            var route = assignment.RoutePlans.FirstOrDefault();
+            if (route == null)
+            {
+                return NotFound();
+            }
+
+            // Map route stops
+            var stops = route.RouteStops
+                .OrderBy(rs => rs.StopSequence)
+                .Select(rs =>
+                {
+                    var latestCollection = rs.CollectionDetails
+                        .OrderByDescending(cd => cd.CurrentCollectionDateTime)
+                        .FirstOrDefault();
+
+                    return new RouteStopDisplayItem
+                    {
+                        StopId = rs.StopId,
+                        StopSequence = rs.StopSequence,
+                        PlannedCollectionTime = rs.PlannedCollectionTime.DateTime,
+                        BinId = rs.CollectionBin?.BinId ?? 0,
+                        LocationName = rs.CollectionBin?.LocationName,
+                        RegionName = rs.CollectionBin?.Region?.RegionName,
+                        IsCollected = latestCollection?.CollectionStatus == "Collected",
+                        CollectedAt = latestCollection?.CurrentCollectionDateTime?.DateTime,
+                        CollectionStatus = latestCollection?.CollectionStatus,
+                        BinFillLevel = latestCollection?.BinFillLevel
+                    };
+                }).ToList();
+
+            var viewModel = new RouteAssignmentDetailViewModel
+            {
+                AssignmentId = assignment.AssignmentId,
+                AssignedBy = assignment.AssignedBy,
+                AssignedTo = assignment.AssignedTo,
+                RouteId = route.RouteId,
+                PlannedDate = route.PlannedDate,
+                RouteStatus = route.RouteStatus,
+                RouteStops = stops
+            };
+
+            return View(viewModel);
+        }
+
+        /// <summary>
+        /// Get next pending stops (sequence-based, customizable count)
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetNextStops(int? top = 10)
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username))
+            {
+                return Unauthorized();
+            }
+
+            // Get today's route assignment (filter by RoutePlan.PlannedDate and RouteStatus)
+            var todayAssignment = await _db.RouteAssignments
+                .Include(ra => ra.RoutePlans)
+                    .ThenInclude(rp => rp.RouteStops)
+                        .ThenInclude(rs => rs.CollectionBin)
+                .Include(ra => ra.RoutePlans)
+                    .ThenInclude(rp => rp.RouteStops)
+                        .ThenInclude(rs => rs.CollectionDetails)
+                .Where(ra => ra.AssignedTo == username
+                          && ra.RoutePlans.Any(rp => 
+                              rp.PlannedDate.Date == DateTime.Today 
+                              && rp.RouteStatus != "Completed"))
+                .FirstOrDefaultAsync();
+
+            if (todayAssignment == null)
+            {
+                return NotFound(new { message = "No active route assignment for today" });
+            }
+
+            var route = todayAssignment.RoutePlans
+                .FirstOrDefault(rp => rp.PlannedDate.Date == DateTime.Today && rp.RouteStatus != "Completed");
+            if (route == null)
+            {
+                return NotFound(new { message = "No route plan found" });
+            }
+
+            // Get next pending stops by sequence
+            var nextStops = route.RouteStops
+                .Where(rs => !rs.CollectionDetails.Any(cd => cd.CollectionStatus == "Collected"))
+                .OrderBy(rs => rs.StopSequence)
+                .Take(top ?? 10)
+                .Select(rs => new RouteStopDisplayItem
+                {
+                    StopId = rs.StopId,
+                    StopSequence = rs.StopSequence,
+                    PlannedCollectionTime = rs.PlannedCollectionTime.DateTime,
+                    BinId = rs.CollectionBin?.BinId ?? 0,
+                    LocationName = rs.CollectionBin?.LocationName,
+                    IsCollected = false
+                }).ToList();
+
+            var totalPending = route.RouteStops
+                .Count(rs => !rs.CollectionDetails.Any(cd => cd.CollectionStatus == "Collected"));
+
+            var viewModel = new NextStopsViewModel
+            {
+                AssignmentId = todayAssignment.AssignmentId,
+                RouteId = route.RouteId,
+                PlannedDate = route.PlannedDate,
+                NextStops = nextStops,
+                TotalPendingStops = totalPending
+            };
+
+            return Json(viewModel);
         }
     }
 }

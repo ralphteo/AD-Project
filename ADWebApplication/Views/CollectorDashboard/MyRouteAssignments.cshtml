@@ -1,0 +1,261 @@
+@model ADWebApplication.ViewModels.RouteAssignmentSearchViewModel
+
+@{
+    ViewData["Title"] = "My Route Assignments";
+}
+
+<div class="container py-4">
+    <h2 class="mb-4">
+        <i class="bi bi-clipboard-check"></i> My Route Assignments
+    </h2>
+    
+    <!-- Search & Filter Panel -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="MyRouteAssignments">
+                <div class="row g-3">
+                    <!-- General Search -->
+                    <div class="col-md-4">
+                        <label class="form-label">Search</label>
+                        <input type="text" 
+                               name="search" 
+                               class="form-control" 
+                               placeholder="Route name, location..." 
+                               value="@Model.SearchTerm">
+                    </div>
+                    
+                    <!-- Region Filter -->
+                    <div class="col-md-2">
+                        <label class="form-label">Region</label>
+                        <select name="regionId" class="form-select">
+                            <option value="">All Regions</option>
+                            @foreach (var region in Model.AvailableRegions)
+                            {
+                                <option value="@region.RegionId" selected="@(region.RegionId == Model.SelectedRegionId)">
+                                    @region.RegionName
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    
+                    <!-- Date Filter -->
+                    <div class="col-md-2">
+                        <label class="form-label">Collection Date</label>
+                        <input type="date" 
+                               name="date" 
+                               class="form-control" 
+                               value="@Model.SelectedDate?.ToString("yyyy-MM-dd")">
+                    </div>
+                    
+                    <!-- Status Filter -->
+                    <div class="col-md-2">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="">All Status</option>
+                            @foreach (var status in Model.AvailableStatuses)
+                            {
+                                <option value="@status" selected="@(status == Model.SelectedStatus)">
+                                    @status
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    
+                    <!-- Search Buttons -->
+                    <div class="col-md-2 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary flex-fill">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                        <a asp-action="MyRouteAssignments" class="btn btn-secondary flex-fill">
+                            Clear
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Results Summary -->
+    @if (Model.TotalItems > 0)
+    {
+        <div class="mb-3">
+            <span class="text-muted">
+                Showing @((Model.CurrentPage - 1) * Model.PageSize + 1) 
+                to @Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalItems) 
+                of @Model.TotalItems route assignment(s)
+            </span>
+        </div>
+    }
+    
+    <!-- Results List -->
+    @if (Model.Assignments.Any())
+    {
+        <div class="row g-3">
+            @foreach (var assignment in Model.Assignments)
+            {
+                <div class="col-12">
+                    <div class="card @(assignment.Status == "Completed" ? "border-success" : "")">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1">
+                                        Route #@assignment.RouteId
+                                        @if (!string.IsNullOrEmpty(assignment.RegionName))
+                                        {
+                                            <span class="badge bg-secondary ms-2">@assignment.RegionName</span>
+                                        }
+                                    </h5>
+                                    <p class="text-muted mb-2">
+                                        <i class="bi bi-calendar3"></i> Collection Date: @assignment.PlannedDate.ToString("ddd, MMM dd, yyyy")
+                                        <span class="mx-2">•</span>
+                                        <i class="bi bi-person-badge"></i> Assigned by: @assignment.AssignedBy
+                                        <span class="mx-2">•</span>
+                                        <i class="bi bi-geo-alt"></i> @assignment.TotalStops stop(s)
+                                    </p>
+                                    
+                                    <!-- Progress Bar -->
+                                    <div class="progress mb-2" style="height: 10px;">
+                                        <div class="progress-bar @(assignment.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" 
+                                             style="width: @assignment.ProgressPercentage%" 
+                                             role="progressbar"
+                                             aria-valuenow="@assignment.ProgressPercentage" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">
+                                        Progress: @assignment.CompletedStops of @assignment.TotalStops completed (@assignment.ProgressPercentage%)
+                                    </small>
+                                </div>
+                                
+                                <div class="ms-3 text-end">
+                                    <span class="badge @(assignment.RouteStatus switch {
+                                        "Pending" => "bg-warning text-dark",
+                                        "Active" => "bg-primary",
+                                        "In Progress" => "bg-primary",
+                                        "Completed" => "bg-success",
+                                        _ => "bg-secondary"
+                                    }) mb-2 d-block">
+                                        @(assignment.RouteStatus ?? "Pending")
+                                    </span>
+                                    <a asp-action="RouteAssignmentDetails" 
+                                       asp-route-id="@assignment.AssignmentId" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        
+        <!-- Pagination -->
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="mt-4" aria-label="Route assignments pagination">
+                <ul class="pagination justify-content-center">
+                    <!-- Previous Button -->
+                    <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
+                        <a class="page-link" 
+                           asp-action="MyRouteAssignments" 
+                           asp-route-page="@(Model.CurrentPage - 1)"
+                           asp-route-search="@Model.SearchTerm"
+                           asp-route-regionId="@Model.SelectedRegionId"
+                           asp-route-date="@Model.SelectedDate?.ToString("yyyy-MM-dd")"
+                           asp-route-status="@Model.SelectedStatus">
+                            Previous
+                        </a>
+                    </li>
+                    
+                    <!-- Page Numbers -->
+                    @{
+                        var startPage = Math.Max(1, Model.CurrentPage - 2);
+                        var endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 2);
+                    }
+                    
+                    @if (startPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" 
+                               asp-action="MyRouteAssignments" 
+                               asp-route-page="1"
+                               asp-route-search="@Model.SearchTerm"
+                               asp-route-regionId="@Model.SelectedRegionId"
+                               asp-route-date="@Model.SelectedDate?.ToString("yyyy-MM-dd")"
+                               asp-route-status="@Model.SelectedStatus">
+                                1
+                            </a>
+                        </li>
+                        @if (startPage > 2)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                    }
+                    
+                    @for (int i = startPage; i <= endPage; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" 
+                               asp-action="MyRouteAssignments" 
+                               asp-route-page="@i"
+                               asp-route-search="@Model.SearchTerm"
+                               asp-route-regionId="@Model.SelectedRegionId"
+                               asp-route-date="@Model.SelectedDate?.ToString("yyyy-MM-dd")"
+                               asp-route-status="@Model.SelectedStatus">
+                                @i
+                            </a>
+                        </li>
+                    }
+                    
+                    @if (endPage < Model.TotalPages)
+                    {
+                        @if (endPage < Model.TotalPages - 1)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                        <li class="page-item">
+                            <a class="page-link" 
+                               asp-action="MyRouteAssignments" 
+                               asp-route-page="@Model.TotalPages"
+                               asp-route-search="@Model.SearchTerm"
+                               asp-route-regionId="@Model.SelectedRegionId"
+                               asp-route-date="@Model.SelectedDate?.ToString("yyyy-MM-dd")"
+                               asp-route-status="@Model.SelectedStatus">
+                                @Model.TotalPages
+                            </a>
+                        </li>
+                    }
+                    
+                    <!-- Next Button -->
+                    <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
+                        <a class="page-link" 
+                           asp-action="MyRouteAssignments" 
+                           asp-route-page="@(Model.CurrentPage + 1)"
+                           asp-route-search="@Model.SearchTerm"
+                           asp-route-regionId="@Model.SelectedRegionId"
+                           asp-route-date="@Model.SelectedDate?.ToString("yyyy-MM-dd")"
+                           asp-route-status="@Model.SelectedStatus">
+                            Next
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No route assignments found matching your search criteria.
+            @if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.SelectedRegionId.HasValue || Model.SelectedDate.HasValue || !string.IsNullOrEmpty(Model.SelectedStatus))
+            {
+                <br>
+                <a asp-action="MyRouteAssignments" class="alert-link">Clear filters to see all assignments</a>
+            }
+        </div>
+    }
+</div>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
