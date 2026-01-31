@@ -1,0 +1,345 @@
+@model ADWebApplication.Models.ReportIssueVM
+
+@{
+    ViewData["Title"] = "Issue Log";
+    var totalIssues = Model.TotalIssues;
+}
+
+<div class="container py-4 issue-log">
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h2 class="mb-1">Issue Log</h2>
+            <p class="text-muted mb-0">Report and track bin-related issues</p>
+        </div>
+        <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#reportIssueModal">
+            <i class="bi bi-plus-lg"></i> Report Issue
+        </button>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Total Issues</div>
+                <div class="stat-value">@Model.TotalIssues</div>
+                <div class="stat-icon neutral"><i class="bi bi-exclamation-circle"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Open</div>
+                <div class="stat-value text-danger">@Model.OpenIssues</div>
+                <div class="stat-icon danger"><i class="bi bi-x-circle"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">In Progress</div>
+                <div class="stat-value text-warning">@Model.InProgressIssues</div>
+                <div class="stat-icon warning"><i class="bi bi-clock"></i></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-label">Resolved</div>
+                <div class="stat-value text-success">@Model.ResolvedIssues</div>
+                <div class="stat-icon success"><i class="bi bi-check-circle"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="filter-card mb-4">
+        <form method="get" asp-action="ReportIssue" class="filter-grid">
+            <div class="filter-field">
+                <label class="form-label">Search</label>
+                <div class="input-with-icon">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="search" class="form-control" placeholder="Search issues..." value="@Model.Search">
+                </div>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="Open" selected="@(Model.StatusFilter == "Open")">Open</option>
+                    <option value="In Progress" selected="@(Model.StatusFilter == "In Progress")">In Progress</option>
+                    <option value="Resolved" selected="@(Model.StatusFilter == "Resolved")">Resolved</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Priority</label>
+                <select name="priority" class="form-select">
+                    <option value="">All Priorities</option>
+                    <option value="High" selected="@(Model.PriorityFilter == "High")">High</option>
+                    <option value="Medium" selected="@(Model.PriorityFilter == "Medium")">Medium</option>
+                    <option value="Low" selected="@(Model.PriorityFilter == "Low")">Low</option>
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a asp-action="ReportIssue" class="btn btn-outline-secondary">Clear</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="text-muted mb-3">Showing @Model.Issues.Count of @totalIssues issues</div>
+
+    @if (Model.Issues.Any())
+    {
+        foreach (var issue in Model.Issues)
+        {
+            var severityClass = issue.Severity switch
+            {
+                "High" => "pill-danger",
+                "Low" => "pill-low",
+                _ => "pill-warning"
+            };
+            var statusClass = issue.Status switch
+            {
+                "Resolved" => "pill-success",
+                "In Progress" => "pill-warning",
+                _ => "pill-danger"
+            };
+            <div class="issue-card">
+                <div class="issue-header">
+                    <div class="issue-pills">
+                        <span class="pill @severityClass">@issue.Severity.ToUpper()</span>
+                        <span class="pill @statusClass">@issue.Status.ToUpper()</span>
+                    </div>
+                    <div class="issue-title">
+                        <i class="bi bi-exclamation-circle"></i>
+                        @( $"{issue.IssueType} - Bin B{issue.BinId:000}" )
+                    </div>
+                    <div class="issue-sub">@issue.Address</div>
+                    <div class="issue-desc">@issue.Description</div>
+                </div>
+                <div class="issue-meta">
+                    <div><i class="bi bi-pin-map"></i> Bin ID: @( $"B{issue.BinId:000}" )</div>
+                    <div><i class="bi bi-person"></i> @issue.ReportedBy</div>
+                    <div><i class="bi bi-clock"></i> @issue.ReportedAt.ToString("MMM dd, hh:mm tt")</div>
+                </div>
+                <div class="issue-actions">
+                    <button class="btn btn-outline-secondary btn-sm">Start Working</button>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="alert alert-info">No issues found.</div>
+    }
+</div>
+
+<div class="modal fade" id="reportIssueModal" tabindex="-1" aria-labelledby="reportIssueModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reportIssueModalLabel">Report an Issue</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form asp-action="ReportIssue" method="post">
+                    <div class="mb-3">
+                        <label asp-for="BinId" class="form-label">Select Bin from Today's Route</label>
+                        <select asp-for="BinId" class="form-select" id="binSelect">
+                            <option value="">-- Select a bin --</option>
+                            @foreach (var bin in Model.AvailableBins)
+                            {
+                                <option value="@bin.BinId" data-location="@bin.LocationName" data-region="@bin.Region">
+                                    @bin.DisplayText
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="BinId" class="text-danger"></span>
+                    </div>
+
+                    <div id="locationDetails" class="alert alert-info" style="display: none;">
+                        <h6>Location Details</h6>
+                        <p class="mb-1"><strong>Location:</strong> <span id="displayLocation"></span></p>
+                        <p class="mb-0"><strong>Region:</strong> <span id="displayRegion"></span></p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="IssueType" class="form-label">Issue Type</label>
+                        <select asp-for="IssueType" class="form-select">
+                            <option value="">-- Select Issue Type --</option>
+                            <option value="Overflow">Bin Overflow</option>
+                            <option value="Damaged">Bin Damaged</option>
+                            <option value="AccessIssue">Access Issue (Locked/Blocked)</option>
+                            <option value="Missing">Bin Missing</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <span asp-validation-for="IssueType" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Severity" class="form-label">Priority</label>
+                        <select asp-for="Severity" class="form-select">
+                            <option value="">-- Select Priority --</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                        <span asp-validation-for="Severity" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label">Description</label>
+                        <textarea asp-for="Description" class="form-control" rows="4" placeholder="Describe the issue in detail..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            Submit Report
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Auto-populate location details when bin is selected
+        document.getElementById('binSelect').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const locationDetails = document.getElementById('locationDetails');
+            
+            if (this.value) {
+                // Get data attributes
+                const location = selectedOption.getAttribute('data-location');
+                const region = selectedOption.getAttribute('data-region');
+                
+                // Populate display fields
+                document.getElementById('displayLocation').textContent = location;
+                document.getElementById('displayRegion').textContent = region;
+                
+                // Show the location details box
+                locationDetails.style.display = 'block';
+            } else {
+                // Hide if no bin selected
+                locationDetails.style.display = 'none';
+            }
+        });
+    </script>
+}
+
+<style>
+    .issue-log .stat-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+        border: 1px solid #eef2f7;
+        position: relative;
+        min-height: 110px;
+    }
+
+    .issue-log .stat-label {
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .issue-log .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        margin-top: 6px;
+    }
+
+    .issue-log .stat-icon {
+        position: absolute;
+        right: 16px;
+        top: 16px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .issue-log .stat-icon.neutral { background: #e2e8f0; color: #64748b; }
+    .issue-log .stat-icon.danger { background: #fee2e2; color: #ef4444; }
+    .issue-log .stat-icon.warning { background: #ffedd5; color: #f97316; }
+    .issue-log .stat-icon.success { background: #dcfce7; color: #16a34a; }
+
+    .issue-log .filter-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+        border: 1px solid #eef2f7;
+    }
+
+    .issue-log .filter-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr auto;
+        gap: 16px;
+        align-items: end;
+    }
+
+    .issue-log .input-with-icon {
+        position: relative;
+    }
+
+    .issue-log .input-with-icon i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+    }
+
+    .issue-log .input-with-icon input {
+        padding-left: 38px;
+    }
+
+    .issue-log .filter-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .issue-log .issue-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 18px;
+        border: 1px solid #eef2f7;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+        margin-bottom: 18px;
+    }
+
+    .issue-log .issue-pills { display: flex; gap: 8px; margin-bottom: 12px; }
+    .issue-log .pill { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+    .issue-log .pill-danger { background: #fee2e2; color: #b91c1c; }
+    .issue-log .pill-warning { background: #ffedd5; color: #c2410c; }
+    .issue-log .pill-success { background: #dcfce7; color: #15803d; }
+    .issue-log .pill-low { background: #e0f2fe; color: #0369a1; }
+
+    .issue-log .issue-title { font-weight: 700; margin-bottom: 4px; display: flex; gap: 8px; align-items: center; }
+    .issue-log .issue-sub { color: #64748b; margin-bottom: 10px; }
+    .issue-log .issue-desc { color: #0f172a; margin-bottom: 14px; }
+
+    .issue-log .issue-meta {
+        display: flex;
+        gap: 24px;
+        padding-top: 12px;
+        border-top: 1px solid #eef2f7;
+        color: #64748b;
+        flex-wrap: wrap;
+    }
+
+    .issue-log .issue-actions { margin-top: 14px; }
+
+    @@media (max-width: 768px) {
+        .issue-log .filter-grid {
+            grid-template-columns: 1fr;
+        }
+        .issue-log .filter-actions {
+            justify-content: flex-start;
+        }
+    }
+</style>

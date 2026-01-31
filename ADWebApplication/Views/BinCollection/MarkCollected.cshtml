@@ -18,8 +18,8 @@
                         <option value="">-- Select Route --</option>
                         @foreach (var rp in Model.RoutePlans)
                         {
-                            <option value="@rp.RoutetId">
-                                Route @rp.RoutetId (@rp.RouteStatus)
+                            <option value="@rp.RouteId">
+                                Route @rp.RouteId (@rp.RouteStatus)
                             </option>
                         }
                     </select>
@@ -43,22 +43,25 @@
                     </div>
 
                     <!-- Collection Details -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Collection Time</label>
-                        <input asp-for="CollectionDetails.CollectionDateTimeLocal"
-                               class="form-control"
+                    <div class="form-group">
+                        <label asp-for="CollectionDetails.CurrentCollectionDateTime"></label>
+                        <input asp-for="CollectionDetails.CurrentCollectionDateTime"
                                type="datetime-local"
-                               value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Bin Fill Level (cm)</label>
-                        <input asp-for="CollectionDetails.BinFillHeight"
                                class="form-control"
-                               type="number"
-                               min="0" />
+                               required />
+                        <span asp-validation-for="CollectionDetails.CurrentCollectionDateTime" class="text-danger"></span>
                     </div>
 
+                    <div class="form-group">
+                        <label asp-for="CollectionDetails.BinFillLevel">Bin Fill Level (%)</label>
+                        <input asp-for="CollectionDetails.BinFillLevel"
+                               type="number"
+                               class="form-control"
+                               min="0"
+                               max="100"
+                               required />
+                        <span asp-validation-for="CollectionDetails.BinFillLevel" class="text-danger"></span>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Issues</label>
                         <textarea asp-for="CollectionDetails.IssueLog"
@@ -103,10 +106,13 @@
             .then(data => {
                 stopSelect.innerHTML = `<option value="">-- Select Stop --</option>`;
 
-                data.forEach(stop => {
+                data.forEach(function(stop) {
+                    const stopId = stop.stopId;
+                    const stopSequence = stop.stopSequence;
+                    const locationName = stop.locationName;
                     stopSelect.innerHTML += `
-                        <option value="${stop.stopId}">
-                            ${stop.stopSequence} - ${stop.locationName}
+                        <option value="${stopId}">
+                            ${stopSequence} - ${locationName}
                         </option>`;
                 });
             });

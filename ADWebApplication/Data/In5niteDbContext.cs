@@ -12,12 +12,57 @@ namespace ADWebApplication.Data
 
         public DbSet<PublicUser> PublicUser { get; set; }
         public DbSet<RewardWallet> RewardWallet { get; set; }
+        public DbSet<RouteAssignment> RouteAssignments { get; set; }
+        public DbSet<Region> Regions { get; set; }
+        public DbSet<RoutePlan> RoutePlans { get; set; }
+        public DbSet<RouteStop> RouteStops { get; set; }
 
         // public DbSet<CollectionBin> CollectionBins { get; set; }
         // public DbSet<DisposalLog> DisposalLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
+            // Map to singular table names to match database
+            modelBuilder.Entity<RouteAssignment>().ToTable("routeassignment");
+            modelBuilder.Entity<Region>().ToTable("region");
+            modelBuilder.Entity<RoutePlan>().ToTable("routeplan");
+            modelBuilder.Entity<RouteStop>().ToTable("routestop");
+            modelBuilder.Entity<CollectionBin>().ToTable("collectionbin");
+            modelBuilder.Entity<CollectionDetails>().ToTable("collectiondetails");
+
+            // Configure foreign key relationships to match database column names
+            modelBuilder.Entity<RouteStop>()
+                .HasOne(rs => rs.CollectionBin)
+                .WithMany()
+                .HasForeignKey("BinId")
+                .IsRequired(false);
+
+            modelBuilder.Entity<RouteStop>()
+                .HasOne(rs => rs.RoutePlan)
+                .WithMany(rp => rp.RouteStops)
+                .HasForeignKey("RouteId")
+                .IsRequired(false);
+
+            modelBuilder.Entity<RoutePlan>()
+                .HasOne(rp => rp.RouteAssignment)
+                .WithMany(ra => ra.RoutePlans)
+                .HasForeignKey("AssignmentId")
+                .IsRequired();
+
+            modelBuilder.Entity<CollectionBin>()
+                .HasOne(cb => cb.Region)
+                .WithMany()
+                .HasForeignKey("RegionId")
+                .IsRequired(false);
+
+            modelBuilder.Entity<CollectionDetails>()
+                .HasOne(cd => cd.RouteStop)
+                .WithMany(rs => rs.CollectionDetails)
+                .HasForeignKey("StopId")
+                .IsRequired(false);
+
             //one user to one wallet
             modelBuilder.Entity<PublicUser>()
                 .HasOne(u => u.RewardWallet)

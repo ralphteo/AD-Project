@@ -1,0 +1,233 @@
+@using ADWebApplication.ViewModels
+@model RouteAssignmentDetailViewModel
+
+@{
+    ViewData["Title"] = $"Route #{Model.RouteId} Details";
+}
+
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">@Model.RouteDisplayName</h2>
+            <p class="text-muted mb-0">
+                <i class="bi bi-calendar3"></i> @Model.PlannedDate.ToString("dddd, MMM dd, yyyy")
+            </p>
+        </div>
+        <div>
+            <a asp-action="MyRouteAssignments" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to All Routes
+            </a>
+        </div>
+    </div>
+
+    <!-- Route Info Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-geo-alt-fill text-primary" style="font-size: 2rem;"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="text-muted mb-0">Total Stops</h6>
+                            <h3 class="mb-0">@Model.TotalStops</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 2rem;"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="text-muted mb-0">Completed</h6>
+                            <h3 class="mb-0">@Model.CompletedStops</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-clock-fill text-warning" style="font-size: 2rem;"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="text-muted mb-0">Pending</h6>
+                            <h3 class="mb-0">@Model.PendingStops</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-percent text-info" style="font-size: 2rem;"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="text-muted mb-0">Progress</h6>
+                            <h3 class="mb-0">@Model.ProgressPercentage%</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">Route Progress</h6>
+                <span class="badge bg-@(Model.RouteStatus == "Completed" ? "success" : Model.RouteStatus == "Active" ? "primary" : "secondary")">
+                    @Model.RouteStatus
+                </span>
+            </div>
+            <div class="progress" style="height: 25px;">
+                <div class="progress-bar bg-success" role="progressbar" 
+                     style="width: @Model.ProgressPercentage%" 
+                     aria-valuenow="@Model.ProgressPercentage" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                    @Model.ProgressPercentage%
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Route Stops Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0"><i class="bi bi-list-ol"></i> Route Stops</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 80px;">Sequence</th>
+                            <th>Location</th>
+                            <th>Region</th>
+                            <th>Bin ID</th>
+                            <th>Planned Time</th>
+                            <th>Status</th>
+                            <th style="width: 120px;">Fill Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.RouteStops.Any())
+                        {
+                            @foreach (var stop in Model.RouteStops.OrderBy(s => s.StopSequence))
+                            {
+                                <tr class="@(stop.IsCollected ? "table-success" : "")">
+                                    <td>
+                                        <span class="badge bg-primary rounded-pill">@stop.StopSequence</span>
+                                    </td>
+                                    <td>
+                                        <strong>@(stop.LocationName ?? "N/A")</strong>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">@(stop.RegionName ?? "N/A")</span>
+                                    </td>
+                                    <td>
+                                        <code>@stop.BinId</code>
+                                    </td>
+                                    <td>
+                                        <i class="bi bi-clock"></i> @stop.PlannedCollectionTime.ToString("HH:mm")
+                                    </td>
+                                    <td>
+                                        @if (stop.IsCollected)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> Collected
+                                            </span>
+                                            @if (stop.CollectedAt.HasValue)
+                                            {
+                                                <br/>
+                                                <small class="text-muted">@stop.CollectedAt.Value.ToString("HH:mm")</small>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-hourglass-split"></i> Pending
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (stop.BinFillLevel.HasValue)
+                                        {
+                                            var fillLevel = stop.BinFillLevel.Value;
+                                            var fillClass = fillLevel >= 80 ? "danger" : fillLevel >= 50 ? "warning" : "success";
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar bg-@fillClass" role="progressbar" 
+                                                     style="width: @fillLevel%" 
+                                                     aria-valuenow="@fillLevel" 
+                                                     aria-valuemin="0" 
+                                                     aria-valuemax="100">
+                                                    @fillLevel%
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                                    <p class="mb-0 mt-2">No route stops found</p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment Info -->
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body">
+            <h6 class="card-title mb-3"><i class="bi bi-info-circle"></i> Assignment Information</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-2">
+                        <strong>Assigned To:</strong> 
+                        <span class="badge bg-info">@Model.AssignedTo</span>
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-2">
+                        <strong>Assigned By:</strong> 
+                        <span class="badge bg-secondary">@Model.AssignedBy</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-refresh page every 30 seconds for real-time updates
+        // setTimeout(() => location.reload(), 30000);
+    </script>
+}
