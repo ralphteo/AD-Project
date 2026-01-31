@@ -146,7 +146,8 @@ namespace ADWebApplication.Controllers
 
             if (stop == null)
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "Issue not found for this route.";
+                return RedirectToAction("ReportIssue");
             }
 
             var latestCollection = stop.CollectionDetails
@@ -262,18 +263,16 @@ namespace ADWebApplication.Controllers
                 .Distinct()
                 .ToListAsync();
 
-            var issueStops = await _db.RouteAssignments
-                .Include(ra => ra.RoutePlans)
-                    .ThenInclude(rp => rp.RouteStops)
-                        .ThenInclude(rs => rs.CollectionBin)
-                            .ThenInclude(cb => cb.Region)
-                .Include(ra => ra.RoutePlans)
-                    .ThenInclude(rp => rp.RouteStops)
-                        .ThenInclude(rs => rs.CollectionDetails)
-                .Where(ra => ra.AssignedTo == username)
-                .SelectMany(ra => ra.RoutePlans)
-                .OrderByDescending(rp => rp.PlannedDate)
-                .SelectMany(rp => rp.RouteStops)
+            var issueStops = await _db.RouteStops
+                .Include(rs => rs.CollectionBin)
+                    .ThenInclude(cb => cb.Region)
+                .Include(rs => rs.CollectionDetails)
+                .Include(rs => rs.RoutePlan)
+                    .ThenInclude(rp => rp.RouteAssignment)
+                .Where(rs => rs.RoutePlan != null
+                          && rs.RoutePlan.RouteAssignment != null
+                          && rs.RoutePlan.RouteAssignment.AssignedTo == username)
+                .OrderByDescending(rs => rs.RoutePlan!.PlannedDate)
                 .ToListAsync();
 
             var issues = issueStops
@@ -354,18 +353,16 @@ namespace ADWebApplication.Controllers
                         .Distinct()
                         .ToListAsync();
 
-                    var issueStops = await _db.RouteAssignments
-                        .Include(ra => ra.RoutePlans)
-                            .ThenInclude(rp => rp.RouteStops)
-                                .ThenInclude(rs => rs.CollectionBin)
-                                    .ThenInclude(cb => cb.Region)
-                        .Include(ra => ra.RoutePlans)
-                            .ThenInclude(rp => rp.RouteStops)
-                                .ThenInclude(rs => rs.CollectionDetails)
-                        .Where(ra => ra.AssignedTo == username)
-                        .SelectMany(ra => ra.RoutePlans)
-                        .OrderByDescending(rp => rp.PlannedDate)
-                        .SelectMany(rp => rp.RouteStops)
+                    var issueStops = await _db.RouteStops
+                        .Include(rs => rs.CollectionBin)
+                            .ThenInclude(cb => cb.Region)
+                        .Include(rs => rs.CollectionDetails)
+                        .Include(rs => rs.RoutePlan)
+                            .ThenInclude(rp => rp.RouteAssignment)
+                        .Where(rs => rs.RoutePlan != null
+                                  && rs.RoutePlan.RouteAssignment != null
+                                  && rs.RoutePlan.RouteAssignment.AssignedTo == username)
+                        .OrderByDescending(rs => rs.RoutePlan!.PlannedDate)
                         .ToListAsync();
 
                     var issues = issueStops
@@ -398,6 +395,65 @@ namespace ADWebApplication.Controllers
             
             TempData["SuccessMessage"] = $"Issue reported for Bin #{model.BinId} - {model.LocationName}";
             return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> StartIssueWork(int stopId)
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username))
+            {
+                return Unauthorized();
+            }
+
+            var stop = await _db.RouteStops
+                .Include(rs => rs.CollectionDetails)
+                .Include(rs => rs.RoutePlan)
+                    .ThenInclude(rp => rp.RouteAssignment)
+                .Where(rs => rs.StopId == stopId
+                          && rs.RoutePlan != null
+                          && rs.RoutePlan.RouteAssignment != null
+                          && rs.RoutePlan.RouteAssignment.AssignedTo == username)
+                .FirstOrDefaultAsync();
+
+            if (stop == null)
+            {
+                TempData["ErrorMessage"] = "Issue not found for this route.";
+                return RedirectToAction("ReportIssue");
+            }
+
+            var latestDetail = stop.CollectionDetails
+                .Where(cd => !string.IsNullOrWhiteSpace(cd.IssueLog))
+                .OrderByDescending(cd => cd.CurrentCollectionDateTime)
+                .FirstOrDefault();
+
+            var currentLog = latestDetail?.IssueLog ?? stop.IssueLog ?? string.Empty;
+            var currentStatus = ExtractValue(currentLog, "status") ?? InferStatus(currentLog);
+
+            if (currentStatus == "Resolved")
+            {
+                TempData["SuccessMessage"] = "Issue is already resolved.";
+                return RedirectToAction("ReportIssue");
+            }
+
+            var newStatus = currentStatus == "In Progress" ? "Resolved" : "In Progress";
+
+            if (latestDetail != null)
+            {
+                latestDetail.IssueLog = UpdateIssueLogStatus(latestDetail.IssueLog, newStatus);
+            }
+            else
+            {
+                stop.IssueLog = UpdateIssueLogStatus(stop.IssueLog, newStatus);
+            }
+
+            await _db.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = newStatus == "Resolved"
+                ? "Issue marked as Resolved."
+                : "Issue marked as In Progress.";
+            return RedirectToAction("ReportIssue");
         }
 
         private static IssueLogItem MapIssueLog(RouteStop stop, string issueLog, string reportedBy)
@@ -433,6 +489,24 @@ namespace ADWebApplication.Controllers
                 $@"{key}\s*[:=]\s*([^;|\n]+)",
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             return match.Success ? match.Groups[1].Value.Trim() : null;
+        }
+
+        private static string UpdateIssueLogStatus(string? input, string status)
+        {
+            var baseText = string.IsNullOrWhiteSpace(input) ? "" : input;
+            var regex = new System.Text.RegularExpressions.Regex(@"status\s*[:=]\s*([^;|\n]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            if (regex.IsMatch(baseText))
+            {
+                return regex.Replace(baseText, $"status: {status}");
+            }
+
+            if (string.IsNullOrWhiteSpace(baseText))
+            {
+                return $"status: {status}";
+            }
+
+            return $"{baseText}; status: {status}";
         }
 
         private static string InferSeverity(string input)
