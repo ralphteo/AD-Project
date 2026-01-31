@@ -16,6 +16,17 @@ public class AuthController : ControllerBase
         _db = db;
     }
 
+    [HttpGet("regions")]
+    public async Task<ActionResult<List<Region>>> GetRegions()
+    {
+        var regions = await _db.Regions
+            .AsNoTracking()
+            .OrderBy(r => r.RegionName)
+            .ToListAsync();
+
+        return Ok(regions);
+    }
+
     [HttpPost("register")]
     public async Task<ActionResult<RegisterResponse>> Register([FromBody] RegisterRequest request)
     {

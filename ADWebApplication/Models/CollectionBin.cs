@@ -1,17 +1,35 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ADWebApplication.Models;
 
+[Table("collectionbin")]
 public class CollectionBin
 {
     [Key]
+    [Column("binId")]
     public int BinId { get; set; }
-    public int? RegionId { get; set; }  // Foreign key
-    public Region? Region { get; set; }
-    public String? LocationName { get; set; }
-    public String? LocationAddress { get; set; }
-    public double? Latitude { get; set; }
-    public double? Longitude { get; set; }
+
+    [Column("regionId")]
+    public int? RegionId { get; set; }
+
+    [Column("locationName")]
+    public string? LocationName { get; set; }
+
+    [Column("locationAddress")]
+    public string? LocationAddress { get; set; }
+
+    [Column("binCapacity")]
     public int BinCapacity { get; set; }
-    public String? BinStatus { get; set; }
+
+    [Column("binStatus")]
+    public string BinStatus { get; set; } = "Active";
+
+    [Column("latitude")]
+    public double? Latitude { get; set; }
+
+    [Column("longitude")]
+    public double? Longitude { get; set; }
+
+    public Region? Region { get; set; }
 }

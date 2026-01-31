@@ -18,10 +18,34 @@ namespace ADWebApplication.Controllers
         [HttpGet("bins")]
         public async Task<IActionResult> GetBins()
         {
-            return Ok(await _context.CollectionBins
+            var latestPredictions = await _context.FillLevelPredictions
                 .AsNoTracking()
-                .Select(b => new { binId = b.BinId, locationName = b.LocationName })
-                .ToListAsync());
+                .OrderByDescending(p => p.PredictedDate)
+                .ToListAsync();
+
+            var latestByBin = latestPredictions
+                .GroupBy(p => p.BinId)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            var bins = await _context.CollectionBins
+                .AsNoTracking()
+                .ToListAsync();
+
+            var result = bins.Select(bin => new
+            {
+                binId = bin.BinId,
+                regionId = bin.RegionId,
+                locationName = bin.LocationName,
+                locationAddress = bin.LocationAddress,
+                binStatus = bin.BinStatus,
+                latitude = bin.Latitude,
+                longitude = bin.Longitude,
+                predictedStatus = latestByBin.TryGetValue(bin.BinId, out var prediction)
+                    ? prediction.PredictedStatus
+                    : null
+            });
+
+            return Ok(result);
         }
 
         [HttpGet("categories")]
