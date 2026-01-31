@@ -34,6 +34,12 @@ builder.Services.AddDbContext<LogDisposalDbContext>(options =>
         new MySqlServerVersion(new Version(8, 0, 36))
     )
 );
+builder.Services.AddDbContext<DashboardDbContext>(options =>
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        new MySqlServerVersion(new Version(8, 0, 36))
+    )
+);
 // Session (needed for OTP)
 builder.Services.AddSession(opt =>
 {
@@ -134,6 +140,7 @@ using (var scope = app.Services.CreateScope())
 
     db.SaveChanges();
 }
+app.UseStaticFiles();   
 app.UseRouting();
 app.UseCors("AllowAndroid");
 app.UseSession();

@@ -4,28 +4,164 @@
     ViewData["Title"] = "Collection Confirmed";
 }
 
-<div class="container py-4">
-    <div class="card shadow-sm border-success">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0">
-                <i class="bi bi-check-circle-fill me-2"></i>
-                Collection Confirmed Successfully!
-            </h5>
+<div class="collection-modal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="success-icon">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <a asp-action="Index" class="modal-close" aria-label="Close">
+                <i class="bi bi-x"></i>
+            </a>
         </div>
-        <div class="card-body">
-            <div class="alert alert-success">
-                <h6>Collection Details:</h6>
-                <p><strong>Location:</strong> @Model.LocationName</p>
-                <p><strong>Bin ID:</strong> @Model.BinId</p>
-                <p><strong>Weight Collected:</strong> @Model.CollectedWeightKg kg</p>
-                <p><strong>Time:</strong> @Model.CollectionTime.ToString("dd MMM yyyy HH:mm")</p>
-            </div>
 
-            <div class="d-flex gap-2 mt-3">
-                <a asp-action="Index" class="btn btn-primary">
-                    <i class="bi bi-house"></i> Back to Dashboard
-                </a>
+        <div class="modal-body">
+            <h3 class="modal-title">Collection Complete!</h3>
+            <p class="modal-subtitle">Successfully collected bin at @Model.LocationName</p>
+
+            <div class="next-card">
+                <div class="next-header">
+                    <i class="bi bi-geo-alt"></i>
+                    <span>Next Bin</span>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.NextLocationName))
+                {
+                    <div class="next-title">@Model.NextLocationName</div>
+                    <div class="next-meta">
+                        @if (Model.NextPlannedTime.HasValue)
+                        {
+                            <span>Scheduled: @Model.NextPlannedTime.Value.ToString("HH:mm")</span>
+                        }
+                        @if (Model.NextFillLevel.HasValue)
+                        {
+                            <span>Fill: @Model.NextFillLevel%</span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="next-title">No upcoming bins found</div>
+                }
             </div>
+        </div>
+
+        <div class="modal-footer center">
+            <a asp-action="Index" class="btn btn-outline-secondary">Back to Dashboard</a>
+            @if (!string.IsNullOrEmpty(Model.NextAddress))
+            {
+                <a class="btn btn-light" href="https://www.google.com/maps/search/?api=1&query=@Uri.EscapeDataString(Model.NextAddress)" target="_blank">
+                    <i class="bi bi-send"></i> Navigate
+                </a>
+            }
+            @if (!string.IsNullOrEmpty(Model.NextPointId))
+            {
+                <a class="btn btn-success" asp-action="ConfirmCollection" asp-route-id="@Model.NextPointId">
+                    <i class="bi bi-check-circle"></i> Collect Next
+                </a>
+            }
         </div>
     </div>
 </div>
+
+<style>
+    .collection-modal {
+        min-height: calc(100vh - 120px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+    }
+
+    .modal-card {
+        width: 100%;
+        max-width: 720px;
+        background: #ffffff;
+        border-radius: 18px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+        padding: 28px;
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    .success-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(34, 197, 94, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #16a34a;
+        font-size: 28px;
+        margin: 0 auto;
+    }
+
+    .modal-close {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        color: #6b7280;
+        background: #f3f4f6;
+        text-decoration: none;
+    }
+
+    .modal-body { text-align: center; }
+
+    .modal-title {
+        font-weight: 700;
+        margin-top: 12px;
+        margin-bottom: 6px;
+    }
+
+    .modal-subtitle {
+        color: #6b7280;
+        margin-bottom: 18px;
+    }
+
+    .next-card {
+        background: #eff6ff;
+        border: 1px solid #c7ddff;
+        border-radius: 14px;
+        padding: 16px;
+        text-align: left;
+    }
+
+    .next-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        color: #1d4ed8;
+        margin-bottom: 8px;
+    }
+
+    .next-title { font-weight: 700; }
+
+    .next-meta {
+        color: #475569;
+        font-size: 14px;
+        display: flex;
+        gap: 12px;
+        margin-top: 6px;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 22px;
+        flex-wrap: wrap;
+    }
+
+    @@media (max-width: 640px) {
+        .modal-card { padding: 20px; }
+    }
+</style>

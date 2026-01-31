@@ -20,11 +20,6 @@ namespace ADWebApplication.Data
         .WithOne(i => i.DisposalLog)
         .HasForeignKey<DisposalLogItem>(i => i.LogId);
 
-    // modelBuilder.Entity<DisposalLogItem>()
-    //     .HasOne(i => i.ItemType)
-    //     .WithMany()
-    //     .HasForeignKey(i => i.ItemTypeId);
-
     modelBuilder.Entity<EWasteItemType>()
         .HasOne(t => t.Category)
         .WithMany()

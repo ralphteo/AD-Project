@@ -10,69 +10,62 @@
     </h2>
     
     <!-- Search & Filter Panel -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" asp-action="MyRouteAssignments">
-                <div class="row g-3">
-                    <!-- General Search -->
-                    <div class="col-md-4">
-                        <label class="form-label">Search</label>
-                        <input type="text" 
-                               name="search" 
-                               class="form-control" 
-                               placeholder="Route name, location..." 
-                               value="@Model.SearchTerm">
-                    </div>
-                    
-                    <!-- Region Filter -->
-                    <div class="col-md-2">
-                        <label class="form-label">Region</label>
-                        <select name="regionId" class="form-select">
-                            <option value="">All Regions</option>
-                            @foreach (var region in Model.AvailableRegions)
-                            {
-                                <option value="@region.RegionId" selected="@(region.RegionId == Model.SelectedRegionId)">
-                                    @region.RegionName
-                                </option>
-                            }
-                        </select>
-                    </div>
-                    
-                    <!-- Date Filter -->
-                    <div class="col-md-2">
-                        <label class="form-label">Collection Date</label>
-                        <input type="date" 
-                               name="date" 
-                               class="form-control" 
-                               value="@Model.SelectedDate?.ToString("yyyy-MM-dd")">
-                    </div>
-                    
-                    <!-- Status Filter -->
-                    <div class="col-md-2">
-                        <label class="form-label">Status</label>
-                        <select name="status" class="form-select">
-                            <option value="">All Status</option>
-                            @foreach (var status in Model.AvailableStatuses)
-                            {
-                                <option value="@status" selected="@(status == Model.SelectedStatus)">
-                                    @status
-                                </option>
-                            }
-                        </select>
-                    </div>
-                    
-                    <!-- Search Buttons -->
-                    <div class="col-md-2 d-flex align-items-end gap-2">
-                        <button type="submit" class="btn btn-primary flex-fill">
-                            <i class="bi bi-search"></i> Search
-                        </button>
-                        <a asp-action="MyRouteAssignments" class="btn btn-secondary flex-fill">
-                            Clear
-                        </a>
-                    </div>
+    <div class="filter-card mb-4">
+        <form method="get" asp-action="MyRouteAssignments" class="filter-grid">
+            <div class="filter-field">
+                <label class="form-label">Search</label>
+                <div class="input-with-icon">
+                    <i class="bi bi-search"></i>
+                    <input type="text"
+                           name="search"
+                           class="form-control"
+                           placeholder="Search routes..."
+                           value="@Model.SearchTerm">
                 </div>
-            </form>
-        </div>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Date</label>
+                <div class="input-with-icon">
+                    <i class="bi bi-calendar3"></i>
+                    <input type="date"
+                           name="date"
+                           class="form-control"
+                           value="@Model.SelectedDate?.ToString("yyyy-MM-dd")">
+                </div>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Region</label>
+                <select name="regionId" class="form-select">
+                    <option value="">All Regions</option>
+                    @foreach (var region in Model.AvailableRegions)
+                    {
+                        <option value="@region.RegionId" selected="@(region.RegionId == Model.SelectedRegionId)">
+                            @region.RegionName
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="filter-field">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    @foreach (var status in Model.AvailableStatuses)
+                    {
+                        <option value="@status" selected="@(status == Model.SelectedStatus)">
+                            @status
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">
+                    Search
+                </button>
+                <a asp-action="MyRouteAssignments" class="btn btn-outline-secondary">
+                    Clear
+                </a>
+            </div>
+        </form>
     </div>
     
     <!-- Results Summary -->
@@ -90,61 +83,78 @@
     <!-- Results List -->
     @if (Model.Assignments.Any())
     {
-        <div class="row g-3">
+        <div class="row g-4">
             @foreach (var assignment in Model.Assignments)
             {
-                <div class="col-12">
-                    <div class="card @(assignment.Status == "Completed" ? "border-success" : "")">
+                <div class="col-12 col-md-6">
+                    <div class="card route-card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start">
-                                <div class="flex-grow-1">
-                                    <h5 class="card-title mb-1">
-                                        Route #@assignment.RouteId
-                                        @if (!string.IsNullOrEmpty(assignment.RegionName))
-                                        {
-                                            <span class="badge bg-secondary ms-2">@assignment.RegionName</span>
-                                        }
-                                    </h5>
-                                    <p class="text-muted mb-2">
-                                        <i class="bi bi-calendar3"></i> Collection Date: @assignment.PlannedDate.ToString("ddd, MMM dd, yyyy")
-                                        <span class="mx-2">•</span>
-                                        <i class="bi bi-person-badge"></i> Assigned by: @assignment.AssignedBy
-                                        <span class="mx-2">•</span>
-                                        <i class="bi bi-geo-alt"></i> @assignment.TotalStops stop(s)
-                                    </p>
-                                    
-                                    <!-- Progress Bar -->
-                                    <div class="progress mb-2" style="height: 10px;">
-                                        <div class="progress-bar @(assignment.ProgressPercentage == 100 ? "bg-success" : "bg-primary")" 
-                                             style="width: @assignment.ProgressPercentage%" 
-                                             role="progressbar"
-                                             aria-valuenow="@assignment.ProgressPercentage" 
-                                             aria-valuemin="0" 
-                                             aria-valuemax="100">
-                                        </div>
+                                <div>
+                                    <div class="route-header">
+                                        <h5 class="mb-0">@assignment.RouteDisplayName</h5>
+                                        <span class="badge route-status @(assignment.RouteStatus switch {
+                                            "Pending" => "status-pending",
+                                            "Active" => "status-active",
+                                            "In Progress" => "status-active",
+                                            "Completed" => "status-complete",
+                                            _ => "status-pending"
+                                        })">
+                                            @(assignment.RouteStatus ?? "Pending")
+                                        </span>
                                     </div>
-                                    <small class="text-muted">
-                                        Progress: @assignment.CompletedStops of @assignment.TotalStops completed (@assignment.ProgressPercentage%)
-                                    </small>
+                                    <div class="route-sub">Route ID: @assignment.RouteId</div>
                                 </div>
-                                
-                                <div class="ms-3 text-end">
-                                    <span class="badge @(assignment.RouteStatus switch {
-                                        "Pending" => "bg-warning text-dark",
-                                        "Active" => "bg-primary",
-                                        "In Progress" => "bg-primary",
-                                        "Completed" => "bg-success",
-                                        _ => "bg-secondary"
-                                    }) mb-2 d-block">
-                                        @(assignment.RouteStatus ?? "Pending")
-                                    </span>
-                                    <a asp-action="RouteAssignmentDetails" 
-                                       asp-route-id="@assignment.AssignmentId" 
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i> View Details
-                                    </a>
+                                <button type="button"
+                                        class="route-chevron route-detail-trigger"
+                                        data-assignment-id="@assignment.AssignmentId"
+                                        data-route-id="@assignment.RouteId"
+                                        data-route-status="@(assignment.RouteStatus ?? "Pending")"
+                                        data-planned-date="@assignment.PlannedDate.ToString("dddd, MMM dd, yyyy")"
+                                        data-region="@(assignment.RegionName ?? "-")"
+                                        data-assigned-to="@assignment.AssignedTo"
+                                        data-assigned-by="@assignment.AssignedBy"
+                                        data-total-stops="@assignment.TotalStops"
+                                        data-completed-stops="@assignment.CompletedStops"
+                                        data-progress="@assignment.ProgressPercentage">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
+
+                            <div class="route-info-grid">
+                                <div class="route-info-item">
+                                    <i class="bi bi-calendar3"></i>
+                                    <span>@assignment.PlannedDate.ToString("MMM dd, yyyy")</span>
+                                </div>
+                                <div class="route-info-item">
+                                    <i class="bi bi-person"></i>
+                                    <span>@assignment.AssignedTo</span>
+                                </div>
+                                <div class="route-info-item">
+                                    <i class="bi bi-geo-alt"></i>
+                                    <span>@(assignment.RegionName ?? "-")</span>
+                                </div>
+                                @{
+                                    var estMinutes = assignment.TotalStops * 15;
+                                    var estHours = estMinutes / 60;
+                                    var estMins = estMinutes % 60;
+                                    var estLabel = estHours > 0 ? $"{estHours}h {estMins:D2}min" : $"{estMins}min";
+                                }
+                                <div class="route-info-item">
+                                    <i class="bi bi-clock"></i>
+                                    <span>@estLabel</span>
                                 </div>
                             </div>
+
+                            <div class="route-progress">
+                                <div class="route-progress-label">Progress</div>
+                                <div class="route-progress-meta">@assignment.CompletedStops/@assignment.TotalStops bins</div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" style="width: @assignment.ProgressPercentage%"></div>
+                                </div>
+                            </div>
+
+                            <div class="route-footer">Assigned by @assignment.AssignedBy</div>
                         </div>
                     </div>
                 </div>
@@ -257,5 +267,267 @@
     }
 </div>
 
+<div class="offcanvas offcanvas-end route-drawer" tabindex="-1" id="routeDetailDrawer" aria-labelledby="routeDetailDrawerLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="routeDetailDrawerLabel">Route Details</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="route-drawer-title" id="drawerRouteTitle">Route #</div>
+        <span class="badge bg-warning text-dark mb-3" id="drawerRouteStatus">Pending</span>
+
+        <div class="drawer-section">
+            <div class="drawer-label">Route ID</div>
+            <div class="drawer-value" id="drawerRouteId">-</div>
+        </div>
+        <div class="drawer-section">
+            <div class="drawer-label">Date</div>
+            <div class="drawer-value" id="drawerPlannedDate">-</div>
+        </div>
+        <div class="drawer-section">
+            <div class="drawer-label">Region</div>
+            <div class="drawer-value" id="drawerRegion">-</div>
+        </div>
+        <div class="drawer-section">
+            <div class="drawer-label">Assigned To</div>
+            <div class="drawer-value" id="drawerAssignedTo">-</div>
+        </div>
+        <div class="drawer-section">
+            <div class="drawer-label">Assigned By</div>
+            <div class="drawer-value" id="drawerAssignedBy">-</div>
+        </div>
+
+        <div class="drawer-section">
+            <div class="drawer-label">Progress</div>
+            <div class="drawer-value" id="drawerProgressText">0/0 bins completed</div>
+            <div class="progress" style="height: 10px;">
+                <div class="progress-bar bg-success" id="drawerProgressBar" role="progressbar" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <a class="btn btn-outline-primary w-100 mt-3" id="drawerDetailsLink">
+            <i class="bi bi-eye"></i> View Full Details
+        </a>
+    </div>
+</div>
+
 <!-- Bootstrap Icons -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+<style>
+    .route-card {
+        border-radius: 16px;
+        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+        border: 1px solid #eef2f7;
+    }
+
+    .filter-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+        border: 1px solid #eef2f7;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+        gap: 16px;
+        align-items: end;
+    }
+
+    .filter-field .form-label {
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+    .input-with-icon {
+        position: relative;
+    }
+
+    .input-with-icon i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+    }
+
+    .input-with-icon input {
+        padding-left: 38px;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .route-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .route-status {
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-pending { background: #ffedd5; color: #c2410c; }
+    .status-active { background: #dbeafe; color: #1d4ed8; }
+    .status-complete { background: #dcfce7; color: #15803d; }
+
+    .route-sub {
+        color: #94a3b8;
+        margin-top: 4px;
+    }
+
+    .route-chevron {
+        border: none;
+        background: transparent;
+        color: #94a3b8;
+        font-size: 20px;
+    }
+
+    .route-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 16px;
+        margin-top: 18px;
+        color: #475569;
+    }
+
+    .route-info-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .route-progress {
+        margin-top: 16px;
+    }
+
+    .route-progress-label {
+        color: #64748b;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    .route-progress-meta {
+        text-align: right;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #0f172a;
+    }
+
+    .route-footer {
+        margin-top: 12px;
+        color: #94a3b8;
+        font-size: 14px;
+    }
+
+    .route-drawer {
+        width: 360px;
+        border-left: none;
+        box-shadow: -16px 0 32px rgba(15, 23, 42, 0.12);
+    }
+
+    .route-drawer-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .drawer-section {
+        margin-bottom: 16px;
+    }
+
+    .drawer-label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #94a3b8;
+        margin-bottom: 4px;
+    }
+
+    .drawer-value {
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+    @@media (max-width: 768px) {
+        .route-drawer {
+            width: 100%;
+        }
+
+        .filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-actions {
+            justify-content: flex-start;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        const drawerElement = document.getElementById('routeDetailDrawer');
+        const drawer = drawerElement ? new bootstrap.Offcanvas(drawerElement) : null;
+
+        const statusBadge = document.getElementById('drawerRouteStatus');
+        const titleEl = document.getElementById('drawerRouteTitle');
+        const routeIdEl = document.getElementById('drawerRouteId');
+        const dateEl = document.getElementById('drawerPlannedDate');
+        const regionEl = document.getElementById('drawerRegion');
+        const assignedToEl = document.getElementById('drawerAssignedTo');
+        const assignedByEl = document.getElementById('drawerAssignedBy');
+        const progressTextEl = document.getElementById('drawerProgressText');
+        const progressBarEl = document.getElementById('drawerProgressBar');
+        const detailsLink = document.getElementById('drawerDetailsLink');
+
+        document.querySelectorAll('.route-detail-trigger').forEach((trigger) => {
+            trigger.addEventListener('click', () => {
+                const routeId = trigger.dataset.routeId || '-';
+                const status = trigger.dataset.routeStatus || 'Pending';
+                const plannedDate = trigger.dataset.plannedDate || '-';
+                const region = trigger.dataset.region || '-';
+                const assignedTo = trigger.dataset.assignedTo || '-';
+                const assignedBy = trigger.dataset.assignedBy || '-';
+                const totalStops = trigger.dataset.totalStops || '0';
+                const completedStops = trigger.dataset.completedStops || '0';
+                const progress = trigger.dataset.progress || '0';
+                const assignmentId = trigger.dataset.assignmentId;
+
+                titleEl.textContent = `Route #${routeId}`;
+                routeIdEl.textContent = routeId;
+                dateEl.textContent = plannedDate;
+                regionEl.textContent = region;
+                assignedToEl.textContent = assignedTo;
+                assignedByEl.textContent = assignedBy;
+                progressTextEl.textContent = `${completedStops}/${totalStops} bins completed`;
+                progressBarEl.style.width = `${progress}%`;
+
+                statusBadge.textContent = status;
+                statusBadge.className = 'badge mb-3';
+                if (status === 'Completed') {
+                    statusBadge.classList.add('bg-success');
+                } else if (status === 'Active' || status === 'In Progress') {
+                    statusBadge.classList.add('bg-primary');
+                } else {
+                    statusBadge.classList.add('bg-warning', 'text-dark');
+                }
+
+                if (assignmentId) {
+                    detailsLink.href = `/CollectorDashboard/RouteAssignmentDetails/${assignmentId}`;
+                }
+
+                if (drawer) {
+                    drawer.show();
+                }
+            });
+        });
+    </script>
+}
