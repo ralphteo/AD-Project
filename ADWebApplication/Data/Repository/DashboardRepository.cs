@@ -1,7 +1,6 @@
-using System.Data;
+using ADWebApplication.Data;
 using ADWebApplication.Models.DTOs;
-using Microsoft.Data.SqlClient;
-using Dapper;
+using Microsoft.EntityFrameworkCore;
 
 namespace ADWebApplication.Data.Repository
 {
@@ -11,192 +10,179 @@ namespace ADWebApplication.Data.Repository
        Task<List<CollectionTrend>> GetCollectionTrendsAsync(int monthsBack = 6);
        Task<List<CategoryBreakdown>> GetCategoryBreakdownAsync();
        Task<List<AvgPerformance>> GetAvgPerformanceMetricsAsync();
+       Task<int> GetHighRiskUnscheduledCountAsync();
     }
     public class DashboardRepository : IDashboardRepository
     {
-        private readonly String _connectionString;
+        private readonly DashboardDbContext _db;
 
-        public DashboardRepository(IConfiguration configuration)
+        public DashboardRepository(DashboardDbContext db)
         {
-            _connectionString = configuration.GetConnectionString("DefaultConnection");
+            _db = db;
         }
 
         public async Task<DashboardKPIs> GetAdminDashboardAsync(DateTime? forMonth = null)
         {
             var targetMonth = forMonth ?? DateTime.UtcNow;
             var previousMonth = targetMonth.AddMonths(-1);
-            using var connection = new SqlConnection(_connectionString);
-            var sql = @"
-                -- Total Active Users
-                DECLARE @TotalUsers INT = (SELECT COUNT(*) FROM Users WHERE IsActive = 1);
-                DECLARE @PrevUsers INT = (
-                    SELECT COUNT(*) FROM Users 
-                    WHERE IsActive = 1 
-                    AND RegistrationDate < @PrevMonthStart
-                );
+            var totalUsers = await _db.Users.CountAsync(u => u.IsActive);
 
-                -- Collections This Month
-                DECLARE @CurrentCollections INT = (
-                    SELECT COUNT(*) FROM Collections 
-                    WHERE YEAR(RequestDate) = YEAR(@TargetMonth) 
-                    AND MONTH(RequestDate) = MONTH(@TargetMonth)
-                );
-                DECLARE @PrevCollections INT = (
-                    SELECT COUNT(*) FROM Collections 
-                    WHERE YEAR(RequestDate) = YEAR(@PrevMonth) 
-                    AND MONTH(RequestDate) = MONTH(@PrevMonth)
-                );
+            var currentCollections = await _db.DisposalLogs.CountAsync(l =>
+                l.DisposalTimeStamp.Year == targetMonth.Year && l.DisposalTimeStamp.Month == targetMonth.Month);
+            var prevCollections = await _db.DisposalLogs.CountAsync(l =>
+                l.DisposalTimeStamp.Year == previousMonth.Year && l.DisposalTimeStamp.Month == previousMonth.Month);
 
-                -- Total Weight This Month
-                DECLARE @CurrentWeight DECIMAL(10,2) = (
-                    SELECT ISNULL(SUM(TotalWeight), 0) FROM Collections 
-                    WHERE YEAR(RequestDate) = YEAR(@TargetMonth) 
-                    AND MONTH(RequestDate) = MONTH(@TargetMonth)
-                    AND Status = 'Completed'
-                );
-                DECLARE @PrevWeight DECIMAL(10,2) = (
-                    SELECT ISNULL(SUM(TotalWeight), 0) FROM Collections 
-                    WHERE YEAR(RequestDate) = YEAR(@PrevMonth) 
-                    AND MONTH(RequestDate) = MONTH(@PrevMonth)
-                    AND Status = 'Completed'
-                );
+            var currentWeight = await _db.DisposalLogs
+                .Where(l => l.DisposalTimeStamp.Year == targetMonth.Year
+                            && l.DisposalTimeStamp.Month == targetMonth.Month)
+                .SumAsync(l => (decimal?)l.EstimatedTotalWeight) ?? 0;
 
-                -- Average Bin Fill Rate (Current Month)
-                DECLARE @AvgFillRate DECIMAL(5,2) = (
-                    SELECT AVG(FillPercentage) 
-                    FROM BinFillLevels 
-                    WHERE YEAR(RecordedDateTime) = YEAR(@TargetMonth)
-                    AND MONTH(RecordedDateTime) = MONTH(@TargetMonth)
-                );
-                DECLARE @PrevFillRate DECIMAL(5,2) = (
-                    SELECT AVG(FillPercentage) 
-                    FROM BinFillLevels 
-                    WHERE YEAR(RecordedDateTime) = YEAR(@PrevMonth)
-                    AND MONTH(RecordedDateTime) = MONTH(@PrevMonth)
-                );
+            var prevWeight = await _db.DisposalLogs
+                .Where(l => l.DisposalTimeStamp.Year == previousMonth.Year
+                            && l.DisposalTimeStamp.Month == previousMonth.Month)
+                .SumAsync(l => (decimal?)l.EstimatedTotalWeight) ?? 0;
 
-                -- Calculate Growth Percentages
-                SELECT 
-                    @TotalUsers AS TotalUsers,
-                    CASE WHEN @PrevUsers > 0 
-                        THEN ((@TotalUsers - @PrevUsers) * 100.0 / @PrevUsers) 
-                        ELSE 0 END AS UserGrowthPercent,
-                    
-                    @CurrentCollections AS TotalCollections,
-                    CASE WHEN @PrevCollections > 0 
-                        THEN ((@CurrentCollections - @PrevCollections) * 100.0 / @PrevCollections) 
-                        ELSE 0 END AS CollectionGrowthPercent,
-                    
-                    @CurrentWeight AS TotalWeightRecycled,
-                    CASE WHEN @PrevWeight > 0 
-                        THEN ((@CurrentWeight - @PrevWeight) * 100.0 / @PrevWeight) 
-                        ELSE 0 END AS WeightGrowthPercent,
-                    
-                    ISNULL(@AvgFillRate, 0) AS AverageBinFillRate,
-                    CASE WHEN @PrevFillRate > 0 
-                        THEN ((@AvgFillRate - @PrevFillRate) * 100.0 / @PrevFillRate) 
-                        ELSE 0 END AS FillRateChange;
-            ";
-
-            var parameters = new 
-            { 
-                TargetMonth = targetMonth,
-                PrevMonth = previousMonth,
-                PrevMonthStart = new DateTime(previousMonth.Year, previousMonth.Month, 1)
+            return new DashboardKPIs
+            {
+                TotalUsers = totalUsers,
+                UserGrowthPercent = 0,
+                TotalCollections = currentCollections,
+                CollectionGrowthPercent = prevCollections > 0 ? ((currentCollections - prevCollections) * 100.0m / prevCollections) : 0,
+                TotalWeightRecycled = currentWeight,
+                WeightGrowthPercent = prevWeight > 0 ? ((currentWeight - prevWeight) * 100.0m / prevWeight) : 0,
+                AvgBinFillRate = 0,
+                BinFillRateChange = 0
             };
-
-            return await connection.QuerySingleAsync<DashboardKPIs>(sql, parameters);
         }
 
         public async Task<List<CollectionTrend>> GetCollectionTrendsAsync(int monthsBack = 6)
         {
-            using var connection = new SqlConnection(_connectionString);
-            var sql = @"
-                SELECT 
-                    FORMAT(RequestDate, 'yyyy-MM') AS Month,
-                    COUNT(*) AS Collections,
-                    ISNULL(SUM(TotalWeight), 0) AS Weight
-                FROM Collections
-                WHERE RequestDate >= DATEADD(MONTH, -@MonthsBack, GETDATE())
-                AND Status = 'Completed'
-                GROUP BY YEAR(RequestDate), MONTH(RequestDate), FORMAT(RequestDate, 'MMM')
-                ORDER BY YEAR(RequestDate), MONTH(RequestDate);
-                ";
+            var cutoff = DateTime.UtcNow.AddMonths(-monthsBack);
 
-            var results = await connection.QueryAsync<CollectionTrend>(sql, new { MonthsBack = monthsBack });
-            return results.ToList();
+            var results = await _db.DisposalLogs
+                .Where(l => l.DisposalTimeStamp >= cutoff)
+                .GroupBy(l => new { l.DisposalTimeStamp.Year, l.DisposalTimeStamp.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Collections = g.Count(),
+                    Weight = g.Sum(x => (decimal?)x.EstimatedTotalWeight) ?? 0
+                })
+                .OrderBy(g => g.Year)
+                .ThenBy(g => g.Month)
+                .ToListAsync();
+
+            return results
+                .Select(r => new CollectionTrend
+                {
+                    Month = $"{r.Year:D4}-{r.Month:D2}",
+                    Collections = r.Collections,
+                    Weight = r.Weight
+                })
+                .ToList();
         }
 
         public async Task<List<CategoryBreakdown>> GetCategoryBreakdownAsync()
         {
-            using var connection = new SqlConnection(_connectionString);
-            var sql = @"
-                WITH CategoryCounts AS (
-                    SELECT 
-                        Category,
-                        COUNT(*) AS ItemCount
-                    FROM Items i
-                    JOIN Collections c ON i.CollectionID = c.CollectionID
-                    WHERE c.Status = 'Completed'
-                    AND c.RequestDate >= DATEADD(MONTH, -1, GETDATE())
-                    GROUP BY Category
-                ),
-                TotalItems AS (
-                    SELECT SUM(ItemCount) AS Total FROM CategoryCounts
-                )
-                SELECT 
-                    cc.Category AS Category,
-                    CAST((cc.ItemCount * 100.0 / t.Total) AS INT) AS Value,
-                    CASE cc.Category
-                        WHEN 'Computers' THEN '#3b82f6'
-                        WHEN 'Mobile Devices' THEN '#10b981'
-                        WHEN 'Home Appliances' THEN '#f59e0b'
-                        WHEN 'Accessories' THEN '#8b5cf6'
-                        ELSE '#6b7280'
-                    END AS Color
-                FROM CategoryCounts cc
-                CROSS JOIN TotalItems t
-                ORDER BY cc.ItemCount DESC;
-            ";
+            var cutoff = DateTime.UtcNow.AddMonths(-1);
 
-            var results = await connection.QueryAsync<CategoryBreakdown>(sql);
-            return results.ToList();
+            var categoryCounts = await (from item in _db.DisposalLogItems
+                                        join log in _db.DisposalLogs on item.LogId equals log.LogId
+                                        join type in _db.EWasteItemTypes on item.ItemTypeId equals type.ItemTypeId
+                                        join category in _db.EWasteCategories on type.CategoryId equals category.CategoryId
+                                        where log.DisposalTimeStamp >= cutoff
+                                        group category by category.CategoryName into g
+                                        select new
+                                        {
+                                            Category = g.Key,
+                                            Count = g.Count()
+                                        })
+                .OrderByDescending(g => g.Count)
+                .ToListAsync();
+
+            var total = categoryCounts.Sum(x => x.Count);
+
+            return categoryCounts
+                .Select(x =>
+                {
+                    var category = string.IsNullOrWhiteSpace(x.Category) ? "Uncategorized" : x.Category;
+                    return new CategoryBreakdown
+                    {
+                        Category = category,
+                        Value = total > 0 ? (int)(x.Count * 100.0 / total) : 0,
+                        Color = category switch
+                        {
+                            "Computers" => "#3b82f6",
+                            "Mobile Devices" => "#10b981",
+                            "Home Appliances" => "#f59e0b",
+                            "Accessories" => "#8b5cf6",
+                            _ => "#6b7280"
+                        }
+                    };
+                })
+                .ToList();
         }
         
 
         public async Task<List<AvgPerformance>> GetAvgPerformanceMetricsAsync()
         {
-            using var connection = new SqlConnection(_connectionString);
-            
-            var sql = @"
-                WITH AreaStats AS (
-                    SELECT 
-                        Area,
-                        COUNT(*) AS Collections,
-                        COUNT(DISTINCT UserID) AS UniqueUsers
-                    FROM Collections
-                    WHERE RequestDate >= DATEADD(MONTH, -1, GETDATE())
-                    AND Status = 'Completed'
-                    GROUP BY Area
-                ),
-                AreaPopulation AS (
-                    SELECT 
-                        Area,
-                        COUNT(*) AS TotalUsers
-                    FROM Users
-                    WHERE IsActive = 1
-                    GROUP BY Area
-                )
-                SELECT 
-                    a.Area,
-                    a.Collections,
-                    CAST((a.UniqueUsers * 100.0 / NULLIF(p.TotalUsers, 0)) AS DECIMAL(5,2)) AS Participation
-                FROM AreaStats a
-                LEFT JOIN AreaPopulation p ON a.Area = p.Area
-                ORDER BY a.Collections DESC;
-            ";
-            var results = await connection.QueryAsync<AvgPerformance>(sql);
-            return results.ToList();
+            var cutoff = DateTime.UtcNow.AddMonths(-1);
+
+            var areaStats = await (from log in _db.DisposalLogs
+                                   join bin in _db.CollectionBins on log.BinId equals bin.BinId into binJoin
+                                   from bin in binJoin.DefaultIfEmpty()
+                                   join region in _db.Regions on bin.RegionId equals region.RegionId into regionJoin
+                                   from region in regionJoin.DefaultIfEmpty()
+                                   where log.DisposalTimeStamp >= cutoff
+                                   group new { log, bin, region } by new { bin.RegionId, region.RegionName } into g
+                                   select new
+                                   {
+                                       RegionId = g.Key.RegionId,
+                                       RegionName = g.Key.RegionName,
+                                       Collections = g.Count(),
+                                       UniqueUsers = g.Select(x => x.log.UserId).Distinct().Count()
+                                   })
+                .OrderByDescending(g => g.Collections)
+                .ToListAsync();
+
+            var areaPopulation = await _db.Users
+                .Where(u => u.IsActive)
+                .GroupBy(u => u.RegionId)
+                .Select(g => new
+                {
+                    RegionId = g.Key,
+                    TotalUsers = g.Count()
+                })
+                .ToDictionaryAsync(x => x.RegionId, x => x.TotalUsers);
+
+            return areaStats
+                .Select(a =>
+                {
+                    areaPopulation.TryGetValue(a.RegionId, out var totalUsers);
+                    var participation = totalUsers > 0
+                        ? (decimal)(a.UniqueUsers * 100.0 / totalUsers)
+                        : 0;
+
+                    return new AvgPerformance
+                    {
+                        Area = string.IsNullOrWhiteSpace(a.RegionName)
+                            ? (a.RegionId.HasValue ? $"Region {a.RegionId}" : "Unassigned")
+                            : a.RegionName,
+                        Collections = a.Collections,
+                        Participation = Math.Round(participation, 2)
+                    };
+                })
+                .ToList();
+        }
+
+        public async Task<int> GetHighRiskUnscheduledCountAsync()
+        {
+            return await _db.FillLevelPredictions
+                .Where(p => p.PredictedStatus == "critical" || p.PredictedStatus == "Critical")
+                .Select(p => p.BinId)
+                .Distinct()
+                .CountAsync();
         }
     }
 }

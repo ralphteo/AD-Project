@@ -1,3 +1,7 @@
+@using System.Linq
+@using System.Text.Json
+@model ADWebApplication.Models.DTOs.AdminDashboardViewModel
+
 @{
     ViewData["Title"] = "Admin Dashboard";
     Layout = "_DashboardLayout";
@@ -18,6 +22,9 @@
 
     <!-- Main Content -->
     <div class="container-fluid px-4">
+        <div class="row g-3 mb-4">
+            @await Html.PartialAsync("_KPICards", Model.KPIs)
+        </div>
         <div class="row">
             <!-- Left Column: Operational Readiness & Today's Operations -->
             <div class="col-lg-6">
@@ -40,7 +47,7 @@
                                 <i class="bi bi-exclamation-triangle fs-4"></i>
                             </div>
                             <div class="badge bg-danger position-absolute top-0 end-0 m-3">Alert</div>
-                            <h2 class="stat-number">2</h2>
+                            <h2 class="stat-number">@Model.HighRiskUnscheduledCount</h2>
                             <p class="stat-label">High-Risk Unscheduled</p>
                             <p class="stat-sublabel">Urgent action required</p>
                         </div>
@@ -223,9 +230,9 @@
                 <div class="metric-card">
                     <p class="text-muted mb-1">Completed Collections (MTD)</p>
                     <div class="d-flex align-items-baseline">
-                        <h3 class="metric-value mb-0">167</h3>
+                        <h3 class="metric-value mb-0">@Model.KPIs.TotalCollections.ToString("N0")</h3>
                         <span class="metric-change ms-2">
-                            <i class="bi bi-arrow-up"></i> +12.5%
+                            <i class="bi bi-arrow-up"></i> @Model.KPIs.CollectionGrowthPercent.ToString("+0.0;-0.0")%
                         </span>
                     </div>
                 </div>
@@ -234,9 +241,9 @@
                 <div class="metric-card">
                     <p class="text-muted mb-1">E-Waste Collected (MTD)</p>
                     <div class="d-flex align-items-baseline">
-                        <h3 class="metric-value mb-0">1,069 kg</h3>
+                        <h3 class="metric-value mb-0">@Model.KPIs.TotalWeightRecycled.ToString("N1") kg</h3>
                         <span class="metric-change ms-2">
-                            <i class="bi bi-arrow-up"></i> +8.3%
+                            <i class="bi bi-arrow-up"></i> @Model.KPIs.WeightGrowthPercent.ToString("+0.0;-0.0")%
                         </span>
                     </div>
                 </div>
@@ -257,10 +264,10 @@
             <div class="col-lg-7 mb-4">
                 <div class="chart-container">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="mb-0">Collection Trends (Last 30 Days)</h5>
+                        <h5 class="mb-0">Collection Trends (Recent Months)</h5>
                         <div>
-                            <span class="badge bg-primary me-2">Planned</span>
-                            <span class="badge bg-success">Completed</span>
+                            <span class="badge bg-primary me-2">Collections</span>
+                            <span class="badge bg-success">Weight</span>
                         </div>
                     </div>
                     <canvas id="collectionChart" height="5"></canvas>
@@ -275,61 +282,27 @@
                             <canvas id="categoryChart" height="200"></canvas>
                         </div>
                         <div class="col-6">
-                            <div class="category-item">
-                                <div class="d-flex align-items-center">
-                                    <div class="category-icon me-2" style="background: #e7f1ff; color: #0d6efd;">
-                                        <i class="bi bi-phone"></i>
+                            @if (Model.CategoryBreakdowns != null && Model.CategoryBreakdowns.Count > 0)
+                            {
+                                foreach (var item in Model.CategoryBreakdowns)
+                                {
+                                    <div class="category-item">
+                                        <div class="d-flex align-items-center">
+                                            <div class="category-icon me-2" style="background: @item.Color; color: #ffffff;">
+                                                <i class="bi bi-box"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <small class="text-muted d-block">@item.Category</small>
+                                                <strong>@item.Value% share</strong>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="flex-grow-1">
-                                        <small class="text-muted d-block">Electronics</small>
-                                        <strong>342 items • 32.0%</strong>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="category-item">
-                                <div class="d-flex align-items-center">
-                                    <div class="category-icon me-2" style="background: #d4edda; color: #28a745;">
-                                        <i class="bi bi-battery"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <small class="text-muted d-block">Batteries</small>
-                                        <strong>289 items • 27.0%</strong>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="category-item">
-                                <div class="d-flex align-items-center">
-                                    <div class="category-icon me-2" style="background: #fff3cd; color: #ffc107;">
-                                        <i class="bi bi-usb-plug"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <small class="text-muted d-block">Cables</small>
-                                        <strong>193 items • 18.1%</strong>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="category-item">
-                                <div class="d-flex align-items-center">
-                                    <div class="category-icon me-2" style="background: #f3e8ff; color: #9333ea;">
-                                        <i class="bi bi-headphones"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <small class="text-muted d-block">Accessories</small>
-                                        <strong>156 items • 14.6%</strong>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="category-item">
-                                <div class="d-flex align-items-center">
-                                    <div class="category-icon me-2" style="background: #e9ecef; color: #6c757d;">
-                                        <i class="bi bi-box"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <small class="text-muted d-block">Others</small>
-                                        <strong>89 items • 8.3%</strong>
-                                    </div>
-                                </div>
-                            </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-muted small">No category data yet.</div>
+                            }
                         </div>
                     </div>
                 </div>
@@ -347,21 +320,24 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Collection Trends Chart
+        const collectionLabels = @Html.Raw(JsonSerializer.Serialize(Model.CollectionTrends.Select(t => t.Month)));
+        const collectionCounts = @Html.Raw(JsonSerializer.Serialize(Model.CollectionTrends.Select(t => t.Collections)));
+        const collectionWeights = @Html.Raw(JsonSerializer.Serialize(Model.CollectionTrends.Select(t => t.Weight)));
         const collectionCtx = document.getElementById('collectionChart').getContext('2d');
         new Chart(collectionCtx, {
             type: 'bar',
             data: {
-                labels: Array.from({length: 30}, (_, i) => `Day ${i + 1}`),
+                labels: collectionLabels,
                 datasets: [
                     {
-                        label: 'Planned',
-                        data: [12, 14, 10, 12, 15, 14, 11, 13, 14, 12, 16, 13, 12, 14, 13, 11, 12, 14, 15, 13, 12, 14, 15, 11, 14, 12, 14, 15, 11, 12],
+                        label: 'Collections',
+                        data: collectionCounts,
                         backgroundColor: '#0d6efd',
                         borderRadius: 4
                     },
                     {
-                        label: 'Completed',
-                        data: [11, 14, 9, 11, 15, 13, 11, 13, 13, 11, 14, 12, 11, 13, 12, 10, 11, 13, 14, 12, 11, 13, 14, 10, 13, 11, 13, 14, 10, 12],
+                        label: 'Weight',
+                        data: collectionWeights,
                         backgroundColor: '#28a745',
                         borderRadius: 4
                     }
@@ -373,7 +349,9 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        max: 16
+                        ticks: {
+                            precision: 0
+                        }
                     }
                 },
                 plugins: {
@@ -385,14 +363,17 @@
         });
 
         // Category Distribution Chart
+        const categoryLabels = @Html.Raw(JsonSerializer.Serialize(Model.CategoryBreakdowns.Select(c => c.Category)));
+        const categoryValues = @Html.Raw(JsonSerializer.Serialize(Model.CategoryBreakdowns.Select(c => c.Value)));
+        const categoryColors = @Html.Raw(JsonSerializer.Serialize(Model.CategoryBreakdowns.Select(c => c.Color)));
         const categoryCtx = document.getElementById('categoryChart').getContext('2d');
         new Chart(categoryCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Electronics', 'Batteries', 'Cables', 'Accessories', 'Others'],
+                labels: categoryLabels,
                 datasets: [{
-                    data: [32.0, 27.0, 18.1, 14.6, 8.3],
-                    backgroundColor: ['#0d6efd', '#28a745', '#ffc107', '#9333ea', '#6c757d'],
+                    data: categoryValues,
+                    backgroundColor: categoryColors,
                     borderWidth: 0
                 }]
             },
