@@ -12,6 +12,7 @@ namespace ADWebApplication.Data
 
         public DbSet<PublicUser> PublicUser { get; set; }
         public DbSet<RewardWallet> RewardWallet { get; set; }
+        public DbSet<Region> Regions { get; set; }
 
         // public DbSet<CollectionBin> CollectionBins { get; set; }
         // public DbSet<DisposalLog> DisposalLogs { get; set; }

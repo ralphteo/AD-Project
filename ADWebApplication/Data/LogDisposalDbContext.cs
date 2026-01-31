@@ -9,6 +9,7 @@ namespace ADWebApplication.Data
             : base(options) { }
 
         public DbSet<CollectionBin> CollectionBins => Set<CollectionBin>();
+        public DbSet<FillLevelPrediction> FillLevelPredictions => Set<FillLevelPrediction>();
         public DbSet<EWasteCategory> EWasteCategories => Set<EWasteCategory>();
         public DbSet<EWasteItemType> EWasteItemTypes => Set<EWasteItemType>();
         public DbSet<DisposalLogs> DisposalLogs => Set<DisposalLogs>();
