@@ -23,7 +23,7 @@ public class BinPredictionService
     public async Task<BinPredictionsPageViewModel> BuildBinPredictionsPageAsync(int page, string sort, string sortDir, string risk, string timeframe)
     {
         const int pageSize = 10;
-        var today = DateTimeOffset.UtcNow;
+        var today = DateTimeOffset.UtcNow.Date;
 
         //fetch all bins from DB
         var bins = await _db.CollectionBins
@@ -32,6 +32,8 @@ public class BinPredictionService
             .ToListAsync();
 
         var rows = new List<BinPredictionsTableViewModel>();
+
+        int newCycleDetectedCount = 0;
 
         foreach (var bin in bins)
         {
@@ -48,6 +50,43 @@ public class BinPredictionService
                 latest.CycleStartMonth == null ||
                 latest.CurrentCollectionDateTime == null)
                 continue;
+
+            //checks if bin predictions need to be refreshed (Collection Date>Predicted Date)
+            var latestPrediction = await _db.FillLevelPredictions
+                .AsNoTracking()
+                .Where(p => p.BinId == bin.BinId)
+                .OrderByDescending(p => p.PredictedDate)
+                .FirstOrDefaultAsync();
+
+            bool needsMlRefresh =
+                latestPrediction == null ||
+                latestPrediction.PredictedDate < latest.CurrentCollectionDateTime;
+
+            if (needsMlRefresh)
+            {
+                newCycleDetectedCount++;
+            }
+
+            //Fetch the next scheduled route plan if any (> last collection date && today)
+            var nextRouteStop = await _db.RouteStops
+                .Where(rs =>
+                    rs.BinId == bin.BinId &&
+                    rs.PlannedCollectionTime > latest.CurrentCollectionDateTime && 
+                    rs.PlannedCollectionTime >= today                             
+                )
+                .OrderBy(rs => rs.PlannedCollectionTime)
+                .FirstOrDefaultAsync();
+
+            DateTimeOffset? lastCollectedAt = latest.CurrentCollectionDateTime;
+            DateTimeOffset? nextPlannedAt = nextRouteStop?.PlannedCollectionTime;
+
+            bool isScheduled =
+                nextPlannedAt.HasValue &&
+                lastCollectedAt.HasValue &&
+                nextPlannedAt > lastCollectedAt &&
+                nextPlannedAt >= today;
+
+            var planningStatus = isScheduled ? "Scheduled" : "Not Scheduled";
 
             //ML request
             var req = new MLPredictionRequestDto
@@ -98,8 +137,8 @@ public class BinPredictionService
                 EstimatedDaysToThreshold = daysTo80,
 
                 //WIP
-                PlanningStatus = "Not Scheduled",
-                RouteId = null
+                PlanningStatus = planningStatus,
+                RouteId = isScheduled ? nextRouteStop!.RouteId.ToString() : null
             });
         }
 
@@ -147,7 +186,7 @@ public class BinPredictionService
         {
             Rows = pagedRows,
             TotalBins = totalItems,
-            HighPriorityBins = rows.Count(r => r.EstimatedDaysToThreshold <= 3),
+            HighPriorityBins = query.Count(r => r.EstimatedDaysToThreshold <= 3),
 
             SelectedRisk = risk,
             SelectedTimeframe = timeframe,
@@ -161,7 +200,7 @@ public class BinPredictionService
             ),
 
             //WIP
-            NewCycleDetectedCount = 0
+            NewCycleDetectedCount = newCycleDetectedCount
         };
     }
 }

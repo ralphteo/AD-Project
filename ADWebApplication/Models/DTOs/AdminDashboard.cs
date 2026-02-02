@@ -9,5 +9,6 @@ namespace ADWebApplication.Models.DTOs
         public int HighRiskUnscheduledCount { get; set; }
         public int ActiveBinsCount { get; set; }
         public int TotalBinsCount { get; set; }
+        public List<AdminAlertDto> Alerts { get; set; } = new();
     }
 }
