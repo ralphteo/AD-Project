@@ -17,8 +17,9 @@ namespace ADWebApplication.Data
         public DbSet<RoutePlan> RoutePlans { get; set; }
         public DbSet<RouteStop> RouteStops { get; set; }
 
-        // public DbSet<CollectionBin> CollectionBins { get; set; }
-        // public DbSet<DisposalLog> DisposalLogs { get; set; }
+        public DbSet<CollectionBin> CollectionBins { get; set; }
+        public DbSet<CollectionDetails> CollectionDetails { get; set; }
+        public DbSet<FillLevelPrediction> FillLevelPredictions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -31,6 +32,8 @@ namespace ADWebApplication.Data
             modelBuilder.Entity<RouteStop>().ToTable("routestop");
             modelBuilder.Entity<CollectionBin>().ToTable("collectionbin");
             modelBuilder.Entity<CollectionDetails>().ToTable("collectiondetails");
+            modelBuilder.Entity<CollectionDetails>().ToTable("collectiondetails");
+            modelBuilder.Entity<FillLevelPrediction>().ToTable("filllevelprediction");
 
             // Configure foreign key relationships to match database column names
             modelBuilder.Entity<RouteStop>()
@@ -63,7 +66,6 @@ namespace ADWebApplication.Data
                 .HasForeignKey("StopId")
                 .IsRequired(false);
 
-            //one user to one wallet
             modelBuilder.Entity<PublicUser>()
                 .HasOne(u => u.RewardWallet)
                 .WithOne(r => r.User)

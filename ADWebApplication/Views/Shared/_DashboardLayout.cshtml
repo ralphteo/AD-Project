@@ -1,4 +1,8 @@
-﻿@*
+﻿@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+}
+@*
   Views/Shared/_DashboardLayout.cshtml
   Bootstrap 5 + Bootstrap Icons required
 *@
@@ -28,14 +32,17 @@
         </div>
 
         <nav class="dash-nav">
-            <a class="dash-link active" href="#">
-                <i class="bi bi-grid"></i> Overview Dashboard
+            <a class="dash-link @(currentController == "AdminDashboard" && currentAction == "Index" ? "active" : "")"
+                asp-controller="AdminDashboard" asp-action="Index">
+                    <i class="bi bi-grid"></i>
+                    Overview Dashboard
             </a>
 
-            <a class="dash-link" href="#">
+            <a class="dash-link @(currentController == "AdminDashboard" && currentAction == "BinPredictions" ? "active" : "")"
+                asp-controller="AdminDashboard" asp-action="BinPredictions">
                 <i class="bi bi-graph-up"></i>
                 Bin Predictions
-                <span class="badge rounded-pill text-bg-danger ms-auto">23</span>
+                @await Component.InvokeAsync("HighRiskBinBadge")
             </a>
 
             <a class="dash-link" href="#"><i class="bi bi-diagram-3"></i> Route Planning</a>
@@ -88,5 +95,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 @RenderSection("Scripts", required: false)
+@RenderSection("Styles", required: false)
 </body>
 </html>
