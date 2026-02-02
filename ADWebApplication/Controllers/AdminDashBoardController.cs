@@ -115,6 +115,9 @@ namespace ADWebApplication.Controllers
         
                 var highRisk = await _dashboardRepository.GetHighRiskUnscheduledCountAsync();
                 _logger.LogInformation("High risk count: {Count}", highRisk);
+
+                var binCounts = await _dashboardRepository.GetBinCountsAsync();
+                _logger.LogInformation("Bin counts retrieved: {Active}/{Total}", binCounts.ActiveBins, binCounts.TotalBins);
         
                 var viewModel = new AdminDashboardViewModel
                 {
@@ -122,7 +125,9 @@ namespace ADWebApplication.Controllers
                     CollectionTrends = trends,
                     CategoryBreakdowns = categories,
                     PerformanceMetrics = performance,
-                    HighRiskUnscheduledCount = highRisk
+                    HighRiskUnscheduledCount = highRisk,
+                    ActiveBinsCount = binCounts.ActiveBins,
+                    TotalBinsCount = binCounts.TotalBins
                 };
 
                 return View(viewModel);
@@ -130,10 +135,18 @@ namespace ADWebApplication.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving admin dashboard data.");
-                throw; // ← Change this to THROW instead of returning empty view
+                return View(new AdminDashboardViewModel
+                {
+                    KPIs = new DashboardKPIs(),
+                    CollectionTrends = new List<CollectionTrend>(),
+                    CategoryBreakdowns = new List<CategoryBreakdown>(),
+                    PerformanceMetrics = new List<AvgPerformance>(),
+                    HighRiskUnscheduledCount = 0,
+                    ActiveBinsCount = 0,
+                    TotalBinsCount = 0
+                });
             }
         }
     }
 
 }
-

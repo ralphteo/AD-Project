@@ -36,9 +36,9 @@
                             <div class="icon-wrapper blue">
                                 <i class="bi bi-box-seam fs-4"></i>
                             </div>
-                            <h2 class="stat-number">30</h2>
+                            <h2 class="stat-number">@Model.ActiveBinsCount</h2>
                             <p class="stat-label">Active Bins</p>
-                            <p class="stat-sublabel">of 718 NEA bins</p>
+                            <p class="stat-sublabel">of @Model.TotalBinsCount bins</p>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -277,27 +277,28 @@
             <div class="col-lg-5 mb-3">
                 <div class="chart-container">
                     <h5 class="mb-4">E-Waste Category Distribution</h5>
-                    <div class="row">
-                        <div class="col-6 mb-4">
-                            <canvas id="categoryChart" height="200"></canvas>
+                    <div class="row g-4">
+                        <div class="col-12 col-md-5">
+                            <div class="category-chart-wrap">
+                                <canvas id="categoryChart" height="220"></canvas>
+                            </div>
                         </div>
-                        <div class="col-6">
+
+                        <div class="col-12 col-md-7">
                             @if (Model.CategoryBreakdowns != null && Model.CategoryBreakdowns.Count > 0)
                             {
-                                foreach (var item in Model.CategoryBreakdowns)
-                                {
-                                    <div class="category-item">
-                                        <div class="d-flex align-items-center">
-                                            <div class="category-icon me-2" style="background: @item.Color; color: #ffffff;">
-                                                <i class="bi bi-box"></i>
+                                <div class="category-list">
+                                    @foreach (var item in Model.CategoryBreakdowns)
+                                    {
+                                        <div class="category-item">
+                                            <div class="category-left">
+                                                <span class="category-dot" style="background: @item.Color;"></span>
+                                                <span class="category-name">@item.Category</span>
                                             </div>
-                                            <div class="flex-grow-1">
-                                                <small class="text-muted d-block">@item.Category</small>
-                                                <strong>@item.Value% share</strong>
-                                            </div>
+                                            <span class="category-percent">@item.Value%</span>
                                         </div>
-                                    </div>
-                                }
+                                    }
+                                </div>
                             }
                             else
                             {
@@ -305,7 +306,6 @@
                             }
                         </div>
                     </div>
-                </div>
             </div>
         </div>
     </div>
@@ -365,7 +365,9 @@
         // Category Distribution Chart
         const categoryLabels = @Html.Raw(JsonSerializer.Serialize(Model.CategoryBreakdowns.Select(c => c.Category)));
         const categoryValues = @Html.Raw(JsonSerializer.Serialize(Model.CategoryBreakdowns.Select(c => c.Value)));
-        const categoryColors = @Html.Raw(JsonSerializer.Serialize(Model.CategoryBreakdowns.Select(c => c.Color)));
+        const categoryColorsRaw = @Html.Raw(JsonSerializer.Serialize(Model.CategoryBreakdowns.Select(c => c.Color)));
+        const categoryPalette = ['#0ea5e9', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#f97316', '#6366f1'];
+        const categoryColors = categoryColorsRaw.map((c, i) => c || categoryPalette[i % categoryPalette.length]);
         const categoryCtx = document.getElementById('categoryChart').getContext('2d');
         new Chart(categoryCtx, {
             type: 'doughnut',
@@ -374,7 +376,8 @@
                 datasets: [{
                     data: categoryValues,
                     backgroundColor: categoryColors,
-                    borderWidth: 0
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
                 }]
             },
             options: {

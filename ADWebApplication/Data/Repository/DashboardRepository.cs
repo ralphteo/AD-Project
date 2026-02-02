@@ -11,6 +11,7 @@ namespace ADWebApplication.Data.Repository
        Task<List<CategoryBreakdown>> GetCategoryBreakdownAsync();
        Task<List<AvgPerformance>> GetAvgPerformanceMetricsAsync();
        Task<int> GetHighRiskUnscheduledCountAsync();
+       Task<(int ActiveBins, int TotalBins)> GetBinCountsAsync();
     }
     public class DashboardRepository : IDashboardRepository
     {
@@ -141,14 +142,7 @@ namespace ADWebApplication.Data.Repository
                     {
                         Category = category,
                         Value = total > 0 ? (int)(x.Count * 100.0 / total) : 0,
-                        Color = category switch
-                        {
-                            "Computers" => "#3b82f6",
-                            "Mobile Devices" => "#10b981",
-                            "Home Appliances" => "#f59e0b",
-                            "Accessories" => "#8b5cf6",
-                            _ => "#6b7280"
-                        }
+                        Color = GetCategoryColor(category)
                     };
                 })
                 .ToList();
@@ -218,6 +212,39 @@ namespace ADWebApplication.Data.Repository
                 .Select(p => p.BinId)
                 .Distinct()
                 .CountAsync();
+        }
+
+        public async Task<(int ActiveBins, int TotalBins)> GetBinCountsAsync()
+        {
+            var totalBins = await _db.CollectionBins.CountAsync();
+            var activeBins = await _db.CollectionBins.CountAsync(b => b.BinStatus == "Active");
+            return (activeBins, totalBins);
+        }
+
+        private static string GetCategoryColor(string category)
+        {
+            var palette = new[]
+            {
+                "#0ea5e9",
+                "#22c55e",
+                "#f59e0b",
+                "#ef4444",
+                "#8b5cf6",
+                "#14b8a6",
+                "#f97316",
+                "#6366f1",
+                "#06b6d4",
+                "#84cc16"
+            };
+
+            var hash = 17;
+            foreach (var ch in category)
+            {
+                hash = (hash * 31) + ch;
+            }
+
+            var index = Math.Abs(hash) % palette.Length;
+            return palette[index];
         }
     }
 }

@@ -7,5 +7,7 @@ namespace ADWebApplication.Models.DTOs
         public List<CategoryBreakdown> CategoryBreakdowns { get; set; }
         public List<AvgPerformance> PerformanceMetrics { get; set; }
         public int HighRiskUnscheduledCount { get; set; }
+        public int ActiveBinsCount { get; set; }
+        public int TotalBinsCount { get; set; }
     }
 }
