@@ -1,0 +1,404 @@
+@model List<ADWebApplication.Models.CollectionBin>
+@{
+    ViewData["Title"] = "Collection Bins";
+    Layout = "_Layout";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0"><i class="bi bi-trash"></i> Collection Bins</h2>
+</div>
+
+<!-- Container for Create New Bin Button and Search Box -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+
+    <!-- Create New Bin -->
+    <div>
+        <button type="button"
+                class="btn btn-success"
+                data-bs-toggle="modal"
+                data-bs-target="#createBinModal">
+            <i class="bi bi-plus-circle"></i> Create New Bin
+        </button>
+    </div>
+
+    <!-- Search -->
+    <div class="input-group w-auto">
+        <span class="input-group-text">
+            <i class="bi bi-search"></i>
+        </span>
+        <input type="text"
+               id="searchBox"
+               class="form-control"
+               placeholder="Search..."
+               onkeyup="filterTable()" />
+    </div>
+
+</div>
+
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<table id="binsTable" class="table table-striped table-bordered align-middle">
+    <thead class="table-primary">
+        <tr>
+            <th class="text-nowrap" style="max-width: 80px;" onclick="sortTable(0)">Bin ID <i class="bi bi-arrow-down-up"></i></th>
+            <th class="text-nowrap" style="max-width: 120px;" onclick="sortTable(1)">Region <i class="bi bi-arrow-down-up"></i></th>
+            <th class="text-nowrap" style="max-width: 150px;" onclick="sortTable(2)">Location Name <i class="bi bi-arrow-down-up"></i></th>
+            <th class="text-nowrap" style="max-width: 200px;" onclick="sortTable(3)">Address <i class="bi bi-arrow-down-up"></i></th>
+            <th class="text-nowrap text-center" onclick="sortTable(4)">Capacity <i class="bi bi-arrow-down-up"></i></th>
+            <th class="text-nowrap" style="max-width: 100px;" onclick="sortTable(5)">Status <i class="bi bi-arrow-down-up"></i></th>
+            <th class="text-nowrap" style="max-width: 150px;" onclick="sortTable(6)">Coordinates <i class="bi bi-arrow-down-up"></i></th>
+            <th class="text-nowrap" style="max-width: 100px;">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var bin in Model)
+            {
+                <tr>
+                    <td class="text-center">@bin.BinId</td>
+                    <td>@(bin.Region?.RegionName ?? "N/A")</td>
+                    <td>@(bin.LocationName ?? "N/A")</td>
+                    <td>@(bin.LocationAddress ?? "N/A")</td>
+                    <td class="text-center">@bin.BinCapacity</td>
+                    <td>
+                        @switch (bin.BinStatus)
+                        {
+                            case "Active":
+                                <span class="badge bg-success">Active</span>;
+                                break;
+                            case "Maintenance":
+                                <span class="badge bg-warning text-dark">Maintenance</span>;
+                                break;
+                            default:
+                                <span class="badge bg-secondary">@bin.BinStatus</span>;
+                                break;
+                        }
+                    </td>
+                    <td>
+                        @(bin.Latitude.HasValue && bin.Longitude.HasValue 
+                            ? $"{bin.Latitude}, {bin.Longitude}" 
+                            : "N/A")
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-primary w-100" 
+                                onclick='openEditModal(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(bin)))'>
+                            <i class="bi bi-pencil-square"></i> Edit
+                        </button>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="8" class="text-center text-muted">No bins found.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Edit Bin Modal -->
+<div class="modal fade" id="editBinModal" tabindex="-1" aria-labelledby="editBinModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <!-- Edit Form -->
+            <form id="editBinForm" method="post" action="@Url.Action("EditBin", "Admin")">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editBinModalLabel">Edit Collection Bin</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <input type="hidden" id="editBinId" name="BinId" />
+                    
+                    <!-- Form fields for editing -->
+                    <div class="mb-3">
+                        <label for="editRegionId" class="form-label">Region</label>
+                        <select id="editRegionId" name="RegionId" class="form-select" required>
+                            <option value="">Select Region</option>
+                            @foreach (var region in ViewBag.Regions as List<ADWebApplication.Models.Region>)
+                            {
+                                <option value="@region.RegionId">@region.RegionName</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editLocationName" class="form-label">Location Name</label>
+                        <input type="text" id="editLocationName" name="LocationName" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editLocationAddress" class="form-label">Address</label>
+                        <input type="text" id="editLocationAddress" name="LocationAddress" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editBinCapacity" class="form-label">Capacity</label>
+                        <input type="number" id="editBinCapacity" name="BinCapacity" class="form-control" min="1" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editBinStatus" class="form-label">Status</label>
+                        <select id="editBinStatus" name="BinStatus" class="form-select" required>
+                            <option value="Active">Active</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3 row">
+                        <div class="col">
+                            <label for="editLatitude" class="form-label">Latitude</label>
+                            <input type="number" step="any" id="editLatitude" name="Latitude" class="form-control" />
+                        </div>
+                        <div class="col">
+                            <label for="editLongitude" class="form-label">Longitude</label>
+                            <input type="number" step="any" id="editLongitude" name="Longitude" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer d-flex justify-content-between align-items-center">
+                    <!-- Delete Button -->
+                    <button type="button" class="btn btn-danger" id="deleteBinButton">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+
+                    <!-- Cancel + Save Changes -->
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="saveBtn">Save Changes</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Hidden Delete Form (separate from edit form) -->
+            <form id="deleteBinForm" method="post" action="@Url.Action("DeleteBin", "Admin")" style="display:none;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="deleteBinId" name="BinId" />
+            </form>
+
+        </div>
+    </div>
+</div>
+<!-- Confrim Save Modal -->
+<div class="modal fade" id="confirmSaveModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Save</h5>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to save these changes?
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+        <button class="btn btn-primary" id="confirmSaveBtn">Yes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      
+      <div class="modal-header">
+        <h5 class="modal-title text-danger">
+            <i class="bi bi-exclamation-triangle"></i> Confirm Delete
+        </h5>
+      </div>
+
+      <div class="modal-body">
+        Are you sure you want to delete this collection bin?
+        <br />
+        <strong>This action cannot be undone.</strong>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">
+            Yes, Delete
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Create New Bin Modal -->
+<div class="modal fade" id="createBinModal" tabindex="-1" aria-labelledby="createBinModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <!-- Create Bin Form -->
+            <form id="createBinForm" method="post" action="@Url.Action("CreateBin", "Admin")">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createBinModalLabel">Create New Collection Bin</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <!-- Form fields for creating a new bin -->
+                    <div class="mb-3">
+                        <label for="createRegionId" class="form-label">Region</label>
+                        <select id="createRegionId" name="RegionId" class="form-select" required>
+                            <option value="">Select Region</option>
+                            @foreach (var region in ViewBag.Regions as List<ADWebApplication.Models.Region>)
+                            {
+                                <option value="@region.RegionId">@region.RegionName</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="createLocationName" class="form-label">Location Name</label>
+                        <input type="text" id="createLocationName" name="LocationName" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="createLocationAddress" class="form-label">Address</label>
+                        <input type="text" id="createLocationAddress" name="LocationAddress" class="form-control" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="createBinCapacity" class="form-label">Capacity</label>
+                        <input type="number" id="createBinCapacity" name="BinCapacity" class="form-control" min="1" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="createBinStatus" class="form-label">Status</label>
+                        <select id="createBinStatus" name="BinStatus" class="form-select" required>
+                            <option value="Active">Active</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3 row">
+                        <div class="col">
+                            <label for="createLatitude" class="form-label">Latitude</label>
+                            <input type="number" step="any" id="createLatitude" name="Latitude" class="form-control" />
+                        </div>
+                        <div class="col">
+                            <label for="createLongitude" class="form-label">Longitude</label>
+                            <input type="number" step="any" id="createLongitude" name="Longitude" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Create Bin</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+<script>
+// Open the modal and populate form with selected bin data
+function openEditModal(bin) {
+    var editBinIdElement = document.getElementById("editBinId");
+    
+    if (editBinIdElement) {
+        // Populate edit form if the element exists
+        editBinIdElement.value = bin.BinId;
+    } else {
+        console.error("Element with id 'editBinId' not found!");
+    }
+
+    // Continue setting other values...
+    document.getElementById("editRegionId").value = bin.RegionId || "";
+    document.getElementById("editLocationName").value = bin.LocationName || "";
+    document.getElementById("editLocationAddress").value = bin.LocationAddress || "";
+    document.getElementById("editBinCapacity").value = bin.BinCapacity || "";
+    document.getElementById("editBinStatus").value = bin.BinStatus || "Active";
+    document.getElementById("editLatitude").value = bin.Latitude || "";
+    document.getElementById("editLongitude").value = bin.Longitude || "";
+
+    // Set Delete form BinId
+    document.getElementById("deleteBinId").value = bin.BinId;
+
+    // Show modal
+    var modal = new bootstrap.Modal(document.getElementById('editBinModal'));
+    modal.show();
+}
+
+// Table Sorting (detect if numeric or string and sort in ascending order accordingly)
+function sortTable(columnIndex) {
+    var table = document.getElementById("binsTable");
+    var rows = Array.from(table.tBodies[0].rows);
+    var asc = table.getAttribute("data-sort-asc") === "true" ? false : true;
+
+    rows.sort(function(a, b) {
+        var aText = a.cells[columnIndex].innerText.trim();
+        var bText = b.cells[columnIndex].innerText.trim();
+
+        var aNum = parseFloat(aText.replace(/,/g, ''));
+        var bNum = parseFloat(bText.replace(/,/g, ''));
+
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+            return (aNum - bNum) * (asc ? 1 : -1);
+        }
+
+        return (aText > bText ? 1 : aText < bText ? -1 : 0) * (asc ? 1 : -1);
+    });
+
+    for (var i = 0; i < rows.length; i++) {
+        table.tBodies[0].appendChild(rows[i]);
+    }
+
+    table.setAttribute("data-sort-asc", asc);
+}
+
+// Search filter
+function filterTable() {
+    var input = document.getElementById("searchBox");
+    var filter = input.value.toLowerCase();
+    var table = document.getElementById("binsTable");
+    var rows = table.tBodies[0].rows;
+
+    for (var i = 0; i < rows.length; i++) {
+        rows[i].style.display = rows[i].innerText.toLowerCase().includes(filter) ? "" : "none";
+    }
+}
+
+// Confirm Save Modal Logic
+document.getElementById("saveBtn").addEventListener("click", function () {
+    var modal = new bootstrap.Modal(document.getElementById('confirmSaveModal'));
+    modal.show();
+});
+
+document.getElementById("confirmSaveBtn").addEventListener("click", function () {
+    document.getElementById("editBinForm").submit();
+});
+
+// Confrim Delete Modal Logic
+document.getElementById("deleteBinButton").addEventListener("click", function () {
+    var modal = new bootstrap.Modal(
+        document.getElementById('confirmDeleteModal')
+    );
+    modal.show();
+});
+
+document.getElementById("confirmDeleteBtn").addEventListener("click", function () {
+    document.getElementById("deleteBinForm").submit();
+});
+
+</script>
+}

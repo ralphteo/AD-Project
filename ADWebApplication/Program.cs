@@ -40,6 +40,10 @@ builder.Services.AddDbContext<DashboardDbContext>(options =>
         new MySqlServerVersion(new Version(8, 0, 36))
     )
 );
+
+// Admin Repisitory - Andrew
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+
 // Session (needed for OTP)
 builder.Services.AddSession(opt =>
 {

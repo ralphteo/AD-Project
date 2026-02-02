@@ -18,7 +18,18 @@ public class RouteAssignment
     [Column("assignedTo")]
     [Required]
     public string AssignedTo { get; set; } = string.Empty;
-    
+
+    [Column("assignedDateTime")]
+    public DateTime AssignedDateTime { get; set; }
+
     // Navigation property
     public ICollection<RoutePlan> RoutePlans { get; set; } = new List<RoutePlan>();
+
+    // Navigation property to Employee (Collection Officer)
+    [NotMapped]
+    public Employee? AssignedToEmployee { get; set; }
+
+    // Navigation property to "assigned by" Admin
+    [NotMapped]
+    public Employee? AssignedByEmployee { get; set; }
 }

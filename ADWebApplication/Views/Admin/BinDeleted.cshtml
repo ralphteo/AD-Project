@@ -1,0 +1,9 @@
+@{
+    ViewData["Title"] = "Bin Deleted";
+    Layout = "_Layout";
+}
+
+<div class="alert alert-success mt-4">
+    <h4><i class="bi bi-check-circle"></i> The record for bin @TempData["DeletedBinLocation"] (ID: @TempData["DeletedBinId"]) has been deleted successfully!</h4>
+    <a href="@Url.Action("Bins", "Admin")" class="btn btn-primary mt-3">Back to Bins</a>
+</div>
