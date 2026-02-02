@@ -56,6 +56,7 @@ namespace ADWebApplication.Controllers
     //     }
     // }
 
+    [Route("AdminDashBoard")]
     [Authorize(Roles = "Admin")]
     public class AdminDashboardController : Controller
     {
@@ -99,6 +100,8 @@ namespace ADWebApplication.Controllers
                 });
             }
         } */
+
+        [HttpGet("")]
         public async Task<IActionResult> Index()
         {
             try
@@ -152,7 +155,7 @@ namespace ADWebApplication.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpGet("BinPredictions")]
         public async Task<IActionResult> BinPredictions(int page = 1, string sort = "Days", string sortDir = "asc", string risk = "All", string timeframe = "All")
         {
             var viewModel = await _binPredictionService.BuildBinPredictionsPageAsync(page, sort, sortDir, risk, timeframe);
