@@ -133,7 +133,7 @@ namespace ADWebApplication.Data.Repository
         {
             // Get usernames that are BUSY in this range
             var busyUsernames = await _infDb.RoutePlans
-                .Where(rp => rp.PlannedDate >= from && rp.PlannedDate <= to)
+                .Where(rp => rp.PlannedDate.HasValue && rp.PlannedDate.Value >= from && rp.PlannedDate.Value <= to)
                 .Select(rp => rp.RouteAssignment!.AssignedTo)
                 .Distinct()
                 .ToListAsync();

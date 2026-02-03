@@ -35,7 +35,7 @@ namespace ADWebApplication.Controllers
                     .ThenInclude(rp => rp.RouteStops)
                         .ThenInclude(rs => rs.CollectionDetails)
                 .Where(ra => ra.AssignedTo == username
-                          && ra.RoutePlans.Any(rp => rp.PlannedDate.Date == today))
+                          && ra.RoutePlans.Any(rp => rp.PlannedDate.HasValue && rp.PlannedDate.Value.Date == today))
                 .FirstOrDefaultAsync();
 
             if (assignment == null)
@@ -51,7 +51,7 @@ namespace ADWebApplication.Controllers
             }
 
             var routePlan = assignment.RoutePlans
-                .FirstOrDefault(rp => rp.PlannedDate.Date == today);
+                .FirstOrDefault(rp => rp.PlannedDate.HasValue && rp.PlannedDate.Value.Date == today);
 
             if (routePlan == null)
             {
@@ -110,7 +110,7 @@ namespace ADWebApplication.Controllers
                 RouteId = routePlan.RouteId.ToString(),
                 RouteName = $"Route #{routePlan.RouteId}",
                 Zone = orderedStops.FirstOrDefault()?.CollectionBin?.Region?.RegionName ?? "Assigned Route",
-                ScheduledDate = routePlan.PlannedDate,
+                ScheduledDate = routePlan.PlannedDate ?? today,
                 Status = routePlan.RouteStatus ?? "Pending",
                 CollectionPoints = points
             };
@@ -195,7 +195,8 @@ namespace ADWebApplication.Controllers
                     .Include(rp => rp.RouteAssignment)
                     .Where(rp => rp.RouteAssignment != null
                               && rp.RouteAssignment.AssignedTo == username
-                              && rp.PlannedDate.Date == today)
+                              && rp.PlannedDate.HasValue
+                              && rp.PlannedDate.Value.Date == today)
                     .FirstOrDefaultAsync();
 
                 if (routePlan != null)
@@ -238,6 +239,147 @@ namespace ADWebApplication.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> RouteChangeRequest(string? search, string? status, string? priority)
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username))
+            {
+                return Unauthorized();
+            }
+
+            var requests = await LoadRouteChangeRequests(username);
+            var filtered = requests.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLowerInvariant();
+                filtered = filtered.Where(r =>
+                    r.RequestId.ToLowerInvariant().Contains(term) ||
+                    r.RouteName.ToLowerInvariant().Contains(term) ||
+                    r.RequestType.ToLowerInvariant().Contains(term) ||
+                    r.Reason.ToLowerInvariant().Contains(term) ||
+                    r.Description.ToLowerInvariant().Contains(term));
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                filtered = filtered.Where(r => r.Status == status);
+            }
+
+            if (!string.IsNullOrWhiteSpace(priority))
+            {
+                filtered = filtered.Where(r => r.Priority == priority);
+            }
+
+            var model = new RouteChangeRequestVM
+            {
+                AvailableRoutes = await LoadRouteOptions(username),
+                Requests = filtered.ToList(),
+                TotalRequests = requests.Count,
+                PendingRequests = requests.Count(r => r.Status == "Pending"),
+                ApprovedRequests = requests.Count(r => r.Status == "Approved"),
+                RejectedRequests = requests.Count(r => r.Status == "Rejected"),
+                Search = search,
+                StatusFilter = status,
+                PriorityFilter = priority
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RouteChangeRequest(RouteChangeRequestVM model)
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username))
+            {
+                return Unauthorized();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var requests = await LoadRouteChangeRequests(username);
+                model.AvailableRoutes = await LoadRouteOptions(username);
+                model.Requests = requests;
+                model.TotalRequests = requests.Count;
+                model.PendingRequests = requests.Count(r => r.Status == "Pending");
+                model.ApprovedRequests = requests.Count(r => r.Status == "Approved");
+                model.RejectedRequests = requests.Count(r => r.Status == "Rejected");
+                return View(model);
+            }
+
+            var routePlan = await _db.RoutePlans
+                .Include(rp => rp.RouteAssignment)
+                .Include(rp => rp.RouteStops)
+                    .ThenInclude(rs => rs.CollectionBin)
+                        .ThenInclude(cb => cb.Region)
+                .Where(rp => rp.RouteId == model.RouteId
+                          && rp.RouteAssignment != null
+                          && rp.RouteAssignment.AssignedTo == username)
+                .FirstOrDefaultAsync();
+
+            if (routePlan == null)
+            {
+                ModelState.AddModelError(nameof(model.RouteId), "Selected route was not found.");
+                var requests = await LoadRouteChangeRequests(username);
+                model.AvailableRoutes = await LoadRouteOptions(username);
+                model.Requests = requests;
+                model.TotalRequests = requests.Count;
+                model.PendingRequests = requests.Count(r => r.Status == "Pending");
+                model.ApprovedRequests = requests.Count(r => r.Status == "Approved");
+                model.RejectedRequests = requests.Count(r => r.Status == "Rejected");
+                return View(model);
+            }
+
+            var targetStop = routePlan.RouteStops
+                .OrderBy(rs => rs.StopSequence)
+                .FirstOrDefault();
+
+            if (targetStop == null)
+            {
+                ModelState.AddModelError(nameof(model.RouteId), "Selected route has no stops to attach the request.");
+                var requests = await LoadRouteChangeRequests(username);
+                model.AvailableRoutes = await LoadRouteOptions(username);
+                model.Requests = requests;
+                model.TotalRequests = requests.Count;
+                model.PendingRequests = requests.Count(r => r.Status == "Pending");
+                model.ApprovedRequests = requests.Count(r => r.Status == "Approved");
+                model.RejectedRequests = requests.Count(r => r.Status == "Rejected");
+                return View(model);
+            }
+
+            var existingRequests = await LoadRouteChangeRequests(username);
+            var requestId = $"RC{existingRequests.Count + 1:000}";
+            var routeName = $"Route #{routePlan.RouteId}";
+            var entry = BuildRouteChangeEntry(new RouteChangeRequestItem
+            {
+                RequestId = requestId,
+                RouteId = routePlan.RouteId,
+                RouteName = routeName,
+                RequestType = model.RequestType,
+                Reason = model.Reason,
+                Priority = model.Priority,
+                Status = "Pending",
+                Description = model.Description,
+                RequestedBy = username,
+                RequestedAt = DateTime.Now
+            });
+
+            if (string.IsNullOrWhiteSpace(targetStop.IssueLog))
+            {
+                targetStop.IssueLog = entry;
+            }
+            else
+            {
+                targetStop.IssueLog = string.Join(Environment.NewLine, targetStop.IssueLog, entry);
+            }
+
+            await _db.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Route change request submitted.";
+            return RedirectToAction(nameof(RouteChangeRequest));
+        }
+
+        [HttpGet]
         public async Task<IActionResult> ReportIssue(string? search, string? status, string? priority)
         {
             var username = User.Identity?.Name;
@@ -251,7 +393,7 @@ namespace ADWebApplication.Controllers
             var todaysBins = await _db.RouteAssignments
                 .Where(ra => ra.AssignedTo == username)
                 .SelectMany(ra => ra.RoutePlans)
-                .Where(rp => rp.PlannedDate.Date == today)
+                .Where(rp => rp.PlannedDate.HasValue && rp.PlannedDate.Value.Date == today)
                 .SelectMany(rp => rp.RouteStops)
                 .Where(rs => rs.CollectionBin != null)
                 .Select(rs => new BinOption
@@ -279,12 +421,12 @@ namespace ADWebApplication.Controllers
                 .Select(rs => new
                 {
                     Stop = rs,
-                    IssueLog = !string.IsNullOrWhiteSpace(rs.IssueLog)
+                    IssueLog = StripRouteChangeEntries(!string.IsNullOrWhiteSpace(rs.IssueLog)
                         ? rs.IssueLog
                         : rs.CollectionDetails
                             .OrderByDescending(cd => cd.CurrentCollectionDateTime)
                             .Select(cd => cd.IssueLog)
-                            .FirstOrDefault()
+                            .FirstOrDefault())
                 })
                 .Where(x => !string.IsNullOrWhiteSpace(x.IssueLog))
                 .Select(x => MapIssueLog(x.Stop, x.IssueLog!, username))
@@ -341,7 +483,7 @@ namespace ADWebApplication.Controllers
                     model.AvailableBins = await _db.RouteAssignments
                         .Where(ra => ra.AssignedTo == username)
                         .SelectMany(ra => ra.RoutePlans)
-                        .Where(rp => rp.PlannedDate.Date == today)
+                        .Where(rp => rp.PlannedDate.HasValue && rp.PlannedDate.Value.Date == today)
                         .SelectMany(rp => rp.RouteStops)
                         .Where(rs => rs.CollectionBin != null)
                         .Select(rs => new BinOption
@@ -369,12 +511,12 @@ namespace ADWebApplication.Controllers
                         .Select(rs => new
                         {
                             Stop = rs,
-                            IssueLog = !string.IsNullOrWhiteSpace(rs.IssueLog)
+                            IssueLog = StripRouteChangeEntries(!string.IsNullOrWhiteSpace(rs.IssueLog)
                                 ? rs.IssueLog
                                 : rs.CollectionDetails
                                     .OrderByDescending(cd => cd.CurrentCollectionDateTime)
                                     .Select(cd => cd.IssueLog)
-                                    .FirstOrDefault()
+                                    .FirstOrDefault())
                         })
                         .Where(x => !string.IsNullOrWhiteSpace(x.IssueLog))
                         .Select(x => MapIssueLog(x.Stop, x.IssueLog!, username))
@@ -428,7 +570,7 @@ namespace ADWebApplication.Controllers
                 .OrderByDescending(cd => cd.CurrentCollectionDateTime)
                 .FirstOrDefault();
 
-            var currentLog = latestDetail?.IssueLog ?? stop.IssueLog ?? string.Empty;
+            var currentLog = StripRouteChangeEntries(latestDetail?.IssueLog ?? stop.IssueLog ?? string.Empty);
             var currentStatus = ExtractValue(currentLog, "status") ?? InferStatus(currentLog);
 
             if (currentStatus == "Resolved")
@@ -441,11 +583,13 @@ namespace ADWebApplication.Controllers
 
             if (latestDetail != null)
             {
-                latestDetail.IssueLog = UpdateIssueLogStatus(latestDetail.IssueLog, newStatus);
+                latestDetail.IssueLog = UpdateIssueLogStatus(currentLog, newStatus);
             }
             else
             {
-                stop.IssueLog = UpdateIssueLogStatus(stop.IssueLog, newStatus);
+                var routeChangeEntries = ExtractRouteChangeEntries(stop.IssueLog);
+                var updatedIssueLog = UpdateIssueLogStatus(currentLog, newStatus);
+                stop.IssueLog = CombineIssueAndRouteChange(updatedIssueLog, routeChangeEntries);
             }
 
             await _db.SaveChangesAsync();
@@ -525,6 +669,191 @@ namespace ADWebApplication.Controllers
             return "Open";
         }
 
+        private async Task<List<RouteOption>> LoadRouteOptions(string username)
+        {
+            var today = DateTime.Today;
+            var routePlans = await _db.RoutePlans
+                .Include(rp => rp.RouteAssignment)
+                .Include(rp => rp.RouteStops)
+                    .ThenInclude(rs => rs.CollectionBin)
+                        .ThenInclude(cb => cb.Region)
+                .Where(rp => rp.RouteAssignment != null
+                          && rp.RouteAssignment.AssignedTo == username
+                          && rp.PlannedDate.HasValue
+                          && rp.PlannedDate.Value.Date == today)
+                .ToListAsync();
+
+            return routePlans
+                .Select(rp => new RouteOption
+                {
+                    RouteId = rp.RouteId,
+                    RouteName = $"Route #{rp.RouteId}",
+                    Region = rp.RouteStops
+                        .Select(rs => rs.CollectionBin?.Region?.RegionName)
+                        .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name)) ?? ""
+                })
+                .ToList();
+        }
+
+        private async Task<List<RouteChangeRequestItem>> LoadRouteChangeRequests(string username)
+        {
+            var requestStops = await _db.RouteStops
+                .Include(rs => rs.CollectionBin)
+                    .ThenInclude(cb => cb.Region)
+                .Include(rs => rs.RoutePlan)
+                    .ThenInclude(rp => rp.RouteAssignment)
+                .Where(rs => rs.RoutePlan != null
+                          && rs.RoutePlan.RouteAssignment != null
+                          && rs.RoutePlan.RouteAssignment.AssignedTo == username)
+                .ToListAsync();
+
+            var requests = new List<RouteChangeRequestItem>();
+            foreach (var stop in requestStops)
+            {
+                if (string.IsNullOrWhiteSpace(stop.IssueLog))
+                {
+                    continue;
+                }
+
+                foreach (var entry in ParseRouteChangeEntries(stop.IssueLog))
+                {
+                    var item = ParseRouteChangeEntry(entry, stop);
+                    if (item != null)
+                    {
+                        requests.Add(item);
+                    }
+                }
+            }
+
+            return requests
+                .OrderByDescending(r => r.RequestedAt)
+                .ToList();
+        }
+
+        private static IEnumerable<string> ParseRouteChangeEntries(string input)
+        {
+            return input
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Where(line => line.Contains("[RouteChangeRequest]", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static RouteChangeRequestItem? ParseRouteChangeEntry(string entry, RouteStop stop)
+        {
+            if (!entry.Contains("[RouteChangeRequest]", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            var requestId = ExtractValue(entry, "id") ?? string.Empty;
+            var routeIdText = ExtractValue(entry, "routeId");
+            var routeName = ExtractValue(entry, "routeName") ?? (stop.RoutePlan != null ? $"Route #{stop.RoutePlan.RouteId}" : "Route");
+            var requestType = ExtractValue(entry, "type") ?? "Route Change";
+            var reason = ExtractValue(entry, "reason") ?? string.Empty;
+            var priority = ExtractValue(entry, "priority") ?? "Medium";
+            var status = ExtractValue(entry, "status") ?? "Pending";
+            var description = ExtractValue(entry, "description") ?? string.Empty;
+            var requestedBy = ExtractValue(entry, "requestedBy") ?? string.Empty;
+            var requestedAtText = ExtractValue(entry, "requestedAt");
+            var reviewedBy = ExtractValue(entry, "reviewedBy");
+            var reviewedAtText = ExtractValue(entry, "reviewedAt");
+            var reviewNote = ExtractValue(entry, "reviewNote");
+
+            var routeId = stop.RoutePlan?.RouteId ?? 0;
+            if (!string.IsNullOrWhiteSpace(routeIdText) && int.TryParse(routeIdText, out var parsedId))
+            {
+                routeId = parsedId;
+            }
+
+            var requestedAt = DateTime.Now;
+            if (!string.IsNullOrWhiteSpace(requestedAtText) && DateTime.TryParse(requestedAtText, out var parsedDate))
+            {
+                requestedAt = parsedDate;
+            }
+
+            DateTime? reviewedAt = null;
+            if (!string.IsNullOrWhiteSpace(reviewedAtText) && DateTime.TryParse(reviewedAtText, out var parsedReviewed))
+            {
+                reviewedAt = parsedReviewed;
+            }
+
+            return new RouteChangeRequestItem
+            {
+                RequestId = requestId,
+                RouteId = routeId,
+                RouteName = routeName,
+                RequestType = requestType,
+                Reason = reason,
+                Priority = priority,
+                Status = status,
+                Description = description,
+                RequestedBy = requestedBy,
+                RequestedAt = requestedAt,
+                ReviewedBy = reviewedBy,
+                ReviewedAt = reviewedAt,
+                ReviewNote = reviewNote
+            };
+        }
+
+        private static string BuildRouteChangeEntry(RouteChangeRequestItem item)
+        {
+            return string.Join("; ",
+                "[RouteChangeRequest]",
+                $"id: {item.RequestId}",
+                $"routeId: {item.RouteId}",
+                $"routeName: {item.RouteName}",
+                $"type: {item.RequestType}",
+                $"reason: {item.Reason}",
+                $"priority: {item.Priority}",
+                $"status: {item.Status}",
+                $"description: {item.Description}",
+                $"requestedBy: {item.RequestedBy}",
+                $"requestedAt: {item.RequestedAt:O}");
+        }
+
+        private static string StripRouteChangeEntries(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return string.Empty;
+            }
+
+            var lines = input
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Where(line => !line.Contains("[RouteChangeRequest]", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            return string.Join(Environment.NewLine, lines).Trim();
+        }
+
+        private static List<string> ExtractRouteChangeEntries(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return new List<string>();
+            }
+
+            return input
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Where(line => line.Contains("[RouteChangeRequest]", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        private static string CombineIssueAndRouteChange(string? issueLog, List<string> routeChangeEntries)
+        {
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(issueLog))
+            {
+                parts.Add(issueLog.Trim());
+            }
+
+            if (routeChangeEntries.Count > 0)
+            {
+                parts.AddRange(routeChangeEntries);
+            }
+
+            return string.Join(Environment.NewLine, parts);
+        }
+
         private static CollectorRoute GetMockRouteData()
         {
              var route = new CollectorRoute
@@ -574,13 +903,7 @@ namespace ADWebApplication.Controllers
 
             // Base query - get all assignments for this collector
             var query = _db.RouteAssignments
-                .Include(ra => ra.RoutePlans)
-                    .ThenInclude(rp => rp.RouteStops)
-                        .ThenInclude(rs => rs.CollectionBin)
-                            .ThenInclude(cb => cb.Region)
-                .Include(ra => ra.RoutePlans)
-                    .ThenInclude(rp => rp.RouteStops)
-                        .ThenInclude(rs => rs.CollectionDetails)
+                .AsNoTracking()
                 .Where(ra => ra.AssignedTo == username);
 
             // Apply search filter (search by route ID or location name)
@@ -608,7 +931,9 @@ namespace ADWebApplication.Controllers
             // Apply date filter (use RoutePlan.PlannedDate)
             if (date.HasValue)
             {
-                query = query.Where(ra => ra.RoutePlans.Any(rp => rp.PlannedDate.Date == date.Value.Date));
+                query = query.Where(ra => ra.RoutePlans.Any(rp =>
+                    EF.Property<DateTime?>(rp, "PlannedDate") != null &&
+                    rp.PlannedDate.HasValue && rp.PlannedDate.Value.Date == date.Value.Date));
             }
 
             // Apply status filter (use RoutePlan.RouteStatus)
@@ -617,31 +942,34 @@ namespace ADWebApplication.Controllers
                 query = query.Where(ra => ra.RoutePlans.Any(rp => rp.RouteStatus == status));
             }
 
-            // Get total count for pagination
-            var totalItems = await query.CountAsync();
+            // Get total count for pagination (route plans)
+            var totalItems = await query
+                .SelectMany(ra => ra.RoutePlans)
+                .CountAsync(rp => rp.PlannedDate.HasValue);
 
             // Get paginated results (order by PlannedDate from RoutePlan)
-            var assignments = await query
-                .SelectMany(ra => ra.RoutePlans.Select(rp => new { Assignment = ra, RoutePlan = rp }))
-                .OrderByDescending(x => x.RoutePlan.PlannedDate)
+            var displayItems = await query
+                .SelectMany(ra => ra.RoutePlans
+                    .Where(rp => rp.PlannedDate.HasValue)
+                    .Select(rp => new RouteAssignmentDisplayItem
+                    {
+                        AssignmentId = ra.AssignmentId,
+                        AssignedBy = ra.AssignedBy,
+                        AssignedTo = ra.AssignedTo,
+                        Status = rp.RouteStatus ?? "Pending",
+                        RouteId = rp.RouteId,
+                        PlannedDate = rp.PlannedDate ?? DateTime.Today,
+                        RouteStatus = rp.RouteStatus,
+                        RegionName = rp.RouteStops
+                            .Select(rs => rs.CollectionBin!.Region!.RegionName)
+                            .FirstOrDefault(),
+                        TotalStops = rp.RouteStops.Count(),
+                        CompletedStops = rp.RouteStops.Count(rs => rs.CollectionDetails.Any(cd => cd.CollectionStatus == "Collected"))
+                    }))
+                .OrderByDescending(x => x.PlannedDate)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
-
-            // Map to display items
-            var displayItems = assignments.Select(x => new RouteAssignmentDisplayItem
-            {
-                AssignmentId = x.Assignment.AssignmentId,
-                AssignedBy = x.Assignment.AssignedBy,
-                AssignedTo = x.Assignment.AssignedTo,
-                Status = x.RoutePlan.RouteStatus ?? "Pending",  // Use RoutePlan.RouteStatus
-                RouteId = x.RoutePlan.RouteId,
-                PlannedDate = x.RoutePlan.PlannedDate,
-                RouteStatus = x.RoutePlan.RouteStatus,
-                RegionName = x.RoutePlan.RouteStops.FirstOrDefault()?.CollectionBin?.Region?.RegionName,
-                TotalStops = x.RoutePlan.RouteStops.Count,
-                CompletedStops = x.RoutePlan.RouteStops.Count(rs => rs.CollectionDetails.Any(cd => cd.CollectionStatus == "Collected"))
-            }).ToList();
 
             // Get available regions for dropdown
             var availableRegions = await _db.Regions.ToListAsync();
@@ -727,7 +1055,7 @@ namespace ADWebApplication.Controllers
                 AssignedBy = assignment.AssignedBy,
                 AssignedTo = assignment.AssignedTo,
                 RouteId = route.RouteId,
-                PlannedDate = route.PlannedDate,
+                PlannedDate = route.PlannedDate ?? DateTime.Today,
                 RouteStatus = route.RouteStatus,
                 RouteStops = stops
             };
@@ -757,7 +1085,8 @@ namespace ADWebApplication.Controllers
                         .ThenInclude(rs => rs.CollectionDetails)
                 .Where(ra => ra.AssignedTo == username
                           && ra.RoutePlans.Any(rp => 
-                              rp.PlannedDate.Date == DateTime.Today 
+                              rp.PlannedDate.HasValue
+                              && rp.PlannedDate.Value.Date == DateTime.Today 
                               && rp.RouteStatus != "Completed"))
                 .FirstOrDefaultAsync();
 
@@ -767,7 +1096,7 @@ namespace ADWebApplication.Controllers
             }
 
             var route = todayAssignment.RoutePlans
-                .FirstOrDefault(rp => rp.PlannedDate.Date == DateTime.Today && rp.RouteStatus != "Completed");
+                .FirstOrDefault(rp => rp.PlannedDate.HasValue && rp.PlannedDate.Value.Date == DateTime.Today && rp.RouteStatus != "Completed");
             if (route == null)
             {
                 return NotFound(new { message = "No route plan found" });
@@ -795,7 +1124,7 @@ namespace ADWebApplication.Controllers
             {
                 AssignmentId = todayAssignment.AssignmentId,
                 RouteId = route.RouteId,
-                PlannedDate = route.PlannedDate,
+                PlannedDate = route.PlannedDate ?? DateTime.Today,
                 NextStops = nextStops,
                 TotalPendingStops = totalPending
             };
