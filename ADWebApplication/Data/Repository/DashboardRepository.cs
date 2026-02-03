@@ -178,7 +178,8 @@ namespace ADWebApplication.Data.Repository
                     RegionId = g.Key,
                     TotalUsers = g.Count()
                 })
-                .ToDictionaryAsync(x => x.RegionId, x => x.TotalUsers);
+                .Where(x => x.RegionId.HasValue)
+                .ToDictionaryAsync(x => x.RegionId!.Value, x => x.TotalUsers);
 
             return areaStats
                 .Select(a =>

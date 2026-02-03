@@ -148,7 +148,7 @@ namespace ADWebApplication.Controllers
                         Title = "High overflow risk predicted",
                         Message = $"{highRisk} bins are high-risk and not yet scheduled for collection",
                         LinkText = "View Bin Predictions",
-                        LinkUrl = Url.Action("BinPredictions", "AdminDashboard")
+                        LinkUrl = Url.Action("BinPredictions", "AdminDashboard") ?? ""
                     });
                 }
 
@@ -160,7 +160,7 @@ namespace ADWebApplication.Controllers
                         Title = "Predictions need refresh",
                         Message = $"{mlRefreshCount} bins have new collection cycles detected",
                         LinkText = "Refresh Predictions",
-                        LinkUrl = Url.Action("BinPredictions", "AdminDashboard")
+                        LinkUrl = Url.Action("BinPredictions", "AdminDashboard") ?? ""
                     });
                 }
 

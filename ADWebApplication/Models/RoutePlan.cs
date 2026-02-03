@@ -13,7 +13,7 @@ public class RoutePlan
     [ForeignKey("AssignmentId")]
     public RouteAssignment? RouteAssignment { get; set; }
     
-    public DateTime PlannedDate { get; set; }
+    public DateTime? PlannedDate { get; set; }
     public string? RouteStatus { get; set; }
     
     [Column("generatedBy")]

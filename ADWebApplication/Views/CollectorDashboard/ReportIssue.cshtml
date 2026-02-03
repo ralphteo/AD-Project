@@ -144,9 +144,10 @@
             </div>
             <div class="modal-body">
                 <form asp-action="ReportIssue" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                     <div class="mb-3">
                         <label asp-for="BinId" class="form-label">Select Bin from Today's Route</label>
-                        <select asp-for="BinId" class="form-select" id="binSelect">
+                        <select asp-for="BinId" class="form-select" id="binSelect" required>
                             <option value="">-- Select a bin --</option>
                             @foreach (var bin in Model.AvailableBins)
                             {
@@ -166,7 +167,7 @@
 
                     <div class="mb-3">
                         <label asp-for="IssueType" class="form-label">Issue Type</label>
-                        <select asp-for="IssueType" class="form-select">
+                        <select asp-for="IssueType" class="form-select" required>
                             <option value="">-- Select Issue Type --</option>
                             <option value="Overflow">Bin Overflow</option>
                             <option value="Damaged">Bin Damaged</option>
@@ -179,7 +180,7 @@
 
                     <div class="mb-3">
                         <label asp-for="Severity" class="form-label">Priority</label>
-                        <select asp-for="Severity" class="form-select">
+                        <select asp-for="Severity" class="form-select" required>
                             <option value="">-- Select Priority --</option>
                             <option value="Low">Low</option>
                             <option value="Medium">Medium</option>
@@ -190,7 +191,7 @@
 
                     <div class="mb-3">
                         <label asp-for="Description" class="form-label">Description</label>
-                        <textarea asp-for="Description" class="form-control" rows="4" placeholder="Describe the issue in detail..."></textarea>
+                        <textarea asp-for="Description" class="form-control" rows="4" placeholder="Describe the issue in detail..." required></textarea>
                         <span asp-validation-for="Description" class="text-danger"></span>
                     </div>
 
