@@ -19,6 +19,18 @@ public class BinPredictionService : IBinPredictionService
         db = context;
     }
 
+    // bin fill risk classification
+    private static string GetRiskLevel(int daysToThreshold)
+    {
+        if (daysToThreshold <= 1)
+            return "High";
+
+        if (daysToThreshold <= 3)
+            return "Medium";
+
+        return "Low";
+    }
+
     // Check if ML prediction needs refresh
     private bool NeedsPredictionRefresh(FillLevelPrediction? latestPrediction, CollectionDetails latestCollection)
     {
@@ -129,9 +141,6 @@ public class BinPredictionService : IBinPredictionService
                 var remaining = 80 - estimatedFillToday;
                 daysTo80 = (int)Math.Ceiling(remaining / predictedGrowth);
             }
-
-            // Bins are auto-selected as urgent if it is predicted to reach 80% the next day
-            bool autoSelected = daysTo80 <= 1;
             
             // Retrieve next scheduled route stop of each bin if any
             nextStopByBin.TryGetValue(bin.BinId, out var nextStop);
@@ -146,6 +155,13 @@ public class BinPredictionService : IBinPredictionService
                 nextPlannedAt.Value.Date >= today &&
                 nextPlannedAt > lastCollectedAt;
 
+            var planningStatus = isScheduled ? "Scheduled" : "Not Scheduled";
+
+            var riskLevel = GetRiskLevel(daysTo80);
+
+            // A bin is autoSelected if it is high risk and unscheduled
+            var autoSelected = riskLevel == "High" && planningStatus == "Not Scheduled";
+
             //create row in ViewModel
             rows.Add(new BinPredictionsTableViewModel
             {
@@ -156,14 +172,22 @@ public class BinPredictionService : IBinPredictionService
                 PredictedNextAvgDailyGrowth = predictedGrowth,
                 EstimatedFillToday = estimatedFillToday,
                 EstimatedDaysToThreshold = daysTo80,
+                RiskLevel = riskLevel,
+
+                PlanningStatus = planningStatus,
+                AutoSelected = autoSelected,
 
                 //WIP
-                PlanningStatus = isScheduled ? "Scheduled" : "Not Scheduled",
                 RouteId = isScheduled && nextStop?.RouteId != null
                     ? nextStop.RouteId.Value.ToString()
                     : null
             });
         }
+
+        // calculate avg fill growth rate
+        var avgGrowth = rows.Any()
+            ? rows.Average(r => r.PredictedNextAvgDailyGrowth)
+            : 0;
 
         // filters
         IEnumerable<BinPredictionsTableViewModel> query = rows;
@@ -239,6 +263,7 @@ public class BinPredictionService : IBinPredictionService
             Rows = pagedRows,
             TotalBins = bins.Count,
             HighPriorityBins = query.Count(r => r.EstimatedDaysToThreshold <= 1),
+            AvgDailyFillGrowthOverall = avgGrowth,
 
             SelectedRisk = risk,
             SelectedTimeframe = timeframe,
