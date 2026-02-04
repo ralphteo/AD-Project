@@ -14,7 +14,7 @@ public class AdminBinPredictionsController : Controller
     }
 
     [HttpGet("")]
-    public async Task<IActionResult> Index(int page = 1, string sort = "DaysToThreshold", string sortDir = "asc", string risk = "All", string timeframe = "All")
+    public async Task<IActionResult> Index(int page = 1, string sort = "EstimatedFill", string sortDir = "desc", string risk = "All", string timeframe = "All")
     {
         var viewModel = await _binPredictionService
             .BuildBinPredictionsPageAsync(page, sort, sortDir, risk, timeframe);
