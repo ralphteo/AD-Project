@@ -77,6 +77,8 @@ builder.Services.AddHttpClient<BinPredictionService>(client =>
     client.BaseAddress = new Uri("https://in5nite-ml-fdcycfe6gkfnhdg2.southeastasia-01.azurewebsites.net");
 });
 
+builder.Services.AddScoped<IBinPredictionService, BinPredictionService>();
+
 builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>

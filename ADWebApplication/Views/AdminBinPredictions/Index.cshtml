@@ -54,6 +54,9 @@
                 <div class="card-body">
                     <h6 class="text-muted">Avg. Daily Fill Growth</h6>
                     <h3 class="fw-bold">@Model.AvgDailyFillGrowthOverall.ToString("0.0")%</h3>
+                    <div class="text-muted small">
+                        Mean predicted daily fill growth across active bins
+                    </div>
                 </div>
             </div>
         </div>
@@ -69,7 +72,7 @@
 
                     @if (Model.NewCycleDetectedCount > 0)
                     {
-                        <!-- Orange if refresh is needed -->
+                        <!-- Yellow if refresh is needed -->
                         <h5 class="fw-bold text-warning mb-1">
                             <i class="bi bi-stars me-1"></i>
                             Refresh required
@@ -136,14 +139,14 @@
             </button>
 
             <select asp-for="SortBy" name="sort" class="form-select form-select-sm w-auto" onchange="updateSortField(this.value)">
-                <option value="DaysToThreshold">
-                    Days to Threshold
-                </option>
                 <option value="EstimatedFill">
                     Estimated Fill
                 </option>
+                <option value="DaysToThreshold">
+                    Days to Threshold
+                </option>
                 <option value="AvgGrowth">
-                    Avg Daily Growth
+                    Average Daily Growth
                 </option>
             </select>
 
@@ -303,7 +306,7 @@
                                 {
                                     <span class="badge rounded-pill px-3 py-2 bg-danger-subtle text-danger fw-medium"
                                         data-bs-toggle="tooltip"
-                                        title="Bin predicted to reach ≥ 80% fill within the next 3 days">
+                                        title="Bin predicted to reach ≥ 80% fill within the next 1 day">
                                         High Risk
                                     </span>
                                 }
@@ -311,7 +314,7 @@
                                 {
                                     <span class="badge rounded-pill px-3 py-2 bg-warning-subtle text-warning fw-medium"
                                         data-bs-toggle="tooltip"
-                                        title="Bin predicted to reach ≥ 80% fill within the next 4–7 days">
+                                        title="Bin predicted to reach ≥ 80% fill within the next 3 days">
                                         Medium Risk
                                     </span>
                                 }
@@ -319,7 +322,7 @@
                                 {
                                     <span class="badge rounded-pill bg-secondary-subtle text-secondary fw-semibold"
                                         data-bs-toggle="tooltip"
-                                        title="Bin predicted to reach ≥ 80% fill after 7 days">
+                                        title="Bin predicted to reach ≥ 80% fill after 4 days or more">
                                         Low Risk
                                     </span>
                                 }

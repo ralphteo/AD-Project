@@ -62,10 +62,10 @@ namespace ADWebApplication.Controllers
     {
         private readonly IDashboardRepository _dashboardRepository;
         private readonly ILogger<AdminDashboardController> _logger;
-        private readonly BinPredictionService _binPredictionService;
+        private readonly IBinPredictionService _binPredictionService;
 
 
-        public AdminDashboardController(IDashboardRepository dashboardRepository, ILogger<AdminDashboardController> logger, BinPredictionService binPredictionService)
+        public AdminDashboardController(IDashboardRepository dashboardRepository, ILogger<AdminDashboardController> logger, IBinPredictionService binPredictionService)
         {
             _dashboardRepository = dashboardRepository;
             _logger = logger;
@@ -148,7 +148,7 @@ namespace ADWebApplication.Controllers
                         Title = "High overflow risk predicted",
                         Message = $"{highRisk} bins are high-risk and not yet scheduled for collection",
                         LinkText = "View Bin Predictions",
-                        LinkUrl = Url.Action("Index", "BinPredictions") ?? ""
+                        LinkUrl = Url.Action("Index", "AdminBinPredictions") ?? ""
                     });
                 }
 
@@ -157,10 +157,10 @@ namespace ADWebApplication.Controllers
                     alerts.Add(new AdminAlertDto
                     {
                         Type = "MLRefresh",
-                        Title = "Predictions need refresh",
+                        Title = "Bin Predictions need refresh",
                         Message = $"{mlRefreshCount} bins have new collection cycles detected",
                         LinkText = "Refresh Predictions",
-                        LinkUrl = Url.Action("Index", "BinPredictions") ?? ""
+                        LinkUrl = Url.Action("Index", "AdminBinPredictions") ?? ""
                     });
                 }
 

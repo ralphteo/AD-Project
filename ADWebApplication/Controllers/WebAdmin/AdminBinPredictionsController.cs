@@ -6,15 +6,15 @@ using ADWebApplication.Services;
 [Route("Admin/BinPredictions")]
 public class AdminBinPredictionsController : Controller
 {
-    private readonly BinPredictionService _binPredictionService;
+    private readonly IBinPredictionService _binPredictionService;
 
-    public AdminBinPredictionsController(BinPredictionService binPredictionService)
+    public AdminBinPredictionsController(IBinPredictionService binPredictionService)
     {
         _binPredictionService = binPredictionService;
     }
 
     [HttpGet("")]
-    public async Task<IActionResult> Index(int page = 1, string sort = "DaysToThreshold", string sortDir = "asc", string risk = "All", string timeframe = "All")
+    public async Task<IActionResult> Index(int page = 1, string sort = "EstimatedFill", string sortDir = "desc", string risk = "All", string timeframe = "All")
     {
         var viewModel = await _binPredictionService
             .BuildBinPredictionsPageAsync(page, sort, sortDir, risk, timeframe);

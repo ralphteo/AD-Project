@@ -10,8 +10,7 @@ public class BinPredictionsPageViewModel
     // Summary cards
     public int TotalBins { get; set; }
     public int HighPriorityBins { get; set; }
-    public double AvgDailyFillGrowthOverall =>
-        Rows.Any() ? Rows.Average(r => r.PredictedNextAvgDailyGrowth) : 0;
+    public double AvgDailyFillGrowthOverall { get; set; }
     public int NewCycleDetectedCount { get; set; }
     public int MissingPredictionCount { get; set; }
 
