@@ -17,8 +17,15 @@ namespace ADWebApplication.Data.Repository
         Task<CollectionBin?> GetBinByIdAsync(int binId);
         Task UpdateBinAsync(CollectionBin bin);
         Task CreateBinAsync(CollectionBin bin);
+        Task<List<CollectionOfficerDto>> GetAvailableCollectionOfficersCalendarAsync(DateTime from, DateTime to);
+        Task<List<AssignedCollectionOfficerDto>> GetAssignedCollectionOfficersCalendarAsync(DateTime from, DateTime to);
     }
+<<<<<<< HEAD
+
+   public class AdminRepository(DashboardDbContext dashboardDb, EmpDbContext empDb, In5niteDbContext infDb) : IAdminRepository
+=======
     public class AdminRepository(DashboardDbContext dashboardDb, EmpDbContext empDb, In5niteDbContext infDb) : IAdminRepository
+>>>>>>> d447b27a6afaccf07a0e167fb2854e02581c8f55
     {
         private readonly DashboardDbContext _dashboardDb = dashboardDb;
         private readonly EmpDbContext _empDb = empDb;
@@ -83,12 +90,12 @@ namespace ADWebApplication.Data.Repository
         {
             // Fetch RouteAssignments for collection officers (username starts with "CO-")
             var routeAssignments = await _infDb.RouteAssignments
-                .Where(ra => ra.AssignedTo.StartsWith("CO-")) // Only collection officers (username starts with CO-)
-                .OrderBy(ra => ra.AssignedTo) // Optional: Order by AssignedTo (username)
-                .Include(ra => ra.RoutePlans) // Load associated RoutePlans
+                .Where(ra => ra.AssignedTo.StartsWith("CO-"))
+                .OrderBy(ra => ra.AssignedTo)
+                .Include(ra => ra.RoutePlans)
                 .ToListAsync();
 
-            // After fetching RouteAssignments, load the Employee based on the AssignedTo username
+            // After fetching RouteAssignments, manually load the Employee based on the AssignedTo username
             foreach (var routeAssignment in routeAssignments)
             {
                 var employee = await _empDb.Employees
@@ -167,6 +174,115 @@ namespace ADWebApplication.Data.Repository
             await _dashboardDb.SaveChangesAsync();
         }
 
+       public async Task<List<CollectionOfficerDto>> GetAvailableCollectionOfficersCalendarAsync(DateTime from, DateTime to)
+        {
+            // Normalize date range to DATE ONLY
+            var fromDate = from.Date;
+            var toDate   = to.Date;
 
+            // Get BUSY usernames (any route in range)
+            /*var busyUsernames = await _infDb.RoutePlans
+                .Where(rp =>
+                    rp.PlannedDate.HasValue &&
+                    rp.RouteAssignment != null &&
+                    rp.PlannedDate.Value.Date >= fromDate &&
+                    rp.PlannedDate.Value.Date <= toDate)
+                .Select(rp => rp.RouteAssignment!.AssignedTo.Trim().ToUpper())
+                .Distinct()
+                .ToListAsync();*/
+
+            var busyDebug = await _infDb.RoutePlans
+                .Where(rp =>
+                    rp.PlannedDate.HasValue &&
+                    rp.RouteAssignment != null &&
+                    rp.PlannedDate.Value.Date >= fromDate &&
+                    rp.PlannedDate.Value.Date <= toDate)
+                .Select(rp => new
+                {
+                    Username = rp.RouteAssignment!.AssignedTo,
+                    PlannedDate = rp.PlannedDate.Value
+                })
+                .ToListAsync();
+
+            // Print results
+            foreach (var item in busyDebug)
+            {
+                Console.WriteLine(
+                    $"BUSY → User: '{item.Username}', PlannedDate: {item.PlannedDate:yyyy-MM-dd HH:mm:ss}"
+                );
+            }
+
+            // Then extract usernames if needed
+            var busyUsernames = busyDebug
+                .Select(x => x.Username.Trim().ToUpper())
+                .Distinct()
+                .ToList();
+
+            // Get AVAILABLE officers (not in busy list)
+            return await _empDb.Employees
+                .AsNoTracking()
+                .Include(e => e.Role)
+                .Where(e =>
+                    e.IsActive &&
+                    e.Username.StartsWith("CO-") &&
+                    !busyUsernames.Contains(e.Username.Trim().ToUpper()))
+                .OrderBy(e => e.Username)
+                .Select(e => new CollectionOfficerDto
+                {
+                    Username = e.Username,
+                    FullName = e.FullName
+                })
+                .ToListAsync();
+        }
+
+    public async Task<List<AssignedCollectionOfficerDto>>GetAssignedCollectionOfficersCalendarAsync(DateTime from, DateTime to)
+    {
+        // Normalize date range
+        var fromDate = from.Date;
+        var toDate   = to.Date;
+
+        // Get BUSY routes in range (debug-friendly)
+        var busyDebug = await _infDb.RoutePlans
+            .Where(rp =>
+                rp.PlannedDate.HasValue &&
+                rp.RouteAssignment != null &&
+                rp.PlannedDate.Value.Date >= fromDate &&
+                rp.PlannedDate.Value.Date <= toDate)
+            .Select(rp => new
+            {
+                Username = rp.RouteAssignment!.AssignedTo.Trim().ToUpper(),
+                PlannedDate = rp.PlannedDate.Value.Date
+            })
+            .ToListAsync();
+
+        // Group by username
+        var grouped = busyDebug
+            .GroupBy(x => x.Username)
+            .ToList();
+
+        // Join with Employee table
+        var result = await _empDb.Employees
+            .AsNoTracking()
+            .Where(e =>
+                e.IsActive &&
+                e.Username.StartsWith("CO-") &&
+                grouped.Select(g => g.Key)
+                        .Contains(e.Username.Trim().ToUpper()))
+            .OrderBy(e => e.Username)
+            .Select(e => new AssignedCollectionOfficerDto
+            {
+                Username = e.Username,
+                FullName = e.FullName,
+                PlannedDates = grouped
+                    .First(g => g.Key == e.Username.Trim().ToUpper())
+                    .Select(x => x.PlannedDate)
+                    .ToList()
+            })
+            .ToListAsync();
+
+        return result;
+    }
+
+    
     }
 }

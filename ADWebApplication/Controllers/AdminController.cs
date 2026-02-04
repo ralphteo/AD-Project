@@ -6,7 +6,7 @@ using ADWebApplication.Models;
 
 namespace ADWebApplication.Controllers
 {
-    // [Authorize(Roles = "Admin")] * Uncomment this line to restrict access to Admins only
+    [Authorize(Roles = "Admin")] //* Uncomment this line to restrict access to Admins only
     public class AdminController : Controller
     {
         private readonly IAdminRepository _adminRepository;
@@ -140,12 +140,29 @@ namespace ADWebApplication.Controllers
         }
 
 
-        public async Task<IActionResult> CollectionCalender(string username)
+        public async Task<IActionResult> CollectionCalendar (string username)
         {
 
 
             return View();
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetOfficerAvailability(DateTime from, DateTime to)
+        {
+            var officers = await _adminRepository.GetAvailableCollectionOfficersCalendarAsync(from, to);
+            return Json(officers);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAssignedCollectionOfficersCalendar(DateTime from, DateTime to)
+        {
+            var officers = await _adminRepository
+                .GetAssignedCollectionOfficersCalendarAsync(from, to);
+
+            return Json(officers);
+        }
+
 
     }
 }
