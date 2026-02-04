@@ -6,9 +6,9 @@ using ADWebApplication.Services;
 [Route("Admin/BinPredictions")]
 public class AdminBinPredictionsController : Controller
 {
-    private readonly BinPredictionService _binPredictionService;
+    private readonly IBinPredictionService _binPredictionService;
 
-    public AdminBinPredictionsController(BinPredictionService binPredictionService)
+    public AdminBinPredictionsController(IBinPredictionService binPredictionService)
     {
         _binPredictionService = binPredictionService;
     }

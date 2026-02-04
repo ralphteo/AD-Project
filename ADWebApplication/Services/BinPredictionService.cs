@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ADWebApplication.Services;
 
-public class BinPredictionService
+public class BinPredictionService : IBinPredictionService
 {
     // to call ML API
     private readonly HttpClient client;
@@ -58,11 +58,6 @@ public class BinPredictionService
     {
         int pageSize = 10;
         var today = DateTimeOffset.UtcNow.Date;
-
-        // risk = string.IsNullOrWhiteSpace(risk) ? "All" : risk;
-        // timeframe = string.IsNullOrWhiteSpace(timeframe) ? "All" : timeframe;
-        // sort = string.IsNullOrWhiteSpace(sort) ? "DaysToThreshold" : sort;
-        // sortDir = string.IsNullOrWhiteSpace(sortDir) ? "asc" : sortDir;
 
         var latestCollectionByBin = await GetLatestCollectionsAsync();
         var latestPredictionByBin = await GetLatestPredictionsAsync();
