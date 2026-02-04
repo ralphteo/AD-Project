@@ -22,9 +22,6 @@ namespace ADWebApplication.Models
         [Column("predictedAvgDailyGrowth")]
         public double PredictedAvgDailyGrowth { get; set; }
 
-        [Column("confidenceScore")]
-        public double? ConfidenceScore { get; set; }
-
         [Column("modelVersion")]
         public string ModelVersion { get; set; } = string.Empty;
     }

@@ -42,7 +42,8 @@
                 <div class="card-body">
                     <h6 class="text-muted">High Priority Bins</h6>
                     <h3 class="fw-bold text-danger">@Model.HighPriorityBins</h3>
-                    <small class="text-muted">≤ 3 days to 80%</small>
+                    <small class="text-muted">≤ 1 day to 80%</small>
+                    <div class="text-danger small">Urgent collection</div>
                 </div>
             </div>
         </div>
@@ -233,7 +234,7 @@
                 @if (!Model.Rows.Any())
                 {
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">
+                        <td colspan="9" class="text-center text-muted py-4">
                             No data available
                         </td>
                     </tr>
@@ -381,8 +382,8 @@
 
             <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
                 <a class="page-link"
-                   href="?page=@(Model.CurrentPage - 1)&risk=@Model.SelectedRisk&timeframe=@Model.SelectedTimeframe&sort=@Model.SortBy">
-                    Previous
+                    href="?page=@(Model.CurrentPage - 1)&risk=@Model.SelectedRisk&timeframe=@Model.SelectedTimeframe&sort=@Model.SortBy&sortDir=@Model.SortDir">
+                        Previous
                 </a>
             </li>
 
@@ -390,11 +391,7 @@
             {
                 <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
                     <a class="page-link"
-                       href="?page=@i
-                        &risk=@Model.SelectedRisk
-                        &timeframe=@Model.SelectedTimeframe
-                        &sort=@Model.SortBy
-                        &sortDir=@Model.SortDir">
+                       href="?page=@i&risk=@Model.SelectedRisk&timeframe=@Model.SelectedTimeframe&sort=@Model.SortBy&sortDir=@Model.SortDir">
                         @i
                     </a>
                 </li>
@@ -402,8 +399,8 @@
 
             <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
                 <a class="page-link"
-                   href="?page=@(Model.CurrentPage + 1)&risk=@Model.SelectedRisk&timeframe=@Model.SelectedTimeframe&sort=@Model.SortBy">
-                    Next
+                    href="?page=@(Model.CurrentPage + 1)&risk=@Model.SelectedRisk&timeframe=@Model.SelectedTimeframe&sort=@Model.SortBy&sortDir=@Model.SortDir">
+                        Next
                 </a>
             </li>
 

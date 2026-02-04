@@ -59,10 +59,16 @@ public class BinPredictionService
         int pageSize = 10;
         var today = DateTimeOffset.UtcNow.Date;
 
+        // risk = string.IsNullOrWhiteSpace(risk) ? "All" : risk;
+        // timeframe = string.IsNullOrWhiteSpace(timeframe) ? "All" : timeframe;
+        // sort = string.IsNullOrWhiteSpace(sort) ? "DaysToThreshold" : sort;
+        // sortDir = string.IsNullOrWhiteSpace(sortDir) ? "asc" : sortDir;
+
         var latestCollectionByBin = await GetLatestCollectionsAsync();
         var latestPredictionByBin = await GetLatestPredictionsAsync();
 
         var bins = await db.CollectionBins
+            .Where(b => b.BinStatus == "Active")
             .Include(b => b.Region)
             .ToListAsync();
 
@@ -129,8 +135,8 @@ public class BinPredictionService
                 daysTo80 = (int)Math.Ceiling(remaining / predictedGrowth);
             }
 
-            // Bins are auto-selected as urgent if it is predicted to reach 80% in 3 days or less
-            bool autoSelected = daysTo80 <= 3;
+            // Bins are auto-selected as urgent if it is predicted to reach 80% the next day
+            bool autoSelected = daysTo80 <= 1;
             
             // Retrieve next scheduled route stop of each bin if any
             nextStopByBin.TryGetValue(bin.BinId, out var nextStop);
@@ -219,6 +225,15 @@ public class BinPredictionService
         var totalItems = query.Count(); 
         var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
+        if (totalPages == 0)
+        {
+            page = 1;
+        }
+        else
+        {
+            page = Math.Clamp(page, 1, totalPages);
+        }
+        
         var pagedRows = query
             .Skip((page - 1) * pageSize) //skip  rows belonging to the prev. page
             .Take(pageSize) //limit no. of rows displayed to 10
@@ -227,8 +242,8 @@ public class BinPredictionService
         return new BinPredictionsPageViewModel
         {
             Rows = pagedRows,
-            TotalBins = totalItems,
-            HighPriorityBins = query.Count(r => r.EstimatedDaysToThreshold <= 3),
+            TotalBins = bins.Count,
+            HighPriorityBins = query.Count(r => r.EstimatedDaysToThreshold <= 1),
 
             SelectedRisk = risk,
             SelectedTimeframe = timeframe,
