@@ -75,7 +75,7 @@ namespace ADWebApplication.Data.Repository
                 .SumAsync(l => (decimal?)l.EstimatedTotalWeight) ?? 0;
             //User Growth calculation
             var currentActiveUsersWithDisposals = await (
-                from user in _db.Users
+                from user in _db.PublicUser
                 join log in _db.DisposalLogs on user.Id equals log.UserId
                 where user.IsActive &&
                       log.DisposalTimeStamp.Year == targetMonth.Year &&
@@ -84,7 +84,7 @@ namespace ADWebApplication.Data.Repository
 
             // Previous month active users with disposals
             var prevActiveUsersWithDisposals = await (
-                from user in _db.Users
+                from user in _db.PublicUser
                 join log in _db.DisposalLogs on user.Id equals log.UserId
                 where user.IsActive &&
                       log.DisposalTimeStamp.Year == previousMonth.Year &&
