@@ -3,6 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using ADWebApplication.Data.Repository;
 using ADWebApplication.Models.DTOs;
 using ADWebApplication.Services;
+using System.Runtime.CompilerServices;
+using System.Diagnostics.Tracing;
+using System.Threading.Tasks.Sources;
+using System.Text;
+using System.Runtime.Serialization.Json;
 
 namespace ADWebApplication.Controllers
 {
@@ -63,13 +68,14 @@ namespace ADWebApplication.Controllers
         private readonly IDashboardRepository _dashboardRepository;
         private readonly ILogger<AdminDashboardController> _logger;
         private readonly BinPredictionService _binPredictionService;
+        private readonly RoutePlanningService _routePlanningService;
 
-
-        public AdminDashboardController(IDashboardRepository dashboardRepository, ILogger<AdminDashboardController> logger, BinPredictionService binPredictionService)
+        public AdminDashboardController(IDashboardRepository dashboardRepository, ILogger<AdminDashboardController> logger, BinPredictionService binPredictionService, RoutePlanningService routePlanningService)
         {
             _dashboardRepository = dashboardRepository;
             _logger = logger;
             _binPredictionService = binPredictionService;
+            _routePlanningService = routePlanningService;
         }
 
         /* public async Task<IActionResult> Index()
@@ -196,8 +202,6 @@ namespace ADWebApplication.Controllers
                 });
             }
         }
-
-        
     }
-
 }
+

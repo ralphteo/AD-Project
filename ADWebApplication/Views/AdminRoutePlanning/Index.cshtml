@@ -1,0 +1,235 @@
+@model ADWebApplication.Models.DTOs.RoutePlanningViewModel
+
+@{
+    ViewData["Title"] = "Route Planning";
+    Layout = "_DashboardLayout"; 
+}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<div class="container-fluid">
+
+    <!-- Page title -->
+    <div class="mb-4">
+        <h2 class="fw-bold">Route Planning</h2>
+        <p class="text-muted mb-1">
+            Plan and schedule collection routes up to 3 days in advance
+        </p>
+    </div>
+
+    <!-- Planning date router -->
+    <div class="card p-4 mb-4 shadow-sm border-0 bg-blue" style="border-radius: 15px;">
+        <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <p class="text-muted small mb-1">Planning for:</p>
+            <h2 class="fw-bold mb-1">@Model.SelectedDate.ToString("dddd, d MMMM yyyy")</h2>
+            <p class="text-secondary small">@Model.TotalStops bins predicted to require collection</p>
+        </div>
+        
+        <div class="d-flex gap-2">
+            @for (int i = 0; i <= 3; i++)
+            {
+                var targetDate = DateTime.Today.AddDays(i);
+                var isActive = Model.SelectedDate.Date == targetDate.Date;
+                var label = i == 0 ? "Today" : i == 1 ? "Tomorrow" : targetDate.ToString("d MMM");
+                
+                <a asp-action="RoutePlanning" asp-route-date="@targetDate.ToString("yyyy-MM-dd")" 
+                   class="btn p-3 d-flex flex-column align-items-center justify-content-center @(isActive ? "btn-primary shadow" : "btn-outline-light text-dark border")"
+                   style="width: 100px; height: 110px; border-radius: 12px; transition: 0.3s;">
+                    <i class="bi bi-calendar3 mb-2 fs-4"></i>
+                    <span class="fw-bold small">@label</span>
+                    @if(isActive) { <span class="small" style="font-size: 0.7rem;">Current</span> }
+                </a>
+            }
+        </div>
+        </div>
+    </div>
+
+
+    <!-- Planning Steps -->
+    <div class="card p-4 mb-4 shadow-sm border-0 bg-white" style="border-radius: 15px;">
+        <div class="d-flex align-items-center justify-content-between position-relative px-2">
+        
+            <div class="position-absolute top-50 start-0 end-0 translate-middle-y bg-light" style="height: 2px; z-index: 0; margin: 0 40px;"></div>
+        
+            <div class="d-flex align-items-center bg-white pe-3" style="z-index: 1;">
+                <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-muted fw-bold me-3" style="width: 45px; height: 45px; border: 1px solid #dee2e6;">1</div>
+                <div>
+                <div class="fw-bold small">Plan</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Select date & review routes</div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center bg-white px-3" style="z-index: 1;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-muted fw-bold me-3" style="width: 45px; height: 45px; border: 1px solid #dee2e6;">2</div>
+            <div>
+                <div class="fw-bold small">Approve & Assign</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Approve routes</div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center bg-white ps-3" style="z-index: 1;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-muted fw-bold me-3" style="width: 45px; height: 45px; border: 1px solid #dee2e6;">3</div>
+            <div>
+                <div class="fw-bold small">Dispatch</div>
+                <div class="text-muted" style="font-size: 0.75rem;">Execute now</div>
+            </div>
+        </div>
+
+    </div>
+    </div>
+
+    <!-- Route map view -->
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card p-4 shadow-sm border-0 h-100" style="border-radius: 15px; background-color: #f8f9fa;">
+            <div class="mb-4">
+                <h4 class="fw-bold mb-1">Route Details</h4>
+                <p class="text-muted small">1 route generated • @Model.TotalStops total stops</p>
+            </div>
+
+            <div class="card border-0 p-3 shadow-sm mb-3 bg-white" style="border-radius: 12px; transition: 0.3s;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle bg-primary" style="width: 12px; height: 12px;"></div>
+                        <h5 class="fw-bold mb-0">R0A</h5>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary px-3 py-2" style="border-radius: 8px;">Planned</span>
+                </div>
+                <p class="text-muted small mb-3">Planned: @Model.SelectedDate.ToString("dddd")</p>
+                
+                <div class="row text-center g-2">
+                    <div class="col-4">
+                        <div class="bg-light p-2 rounded-3">
+                            <div class="text-muted" style="font-size: 0.65rem; text-transform: uppercase;">Stops</div>
+                            <div class="fw-bold">@Model.TotalStops</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-light p-2 rounded-3">
+                            <div class="text-muted" style="font-size: 0.65rem; text-transform: uppercase;">Distance</div>
+                            <div class="fw-bold text-nowrap">@Model.EstimatedTotalDistance<small>km</small></div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-light p-2 rounded-3">
+                            <div class="text-muted" style="font-size: 0.65rem; text-transform: uppercase;">Load</div>
+                            <div class="fw-bold">92%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card p-0 overflow-hidden shadow-sm border-0 h-100" style="border-radius: 15px;">
+            <div id="map" style="height: 600px; width: 100%; z-index: 1;"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Base style for the route numbers */
+    .route-label {
+        background-color: #0d6efd !important; /* Bootstrap Primary Blue */
+        color: white !important;
+        border: 2px solid white !important;
+        border-radius: 50% !important;
+        width: 30px !important;
+        height: 30px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: bold !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+        padding: 0 !important;
+    }
+
+    /* Red style for high-risk route numbers */
+    .route-label-high-risk {
+        background-color: #dc3545 !important; /* Bootstrap Danger Red */
+        animation: pulse-red 2s infinite;
+    }
+
+    /* Hide the little arrow Leaflet tooltips usually have */
+    .leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before {
+        display: none !important;
+    }
+
+    @@keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+</style>
+
+    @section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // 1. Initialize map centered on the first stop (Depot)
+            var stops = @Html.Raw(Json.Serialize(Model.Stops));
+            var startPos = [stops[0].latitude, stops[0].longitude];
+            
+            var map = L.map('map').setView(startPos, 13);
+
+            // 2. Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© OpenStreetMap contributors © CARTO'
+            }).addTo(map);
+
+            setTimeout(function(){map.invalidateSize()}, 100);
+
+            var latlngs = [];
+
+            // 3. Loop through optimized stops to create Nodes
+            
+            stops.forEach(function (stop) {
+                var pos = [stop.latitude, stop.longitude];
+                latlngs.push(pos);
+
+                // 1. Determine the color class based on risk
+                var labelClass = stop.isHighRisk ? "route-label route-label-high-risk" : "route-label";
+                var riskBadge = stop.isHighRisk ? `<span class="badge bg-danger mb-2">High Priority</span>` : "";
+
+                // 2. Create an invisible marker (this is just to hold the popup/tooltip)
+                var marker = L.circleMarker(pos, { 
+                    radius: 0,      // Makes the actual marker invisible
+                    opacity: 0, 
+                    fillOpacity: 0 
+                }).addTo(map);
+
+                // 3. Add the Number Label as a Permanent Tooltip
+                marker.bindTooltip(stop.sequenceOrder.toString(), {
+                    permanent: true,
+                    direction: 'center',
+                    className: labelClass
+                }).openTooltip();
+                
+                // Add Popup with OR-Tools Sequence info
+                marker.bindPopup(`
+                    <div class="p-1">
+                        ${riskBadge}<br/>
+                        <strong class="text-primary">Stop #${stop.sequenceOrder}</strong><br/>
+                        <b>${stop.locationName}</b><br/>
+                        <small class="text-muted">${stop.binType} Bin</small>
+                    </div>
+                `);
+ 
+            });
+
+            // 4. Draw the Polyline connecting nodes in sequence
+            var polyline = L.polyline(latlngs, {
+                color: '#0d6efd',
+                weight: 4,
+                opacity: 0.6,
+                dashArray: '10, 10' // Makes it a dashed line
+            }).addTo(map);
+
+            // Zoom map to fit all nodes
+            map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+        });
+    </script>
+}
+</div>

@@ -14,6 +14,7 @@ builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
+builder.Services.AddScoped<RoutePlanningService>();
 
 
 builder.Services.AddDbContext<In5niteDbContext>(options =>
