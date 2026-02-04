@@ -1,5 +1,6 @@
 using ADWebApplication.Data;
 using ADWebApplication.Models;
+using ADWebApplication.Models.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -104,6 +105,28 @@ public class AuthController : ControllerBase
             Success = true,
             Message = "Logged in",
             UserId = user.Id
+        });
+    }
+
+    // GET: /api/auth/profile?userId=1
+    [HttpGet("profile")]
+    public async Task<ActionResult<UserProfileDto>> GetProfile([FromQuery] int userId)
+    {
+        var user = await _db.PublicUser
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(new UserProfileDto
+        {
+            UserId = user.Id,
+            UserName = user.Name,
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber
         });
     }
 }

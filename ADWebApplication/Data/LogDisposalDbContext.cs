@@ -15,6 +15,8 @@ namespace ADWebApplication.Data
         public DbSet<DisposalLogs> DisposalLogs => Set<DisposalLogs>();
         public DbSet<DisposalLogItem> DisposalLogItems => Set<DisposalLogItem>();
         public DbSet<RewardWallet> RewardWallets => Set<RewardWallet>();
+        public DbSet<RewardCatalogue> RewardCatalogues => Set<RewardCatalogue>();
+        public DbSet<RewardRedemption> RewardRedemptions => Set<RewardRedemption>();
         public DbSet<PointTransaction> PointTransactions => Set<PointTransaction>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
