@@ -184,7 +184,6 @@ public class EmpAuthController : Controller
         if (string.IsNullOrEmpty(username))
             return RedirectToAction(nameof(Login));
 
-        // locked? block verify
         if (IsUserLocked(username, out var lockUntilUtc))
         {
             ModelState.AddModelError("", $"Account locked until {lockUntilUtc.ToLocalTime():HH:mm}.");
