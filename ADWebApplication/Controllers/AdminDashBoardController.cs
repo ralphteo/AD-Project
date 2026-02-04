@@ -107,25 +107,25 @@ namespace ADWebApplication.Controllers
             try
             {
                 _logger.LogInformation("Starting dashboard data retrieval...");
-        
+
                 var kpis = await _dashboardRepository.GetAdminDashboardAsync();
                 _logger.LogInformation("KPIs retrieved: {Users} users", kpis.TotalUsers);
-        
+
                 var trends = await _dashboardRepository.GetCollectionTrendsAsync();
                 _logger.LogInformation("Trends retrieved: {Count} records", trends.Count);
-        
+
                 var categories = await _dashboardRepository.GetCategoryBreakdownAsync();
                 _logger.LogInformation("Categories retrieved: {Count} records", categories.Count);
-        
+
                 var performance = await _dashboardRepository.GetAvgPerformanceMetricsAsync();
                 _logger.LogInformation("Performance retrieved: {Count} records", performance.Count);
-        
+
                 // var highRisk = await _dashboardRepository.GetHighRiskUnscheduledCountAsync();
                 // _logger.LogInformation("High risk count: {Count}", highRisk);
 
                 var binCounts = await _dashboardRepository.GetBinCountsAsync();
                 _logger.LogInformation("Bin counts retrieved: {Active}/{Total}", binCounts.ActiveBins, binCounts.TotalBins);
-        
+
                 var predictionVm = await _binPredictionService
                     .BuildBinPredictionsPageAsync(
                         page: 1,
@@ -175,8 +175,8 @@ namespace ADWebApplication.Controllers
                     TotalBinsCount = binCounts.TotalBins,
                     Alerts = alerts
                 };
-                
-                
+
+
                 viewModel.Alerts = alerts;
 
                 return View(viewModel);
@@ -197,7 +197,7 @@ namespace ADWebApplication.Controllers
             }
         }
 
-        
+
     }
 
 }

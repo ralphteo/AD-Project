@@ -6,12 +6,12 @@ namespace ADWebApplication.Data.Repository
 {
     public interface IDashboardRepository
     {
-       Task <DashboardKPIs> GetAdminDashboardAsync(DateTime? forMonth = null);
-       Task<List<CollectionTrend>> GetCollectionTrendsAsync(int monthsBack = 6);
-       Task<List<CategoryBreakdown>> GetCategoryBreakdownAsync();
-       Task<List<AvgPerformance>> GetAvgPerformanceMetricsAsync();
-       Task<int> GetHighRiskUnscheduledCountAsync();
-       Task<(int ActiveBins, int TotalBins)> GetBinCountsAsync();
+        Task<DashboardKPIs> GetAdminDashboardAsync(DateTime? forMonth = null);
+        Task<List<CollectionTrend>> GetCollectionTrendsAsync(int monthsBack = 6);
+        Task<List<CategoryBreakdown>> GetCategoryBreakdownAsync();
+        Task<List<AvgPerformance>> GetAvgPerformanceMetricsAsync();
+        Task<int> GetHighRiskUnscheduledCountAsync();
+        Task<(int ActiveBins, int TotalBins)> GetBinCountsAsync();
     }
     public class DashboardRepository : IDashboardRepository
     {
@@ -28,29 +28,29 @@ namespace ADWebApplication.Data.Repository
             var previousMonth = targetMonth.AddMonths(-1);
             //var totalUsers = await _db.Users.CountAsync(u => u.IsActive);
             // 🔍 DEBUG: Multiple approaches
-    Console.WriteLine("=== USER COUNT DEBUG ===");
-    
-    var allUsers = await _db.Users.CountAsync();
-    Console.WriteLine($"All users: {allUsers}");
-    
-    var activeUsers1 = await _db.Users.CountAsync(u => u.IsActive);
-    Console.WriteLine($"Active (u.IsActive): {activeUsers1}");
-    
-    var activeUsers2 = await _db.Users.CountAsync(u => u.IsActive == true);
-    Console.WriteLine($"Active (u.IsActive == true): {activeUsers2}");
-    
-    var activeUsers3 = await _db.Users.Where(u => u.IsActive).CountAsync();
-    Console.WriteLine($"Active (Where clause): {activeUsers3}");
-    
-    // Check actual values
-    var sampleUsers = await _db.Users.Take(5).Select(u => new { u.Id, u.IsActive }).ToListAsync();
-    Console.WriteLine($"Sample users: {string.Join(", ", sampleUsers.Select(u => $"Id={u.Id},IsActive={u.IsActive}"))}");
-    
-    Console.WriteLine("=======================");
-    
-    var totalUsers = activeUsers1;
-            
-                // 🔍 DEBUG OUTPUT
+            Console.WriteLine("=== USER COUNT DEBUG ===");
+
+            var allUsers = await _db.Users.CountAsync();
+            Console.WriteLine($"All users: {allUsers}");
+
+            var activeUsers1 = await _db.Users.CountAsync(u => u.IsActive);
+            Console.WriteLine($"Active (u.IsActive): {activeUsers1}");
+
+            var activeUsers2 = await _db.Users.CountAsync(u => u.IsActive == true);
+            Console.WriteLine($"Active (u.IsActive == true): {activeUsers2}");
+
+            var activeUsers3 = await _db.Users.Where(u => u.IsActive).CountAsync();
+            Console.WriteLine($"Active (Where clause): {activeUsers3}");
+
+            // Check actual values
+            var sampleUsers = await _db.Users.Take(5).Select(u => new { u.Id, u.IsActive }).ToListAsync();
+            Console.WriteLine($"Sample users: {string.Join(", ", sampleUsers.Select(u => $"Id={u.Id},IsActive={u.IsActive}"))}");
+
+            Console.WriteLine("=======================");
+
+            var totalUsers = activeUsers1;
+
+            // 🔍 DEBUG OUTPUT
             Console.WriteLine($"Target Month: {targetMonth:yyyy-MM}");
             Console.WriteLine($"Previous Month: {previousMonth:yyyy-MM}");
 
@@ -59,7 +59,7 @@ namespace ADWebApplication.Data.Repository
             var prevCollections = await _db.DisposalLogs.CountAsync(l =>
                 l.DisposalTimeStamp.Year == previousMonth.Year && l.DisposalTimeStamp.Month == previousMonth.Month);
 
-             // 🔍 DEBUG OUTPUT
+            // 🔍 DEBUG OUTPUT
             Console.WriteLine($"Current Collections (Feb 2026): {currentCollections}");
             Console.WriteLine($"Prev Collections (Jan 2026): {prevCollections}");
 
@@ -147,7 +147,7 @@ namespace ADWebApplication.Data.Repository
                 })
                 .ToList();
         }
-        
+
 
         public async Task<List<AvgPerformance>> GetAvgPerformanceMetricsAsync()
         {

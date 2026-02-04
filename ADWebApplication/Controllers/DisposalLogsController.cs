@@ -92,7 +92,7 @@ namespace ADWebApplication.Controllers
             }
         }
         [HttpGet("history")]
-        public async Task<ActionResult<List<DisposalHistoryDto>>>GetHistory(
+        public async Task<ActionResult<List<DisposalHistoryDto>>> GetHistory(
             [FromQuery] int userId,
             [FromQuery] string range = "all"
         )
@@ -100,17 +100,17 @@ namespace ADWebApplication.Controllers
             DateTime? from = null;
             var now = DateTime.UtcNow;
 
-            range = (range?? "all").ToLowerInvariant();
-            if(range == "month")
-            from = new DateTime(now.Year, now.Month,1);
-            else if (range =="last 3")
+            range = (range ?? "all").ToLowerInvariant();
+            if (range == "month")
+                from = new DateTime(now.Year, now.Month, 1);
+            else if (range == "last 3")
                 from = now.AddMonths(-3);
-            
+
             var q = _context.DisposalLogs
             .AsNoTracking()
-            .Where(l=>l.UserId==userId);
+            .Where(l => l.UserId == userId);
 
-            if(from.HasValue)
+            if (from.HasValue)
                 q = q.Where(l => l.DisposalTimeStamp >= from.Value);
 
             var result = await q
@@ -145,4 +145,4 @@ namespace ADWebApplication.Controllers
         }
     }
 }
- 
+

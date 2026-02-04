@@ -16,7 +16,7 @@
         <span class="input-group-text">
             <i class="bi bi-search"></i>
         </span>
-        <input type="text" id="searchBox" class="form-control" placeholder="Search..." onkeyup="filterTable()"/>
+        <input type="text" id="searchBox" class="form-control" placeholder="Search..." onkeyup="filterTable()" />
     </div>
 </div>
 
@@ -96,7 +96,7 @@
             var rows = Array.from(table.tBodies[0].rows);
             var asc = table.getAttribute("data-sort-asc") === "true" ? false : true;
 
-            rows.sort(function(a, b) {
+            rows.sort(function (a, b) {
                 var aText = a.cells[columnIndex].innerText.trim();
                 var bText = b.cells[columnIndex].innerText.trim();
 

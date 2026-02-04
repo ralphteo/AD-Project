@@ -51,7 +51,7 @@ public class AuthController : ControllerBase
             Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
             RewardWallet = new RewardWallet
             {
-                AvailablePoints=0
+                AvailablePoints = 0
             }
         };
 

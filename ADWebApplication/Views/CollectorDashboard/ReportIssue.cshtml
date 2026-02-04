@@ -53,7 +53,8 @@
                 <label class="form-label">Search</label>
                 <div class="input-with-icon">
                     <i class="bi bi-search"></i>
-                    <input type="text" name="search" class="form-control" placeholder="Search issues..." value="@Model.Search">
+                    <input type="text" name="search" class="form-control" placeholder="Search issues..."
+                        value="@Model.Search">
                 </div>
             </div>
             <div class="filter-field">
@@ -92,13 +93,13 @@
                 "High" => "pill-danger",
                 "Low" => "pill-low",
                 _ => "pill-warning"
-            };
+                    };
             var statusClass = issue.Status switch
             {
                 "Resolved" => "pill-success",
                 "In Progress" => "pill-warning",
                 _ => "pill-danger"
-            };
+                    };
             <div class="issue-card">
                 <div class="issue-header">
                     <div class="issue-pills">
@@ -191,7 +192,8 @@
 
                     <div class="mb-3">
                         <label asp-for="Description" class="form-label">Description</label>
-                        <textarea asp-for="Description" class="form-control" rows="4" placeholder="Describe the issue in detail..." required></textarea>
+                        <textarea asp-for="Description" class="form-control" rows="4"
+                            placeholder="Describe the issue in detail..." required></textarea>
                         <span asp-validation-for="Description" class="text-danger"></span>
                     </div>
 
@@ -212,19 +214,19 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         // Auto-populate location details when bin is selected
-        document.getElementById('binSelect').addEventListener('change', function() {
+        document.getElementById('binSelect').addEventListener('change', function () {
             const selectedOption = this.options[this.selectedIndex];
             const locationDetails = document.getElementById('locationDetails');
-            
+
             if (this.value) {
                 // Get data attributes
                 const location = selectedOption.getAttribute('data-location');
                 const region = selectedOption.getAttribute('data-region');
-                
+
                 // Populate display fields
                 document.getElementById('displayLocation').textContent = location;
                 document.getElementById('displayRegion').textContent = region;
-                
+
                 // Show the location details box
                 locationDetails.style.display = 'block';
             } else {
@@ -269,10 +271,25 @@
         justify-content: center;
     }
 
-    .issue-log .stat-icon.neutral { background: #e2e8f0; color: #64748b; }
-    .issue-log .stat-icon.danger { background: #fee2e2; color: #ef4444; }
-    .issue-log .stat-icon.warning { background: #ffedd5; color: #f97316; }
-    .issue-log .stat-icon.success { background: #dcfce7; color: #16a34a; }
+    .issue-log .stat-icon.neutral {
+        background: #e2e8f0;
+        color: #64748b;
+    }
+
+    .issue-log .stat-icon.danger {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .issue-log .stat-icon.warning {
+        background: #ffedd5;
+        color: #f97316;
+    }
+
+    .issue-log .stat-icon.success {
+        background: #dcfce7;
+        color: #16a34a;
+    }
 
     .issue-log .filter-card {
         background: #ffffff;
@@ -319,16 +336,56 @@
         margin-bottom: 18px;
     }
 
-    .issue-log .issue-pills { display: flex; gap: 8px; margin-bottom: 12px; }
-    .issue-log .pill { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
-    .issue-log .pill-danger { background: #fee2e2; color: #b91c1c; }
-    .issue-log .pill-warning { background: #ffedd5; color: #c2410c; }
-    .issue-log .pill-success { background: #dcfce7; color: #15803d; }
-    .issue-log .pill-low { background: #e0f2fe; color: #0369a1; }
+    .issue-log .issue-pills {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
 
-    .issue-log .issue-title { font-weight: 700; margin-bottom: 4px; display: flex; gap: 8px; align-items: center; }
-    .issue-log .issue-sub { color: #64748b; margin-bottom: 10px; }
-    .issue-log .issue-desc { color: #0f172a; margin-bottom: 14px; }
+    .issue-log .pill {
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 999px;
+    }
+
+    .issue-log .pill-danger {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .issue-log .pill-warning {
+        background: #ffedd5;
+        color: #c2410c;
+    }
+
+    .issue-log .pill-success {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .issue-log .pill-low {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+
+    .issue-log .issue-title {
+        font-weight: 700;
+        margin-bottom: 4px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .issue-log .issue-sub {
+        color: #64748b;
+        margin-bottom: 10px;
+    }
+
+    .issue-log .issue-desc {
+        color: #0f172a;
+        margin-bottom: 14px;
+    }
 
     .issue-log .issue-meta {
         display: flex;
@@ -339,12 +396,15 @@
         flex-wrap: wrap;
     }
 
-    .issue-log .issue-actions { margin-top: 14px; }
+    .issue-log .issue-actions {
+        margin-top: 14px;
+    }
 
     @@media (max-width: 768px) {
         .issue-log .filter-grid {
             grid-template-columns: 1fr;
         }
+
         .issue-log .filter-actions {
             justify-content: flex-start;
         }

@@ -31,7 +31,8 @@
 
             <div class="modal-section">
                 <label class="section-label" for="notes">Collection Notes (Optional)</label>
-                <textarea asp-for="Remarks" id="notes" class="form-control" rows="3" placeholder="Add any notes about this collection..."></textarea>
+                <textarea asp-for="Remarks" id="notes" class="form-control" rows="3"
+                    placeholder="Add any notes about this collection..."></textarea>
             </div>
 
             <div class="modal-section modal-actions-row">
@@ -117,7 +118,9 @@
         text-decoration: none;
     }
 
-    .modal-section { margin-bottom: 20px; }
+    .modal-section {
+        margin-bottom: 20px;
+    }
 
     .section-label {
         font-weight: 600;
@@ -138,8 +141,16 @@
     }
 
     @@media (max-width: 640px) {
-        .modal-card { padding: 20px; }
-        .modal-actions-row { flex-direction: column; }
-        .modal-footer { flex-direction: column-reverse; }
+        .modal-card {
+            padding: 20px;
+        }
+
+        .modal-actions-row {
+            flex-direction: column;
+        }
+
+        .modal-footer {
+            flex-direction: column-reverse;
+        }
     }
 </style>

@@ -230,7 +230,7 @@ namespace ADWebApplication.Controllers
             }
 
             // Redirect to Success Page
-             return RedirectToAction("CollectionConfirmed", model);
+            return RedirectToAction("CollectionConfirmed", model);
         }
 
         public IActionResult CollectionConfirmed(CollectionConfirmationVM model)
@@ -534,7 +534,7 @@ namespace ADWebApplication.Controllers
             // TODO: Save issue to database
             // Options: Create IssueLog table OR use RouteStop.IssueLog/CollectionDetails.IssueLog JSONB field
             // For now, just store in TempData (placeholder)
-            
+
             TempData["SuccessMessage"] = $"Issue reported for Bin #{model.BinId} - {model.LocationName}";
             return RedirectToAction("Index");
         }
@@ -856,7 +856,7 @@ namespace ADWebApplication.Controllers
 
         private static CollectorRoute GetMockRouteData()
         {
-             var route = new CollectorRoute
+            var route = new CollectorRoute
             {
                 RouteId = "R-SG-101",
                 RouteName = "Route SG-East",
@@ -1084,9 +1084,9 @@ namespace ADWebApplication.Controllers
                     .ThenInclude(rp => rp.RouteStops)
                         .ThenInclude(rs => rs.CollectionDetails)
                 .Where(ra => ra.AssignedTo == username
-                          && ra.RoutePlans.Any(rp => 
+                          && ra.RoutePlans.Any(rp =>
                               rp.PlannedDate.HasValue
-                              && rp.PlannedDate.Value.Date == DateTime.Today 
+                              && rp.PlannedDate.Value.Date == DateTime.Today
                               && rp.RouteStatus != "Completed"))
                 .FirstOrDefaultAsync();
 

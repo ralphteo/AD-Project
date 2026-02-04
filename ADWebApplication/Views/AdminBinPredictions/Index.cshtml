@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "Bin Fill Predictions";
-    Layout = "_DashboardLayout"; 
+    Layout = "_DashboardLayout";
 }
 
 @if (TempData["PredictionRefreshSuccess"] != null)
@@ -105,7 +105,7 @@
         </div>
     </div>
 
-    
+
     <form method="get" class="d-flex align-items-center gap-3 flex-wrap mb-3">
 
         <input type="hidden" name="sortDir" value="@Model.SortDir" />
@@ -131,18 +131,19 @@
         <div class="d-flex align-items-center gap-2">
 
             <!-- Sort direction toggle -->
-            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleSortDir()" title="Toggle sort direction">
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleSortDir()"
+                title="Toggle sort direction">
                 <i class="bi bi-arrow-down-up @(Model.SortDir == "desc" ? "sort-desc" : "")"></i>
             </button>
 
             <select name="sort" class="form-select form-select-sm w-auto" onchange="updateSortField(this.value)">
-                <option value="DaysToThreshold" selected="@(Model.SortBy=="DaysToThreshold")">
+                <option value="DaysToThreshold" selected="@(Model.SortBy == "DaysToThreshold")">
                     Days to Threshold
                 </option>
-                <option value="EstimatedFill" selected="@(Model.SortBy=="EstimatedFill")">
+                <option value="EstimatedFill" selected="@(Model.SortBy == "EstimatedFill")">
                     Estimated Fill
                 </option>
-                <option value="AvgGrowth" selected="@(Model.SortBy=="AvgGrowth")">
+                <option value="AvgGrowth" selected="@(Model.SortBy == "AvgGrowth")">
                     Avg Daily Growth
                 </option>
             </select>
@@ -158,31 +159,31 @@
     </form>
 </div>
 
-    <!-- alert banner -->
-    @if (Model.HighRiskUnscheduledCount > 0)
-    {
-        <div class="alert alert-danger d-flex align-items-center justify-content-between mb-3">
-            <div class="d-flex align-items-center gap-3">
-                <i class="bi bi-exclamation-circle-fill fs-4"></i>
-                <div>
-                    <strong>
-                        @Model.HighRiskUnscheduledCount high-risk bin@(Model.HighRiskUnscheduledCount > 1 ? "s are" : " is")
-                        not yet scheduled for collection
-                    </strong>
-                    <div class="small">
-                        Immediate action required to prevent overflow
-                    </div>
+<!-- alert banner -->
+@if (Model.HighRiskUnscheduledCount > 0)
+{
+    <div class="alert alert-danger d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-exclamation-circle-fill fs-4"></i>
+            <div>
+                <strong>
+                    @Model.HighRiskUnscheduledCount high-risk bin@(Model.HighRiskUnscheduledCount > 1 ? "s are" : " is")
+                    not yet scheduled for collection
+                </strong>
+                <div class="small">
+                    Immediate action required to prevent overflow
                 </div>
             </div>
-
-            <a href="#" class="btn btn-danger">
-                <i class="bi bi-lightning-fill me-1"></i>
-                View in Route Planning
-            </a>
         </div>
-    }
 
-    @functions {
+        <a href="#" class="btn btn-danger">
+            <i class="bi bi-lightning-fill me-1"></i>
+            View in Route Planning
+        </a>
+    </div>
+}
+
+@functions {
     string FillBarClass(double fill)
     {
         if (fill >= 75) return "bg-danger";
@@ -191,46 +192,44 @@
     }
 }
 
-    <!-- Prediction Bin table -->
-    <div class="card shadow-sm overflow-hidden rounded-3">
-        <div class="card-body p-0">
-            <table class="table table-hover mb-0 align-middle">
-                <thead class="table-light border-bottom">
-                    <tr class="align-middle">
-                        <th style="width:36px;">
-                            <input type="checkbox" id="selectAllBins" />
-                        </th>
+<!-- Prediction Bin table -->
+<div class="card shadow-sm overflow-hidden rounded-3">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light border-bottom">
+                <tr class="align-middle">
+                    <th style="width:36px;">
+                        <input type="checkbox" id="selectAllBins" />
+                    </th>
 
-                        <th class="th-tight">Bin ID</th>
-                        <th class="th-tight">Region</th>
+                    <th class="th-tight">Bin ID</th>
+                    <th class="th-tight">Region</th>
 
-                        <th class="th-tight">
-                            Estimated Fill
-                            <i class="bi bi-info-circle ms-1"
-                            data-bs-toggle="tooltip"
+                    <th class="th-tight">
+                        Estimated Fill
+                        <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
                             title="Estimated fill level today based on ML growth">
-                            </i>
-                        </th>
+                        </i>
+                    </th>
 
-                        <th class="th-tight text-center">
-                            Avg. Daily Fill Growth
-                            <i class="bi bi-info-circle ms-1"
-                            data-bs-toggle="tooltip"
+                    <th class="th-tight text-center">
+                        Avg. Daily Fill Growth
+                        <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip"
                             title="Predicted average daily bin fill growth">
-                            </i>
-                        </th>
+                        </i>
+                    </th>
 
-                        <th class="th-tight">Est. Days to 80%</th>
-                        <th class="th-tight text-center">Risk Status</th>
-                        <th class="th-tight text-center">Planning Status</th>
+                    <th class="th-tight">Est. Days to 80%</th>
+                    <th class="th-tight text-center">Risk Status</th>
+                    <th class="th-tight text-center">Planning Status</th>
 
-                        <th class="th-tight text-center actions-col">
-                            Actions
-                        </th>
-                    </tr>
-                </thead>
+                    <th class="th-tight text-center actions-col">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
 
-                <tbody>
+            <tbody>
                 @if (!Model.Rows.Any())
                 {
                     <tr>
@@ -246,11 +245,9 @@
                         <tr class="@(row.AutoSelected ? "row-high-risk" : "")">
 
                             <td style="width:32px;">
-                                <input type="checkbox"
-                                    class="bin-checkbox"
-                                    value="@row.BinId" />
+                                <input type="checkbox" class="bin-checkbox" value="@row.BinId" />
                             </td>
-                            
+
                             <td class="fw-semibold text-center">
                                 @row.BinId
                             </td>
@@ -265,8 +262,7 @@
                                 </div>
 
                                 <div class="progress mt-2" style="height: 6px; background-color:#e9ecef;">
-                                    <div class="progress-bar @FillBarClass(row.EstimatedFillToday)"
-                                        role="progressbar"
+                                    <div class="progress-bar @FillBarClass(row.EstimatedFillToday)" role="progressbar"
                                         style="width:@row.EstimatedFillToday%">
                                     </div>
                                 </div>
@@ -302,24 +298,21 @@
                                 @if (row.RiskLevel == "High")
                                 {
                                     <span class="badge rounded-pill px-3 py-2 bg-danger-subtle text-danger fw-medium"
-                                        data-bs-toggle="tooltip"
-                                        title="Bin predicted to reach ≥ 80% fill within the next 3 days">
+                                        data-bs-toggle="tooltip" title="Bin predicted to reach ≥ 80% fill within the next 3 days">
                                         High Risk
                                     </span>
                                 }
                                 else if (row.RiskLevel == "Medium")
                                 {
                                     <span class="badge rounded-pill px-3 py-2 bg-warning-subtle text-warning fw-medium"
-                                        data-bs-toggle="tooltip"
-                                        title="Bin predicted to reach ≥ 80% fill within the next 4–7 days">
+                                        data-bs-toggle="tooltip" title="Bin predicted to reach ≥ 80% fill within the next 4–7 days">
                                         Medium Risk
                                     </span>
                                 }
                                 else
                                 {
                                     <span class="badge rounded-pill bg-secondary-subtle text-secondary fw-semibold"
-                                        data-bs-toggle="tooltip"
-                                        title="Bin predicted to reach ≥ 80% fill after 7 days">
+                                        data-bs-toggle="tooltip" title="Bin predicted to reach ≥ 80% fill after 7 days">
                                         Low Risk
                                     </span>
                                 }
@@ -339,8 +332,7 @@
                                 else
                                 {
                                     <span class="badge bg-danger-subtle text-danger d-inline-flex align-items-center gap-1"
-                                        data-bs-toggle="tooltip"
-                                        data-bs-placement="top"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
                                         title="High-risk bin flagged for collection planning. No route assigned yet.">
                                         <i class="bi bi-x-circle"></i>
                                         Not Scheduled
@@ -367,11 +359,11 @@
                         </tr>
                     }
                 }
-                </tbody>
-            </table>
+            </tbody>
+        </table>
 
-        </div>
     </div>
+</div>
 
 </div>
 
@@ -409,115 +401,114 @@
 }
 
 @section Scripts {
-<script>
-    // Bootstrap tooltips
-    document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll('[data-bs-toggle="tooltip"]')
-            .forEach(el => new bootstrap.Tooltip(el));
-    });
+    <script>
+        // Bootstrap tooltips
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll('[data-bs-toggle="tooltip"]')
+                .forEach(el => new bootstrap.Tooltip(el));
+        });
 
-    // Select all bins
-    document.getElementById("selectAllBins")?.addEventListener("change", function () {
-        const checked = this.checked;
-        document.querySelectorAll(".bin-checkbox")
-            .forEach(cb => cb.checked = checked);
-    });
+        // Select all bins
+        document.getElementById("selectAllBins")?.addEventListener("change", function () {
+            const checked = this.checked;
+            document.querySelectorAll(".bin-checkbox")
+                .forEach(cb => cb.checked = checked);
+        });
 
-    // Generate routes
-    document.getElementById("generateRoutesBtn")?.addEventListener("click", function () {
-        const selected = [...document.querySelectorAll(".bin-checkbox:checked")]
-            .map(cb => cb.value);
+        // Generate routes
+        document.getElementById("generateRoutesBtn")?.addEventListener("click", function () {
+            const selected = [...document.querySelectorAll(".bin-checkbox:checked")]
+                .map(cb => cb.value);
 
-        if (selected.length === 0) {
-            alert("Please select at least one bin.");
-            return;
+            if (selected.length === 0) {
+                alert("Please select at least one bin.");
+                return;
+            }
+
+            console.log("Selected bin IDs:", selected);
+            // WIP: POST route assignment
+        });
+
+        // Sort direction toggle
+        function toggleSortDir() {
+            const url = new URL(window.location.href);
+            const current = url.searchParams.get("sortDir") || "asc";
+            url.searchParams.set("sortDir", current === "asc" ? "desc" : "asc");
+            url.searchParams.set("page", 1);
+            window.location.href = url.toString();
         }
 
-        console.log("Selected bin IDs:", selected);
-        // WIP: POST route assignment
-    });
-
-    // Sort direction toggle
-    function toggleSortDir() {
-        const url = new URL(window.location.href);
-        const current = url.searchParams.get("sortDir") || "asc";
-        url.searchParams.set("sortDir", current === "asc" ? "desc" : "asc");
-        url.searchParams.set("page", 1);
-        window.location.href = url.toString();
-    }
-
-    //
-    function updateSortField(field) {
-        const url = new URL(window.location.href);
-        url.searchParams.set("sort", field);
-        url.searchParams.set("page", 1);
-        window.location.href = url.toString();
-    }
-</script>
+        //
+        function updateSortField(field) {
+            const url = new URL(window.location.href);
+            url.searchParams.set("sort", field);
+            url.searchParams.set("page", 1);
+            window.location.href = url.toString();
+        }
+    </script>
 }
 
 @section Styles {
-<style>
-    .sort-desc {
-        transform: rotate(180deg);
-        transition: transform 0.2s ease;
-    }
+    <style>
+        .sort-desc {
+            transform: rotate(180deg);
+            transition: transform 0.2s ease;
+        }
 
-    .table tbody tr td {
-        padding-top: 1.1rem;
-        padding-bottom: 1.1rem;
-        vertical-align: middle;
-    }
+        .table tbody tr td {
+            padding-top: 1.1rem;
+            padding-bottom: 1.1rem;
+            vertical-align: middle;
+        }
 
-    .table tbody tr {
-        border-bottom: 1px solid #eef1f5;
-    }
+        .table tbody tr {
+            border-bottom: 1px solid #eef1f5;
+        }
 
-    .row-high-risk {
-        border-left: 4px solid #dc3545;
-        background-color: #fff;
-    }
+        .row-high-risk {
+            border-left: 4px solid #dc3545;
+            background-color: #fff;
+        }
 
-    .row-high-risk:hover {
-        background-color: #fff5f5;
-    }
+        .row-high-risk:hover {
+            background-color: #fff5f5;
+        }
 
-    thead th {
-        letter-spacing: .03em;
-        color: #495057;
-    }
+        thead th {
+            letter-spacing: .03em;
+            color: #495057;
+        }
 
-    .route-action-btn {
-        padding: 6px 8px !important;
-        line-height: 1.2;
-        min-height: unset;
-        white-space: normal;
-        text-align: center;
-    }
+        .route-action-btn {
+            padding: 6px 8px !important;
+            line-height: 1.2;
+            min-height: unset;
+            white-space: normal;
+            text-align: center;
+        }
 
-    .th-tight {
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        color: #6c757d;
-        white-space: nowrap;
-        vertical-align: middle;
-    }
+        .th-tight {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: #6c757d;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
 
-    .actions-col {
-        width: 170px;
-        min-width: 170px;
-        text-align: center;
-    }
+        .actions-col {
+            width: 170px;
+            min-width: 170px;
+            text-align: center;
+        }
 
-    .table td .fs-5 {
-        font-size: 1.15rem !important;
-    }
+        .table td .fs-5 {
+            font-size: 1.15rem !important;
+        }
 
-    .table tbody tr:hover {
-        background-color: #f9fafb;
-    }
-
-</style>
+        .table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+    </style>
 }

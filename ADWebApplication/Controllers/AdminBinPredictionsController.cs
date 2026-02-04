@@ -29,7 +29,7 @@ public class AdminBinPredictionsController : Controller
         int refreshed = await _binPredictionService.RefreshPredictionsForNewCyclesAsync();
 
         TempData["PredictionRefreshSuccess"] = $"{refreshed} bin prediction(s) refreshed successfully.";
-        
+
         return RedirectToAction(nameof(Index));
     }
 }

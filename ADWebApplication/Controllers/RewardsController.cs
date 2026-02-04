@@ -70,7 +70,7 @@ namespace ADWebApplication.Controllers
                 .OrderByDescending(t => t.CreatedDateTime)
                 .Select(t => new RewardsHistoryDto
                 {
-                    TransactionId = t.TransactionId,  
+                    TransactionId = t.TransactionId,
                     Title = t.Points > 0
                         ? (t.DisposalLog != null
                             ? (t.DisposalLog.DisposalLogItem.ItemType != null
@@ -83,7 +83,7 @@ namespace ADWebApplication.Controllers
                             ? t.DisposalLog.DisposalLogItem.ItemType.Category.CategoryName
                             : "Other")
                         : "Other",
-                    Points =t.Points, 
+                    Points = t.Points,
                     CreatedAt = t.CreatedDateTime
                 })
                 .ToListAsync();

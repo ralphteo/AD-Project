@@ -53,7 +53,8 @@
                 <label class="form-label">Search</label>
                 <div class="input-with-icon">
                     <i class="bi bi-search"></i>
-                    <input type="text" name="search" class="form-control" placeholder="Search requests..." value="@Model.Search">
+                    <input type="text" name="search" class="form-control" placeholder="Search requests..."
+                        value="@Model.Search">
                 </div>
             </div>
             <div class="filter-field">
@@ -182,7 +183,8 @@
 
                     <div class="mb-3">
                         <label asp-for="Reason" class="form-label">Reason</label>
-                        <input asp-for="Reason" class="form-control" placeholder="e.g., Road construction, equipment issue, personal request..." required />
+                        <input asp-for="Reason" class="form-control"
+                            placeholder="e.g., Road construction, equipment issue, personal request..." required />
                         <span asp-validation-for="Reason" class="text-danger"></span>
                     </div>
 
@@ -199,7 +201,8 @@
 
                     <div class="mb-3">
                         <label asp-for="Description" class="form-label">Description</label>
-                        <textarea asp-for="Description" class="form-control" rows="4" placeholder="Provide detailed information about your request..." required></textarea>
+                        <textarea asp-for="Description" class="form-control" rows="4"
+                            placeholder="Provide detailed information about your request..." required></textarea>
                         <span asp-validation-for="Description" class="text-danger"></span>
                     </div>
 
@@ -251,10 +254,25 @@
         justify-content: center;
     }
 
-    .route-change .stat-icon.neutral { background: #e2e8f0; color: #64748b; }
-    .route-change .stat-icon.danger { background: #fee2e2; color: #ef4444; }
-    .route-change .stat-icon.warning { background: #ffedd5; color: #f97316; }
-    .route-change .stat-icon.success { background: #dcfce7; color: #16a34a; }
+    .route-change .stat-icon.neutral {
+        background: #e2e8f0;
+        color: #64748b;
+    }
+
+    .route-change .stat-icon.danger {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .route-change .stat-icon.warning {
+        background: #ffedd5;
+        color: #f97316;
+    }
+
+    .route-change .stat-icon.success {
+        background: #dcfce7;
+        color: #16a34a;
+    }
 
     .route-change .filter-card {
         background: #ffffff;
@@ -271,7 +289,10 @@
         align-items: end;
     }
 
-    .route-change .input-with-icon { position: relative; }
+    .route-change .input-with-icon {
+        position: relative;
+    }
+
     .route-change .input-with-icon i {
         position: absolute;
         left: 12px;
@@ -279,9 +300,15 @@
         transform: translateY(-50%);
         color: #94a3b8;
     }
-    .route-change .input-with-icon input { padding-left: 38px; }
 
-    .route-change .filter-actions { display: flex; gap: 10px; }
+    .route-change .input-with-icon input {
+        padding-left: 38px;
+    }
+
+    .route-change .filter-actions {
+        display: flex;
+        gap: 10px;
+    }
 
     .route-change .request-card {
         background: #ffffff;
@@ -292,20 +319,73 @@
         margin-bottom: 18px;
     }
 
-    .route-change .request-pills { display: flex; gap: 8px; margin-bottom: 12px; }
-    .route-change .pill { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
-    .route-change .pill-danger { background: #fee2e2; color: #b91c1c; }
-    .route-change .pill-warning { background: #ffedd5; color: #c2410c; }
-    .route-change .pill-success { background: #dcfce7; color: #15803d; }
-    .route-change .pill-low { background: #e0f2fe; color: #0369a1; }
+    .route-change .request-pills {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
 
-    .route-change .request-title { font-weight: 700; margin-bottom: 4px; }
-    .route-change .request-sub { color: #64748b; margin-bottom: 8px; }
-    .route-change .request-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
-    .route-change .request-row i { color: #94a3b8; margin-top: 3px; }
-    .route-change .request-label { font-weight: 600; }
-    .route-change .request-meta { color: #64748b; }
-    .route-change .request-desc { color: #0f172a; margin-bottom: 12px; }
+    .route-change .pill {
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 999px;
+    }
+
+    .route-change .pill-danger {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .route-change .pill-warning {
+        background: #ffedd5;
+        color: #c2410c;
+    }
+
+    .route-change .pill-success {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .route-change .pill-low {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+
+    .route-change .request-title {
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+    .route-change .request-sub {
+        color: #64748b;
+        margin-bottom: 8px;
+    }
+
+    .route-change .request-row {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        margin-bottom: 10px;
+    }
+
+    .route-change .request-row i {
+        color: #94a3b8;
+        margin-top: 3px;
+    }
+
+    .route-change .request-label {
+        font-weight: 600;
+    }
+
+    .route-change .request-meta {
+        color: #64748b;
+    }
+
+    .route-change .request-desc {
+        color: #0f172a;
+        margin-bottom: 12px;
+    }
 
     .route-change .request-meta-row {
         display: flex;
@@ -324,12 +404,27 @@
         border: 1px solid #e2e8f0;
     }
 
-    .route-change .review-title { font-weight: 600; margin-bottom: 6px; }
-    .route-change .review-note { color: #0f172a; }
-    .route-change .review-time { color: #64748b; margin-top: 6px; }
+    .route-change .review-title {
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .route-change .review-note {
+        color: #0f172a;
+    }
+
+    .route-change .review-time {
+        color: #64748b;
+        margin-top: 6px;
+    }
 
     @@media (max-width: 768px) {
-        .route-change .filter-grid { grid-template-columns: 1fr; }
-        .route-change .filter-actions { justify-content: flex-start; }
+        .route-change .filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .route-change .filter-actions {
+            justify-content: flex-start;
+        }
     }
 </style>

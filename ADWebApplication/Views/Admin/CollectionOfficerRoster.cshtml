@@ -9,21 +9,18 @@
     <h2 class="mb-0"><i class="bi bi-people"></i> Collection Officer Roster</h2>
 </div>
 <div class="d-flex justify-content-between align-items-center mb-3">
-    
-    <form method="get"
-          asp-action="CollectionOfficerRoster"
-          class="d-flex align-items-center gap-3 flex-nowrap">
+
+    <form method="get" asp-action="CollectionOfficerRoster" class="d-flex align-items-center gap-3 flex-nowrap">
 
         <div class="d-flex align-items-center gap-2">
             <label class="mb-0 text-nowrap">Available From:</label>
-            <input type="date" name="dateFrom" class="form-control" 
-            value="@Context.Request.Query["dateFrom"]" required />
+            <input type="date" name="dateFrom" class="form-control" value="@Context.Request.Query["dateFrom"]"
+                required />
         </div>
 
         <div class="d-flex align-items-center gap-2">
             <label class="mb-0 text-nowrap">Available To:</label>
-            <input type="date" name="dateTo" class="form-control"
-                   value="@Context.Request.Query["dateTo"]" required />
+            <input type="date" name="dateTo" class="form-control" value="@Context.Request.Query["dateTo"]" required />
         </div>
 
         <button type="submit" class="btn btn-primary text-nowrap">
@@ -45,8 +42,8 @@
 @if (Context.Request.Query.ContainsKey("dateFrom"))
 {
     <div class="alert alert-info mt-2">
-        Showing officers available from 
-        <strong>@Context.Request.Query["dateFrom"]</strong> to 
+        Showing officers available from
+        <strong>@Context.Request.Query["dateFrom"]</strong> to
         <strong>@Context.Request.Query["dateTo"]</strong>
     </div>
 }
@@ -56,11 +53,14 @@
     <thead class="table-primary">
         <tr>
             <th class="sortable" onclick="sortTable(0)"># <i class="bi bi-arrow-down-up"></i></th>
-            <th id="usernameHeader" class="sortable" onclick="sortTable(1)">Username <i class="bi bi-arrow-down-up"></i></th>
-            <th id="fullNameHeader" class="sortable" onclick="sortTable(2)">Full Name <i class="bi bi-arrow-down-up"></i></th>
+            <th id="usernameHeader" class="sortable" onclick="sortTable(1)">Username <i class="bi bi-arrow-down-up"></i>
+            </th>
+            <th id="fullNameHeader" class="sortable" onclick="sortTable(2)">Full Name <i
+                    class="bi bi-arrow-down-up"></i></th>
             <th id="emailHeader" class="sortable" onclick="sortTable(3)">Email <i class="bi bi-arrow-down-up"></i></th>
             <th id="roleHeader" class="sortable" onclick="sortTable(4)">Role <i class="bi bi-arrow-down-up"></i></th>
-            <th id="statusHeader" class="sortable" onclick="sortTable(5)">Status <i class="bi bi-arrow-down-up"></i></th>
+            <th id="statusHeader" class="sortable" onclick="sortTable(5)">Status <i class="bi bi-arrow-down-up"></i>
+            </th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -88,7 +88,8 @@
                     </td>
                     <td>
                         <!-- Route History Button -->
-                        <a href="@Url.Action("CollectionOfficerSchedule", "Admin", new { officerUsername = officer.Username })" class="btn btn-info btn-sm">
+                        <a href="@Url.Action("CollectionOfficerSchedule", "Admin", new { officerUsername = officer.Username })"
+                            class="btn btn-info btn-sm">
                             <i class="bi bi-clock"></i> Route History
                         </a>
                     </td>
@@ -106,50 +107,50 @@
 </table>
 
 @section Scripts {
-<script>
-    // Sort the table by the column index
-    function sortTable(columnIndex) {
-        var table = document.getElementById("officersTable");
-        var rows = Array.from(table.tBodies[0].rows);  // Get all rows in the tbody
-        var isAscending = table.getAttribute("data-sort-order") === "asc";  // Check the current sort order
+    <script>
+        // Sort the table by the column index
+        function sortTable(columnIndex) {
+            var table = document.getElementById("officersTable");
+            var rows = Array.from(table.tBodies[0].rows);  // Get all rows in the tbody
+            var isAscending = table.getAttribute("data-sort-order") === "asc";  // Check the current sort order
 
-        // Toggle sort direction for clicked column
-        isAscending = !isAscending;
-        table.setAttribute("data-sort-order", isAscending ? "asc" : "desc");
+            // Toggle sort direction for clicked column
+            isAscending = !isAscending;
+            table.setAttribute("data-sort-order", isAscending ? "asc" : "desc");
 
-        // Sort rows based on the content of the selected column (numeric or string)
-        rows.sort(function(a, b) {
-            var aText = a.cells[columnIndex].innerText.trim();
-            var bText = b.cells[columnIndex].innerText.trim();
+            // Sort rows based on the content of the selected column (numeric or string)
+            rows.sort(function (a, b) {
+                var aText = a.cells[columnIndex].innerText.trim();
+                var bText = b.cells[columnIndex].innerText.trim();
 
-            var aNum = parseFloat(aText.replace(/,/g, ''));
-            var bNum = parseFloat(bText.replace(/,/g, ''));
+                var aNum = parseFloat(aText.replace(/,/g, ''));
+                var bNum = parseFloat(bText.replace(/,/g, ''));
 
-            // If column contains numbers, sort numerically
-            if (!isNaN(aNum) && !isNaN(bNum)) {
-                return isAscending ? aNum - bNum : bNum - aNum;
-            }
+                // If column contains numbers, sort numerically
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return isAscending ? aNum - bNum : bNum - aNum;
+                }
 
-            // Else, sort by string (case-insensitive)
-            return isAscending
-                ? aText.localeCompare(bText)
-                : bText.localeCompare(aText);
-        });
+                // Else, sort by string (case-insensitive)
+                return isAscending
+                    ? aText.localeCompare(bText)
+                    : bText.localeCompare(aText);
+            });
 
-        // Re-append sorted rows to the table
-        rows.forEach(row => table.tBodies[0].appendChild(row));
-    }
-
-    // Search filter
-    function filterTable() {
-        var input = document.getElementById("searchBox");
-        var filter = input.value.toLowerCase();
-        var table = document.getElementById("officersTable");
-        var rows = table.tBodies[0].rows;
-
-        for (var i = 0; i < rows.length; i++) {
-            rows[i].style.display = rows[i].innerText.toLowerCase().includes(filter) ? "" : "none";
+            // Re-append sorted rows to the table
+            rows.forEach(row => table.tBodies[0].appendChild(row));
         }
-    }
-</script>
+
+        // Search filter
+        function filterTable() {
+            var input = document.getElementById("searchBox");
+            var filter = input.value.toLowerCase();
+            var table = document.getElementById("officersTable");
+            var rows = table.tBodies[0].rows;
+
+            for (var i = 0; i < rows.length; i++) {
+                rows[i].style.display = rows[i].innerText.toLowerCase().includes(filter) ? "" : "none";
+            }
+        }
+    </script>
 }

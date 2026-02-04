@@ -89,7 +89,7 @@ public class BinPredictionService
         int missingPredictionCount = 0;
 
         foreach (var bin in bins)
-        {   
+        {
             // Retrieve latest collection record of each bin and store in var latest
             if (!latestCollectionByBin.TryGetValue(bin.BinId, out var latest))
                 continue;
@@ -119,7 +119,7 @@ public class BinPredictionService
 
             // Count no. of days since last collection
             var daysElapsed = Math.Max((today - latest.CurrentCollectionDateTime.Value).TotalDays, 0);
-            
+
             // Bin fill % starts from 0 after collection
             var estimatedFillToday = Math.Clamp(predictedGrowth * daysElapsed, 0, 100);
 
@@ -222,7 +222,7 @@ public class BinPredictionService
 
         //pagination
         //counts no. of rows after filtering/sorting
-        var totalItems = query.Count(); 
+        var totalItems = query.Count();
         var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
         if (totalPages == 0)
@@ -306,7 +306,7 @@ public class BinPredictionService
             {
                 BinId = binId,
                 PredictedAvgDailyGrowth = ml.predicted_next_avg_daily_growth,
-                PredictedDate = now.UtcDateTime,        
+                PredictedDate = now.UtcDateTime,
                 ModelVersion = "v1"
             });
 

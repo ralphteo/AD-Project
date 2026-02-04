@@ -19,26 +19,26 @@ namespace ADWebApplication.Controllers
 
         // LIST
         [HttpGet]
-   [HttpGet]
-public async Task<IActionResult> Index()
-{
-    var list = await _db.Employees
-        .Include(e => e.Role)
-        .OrderBy(e => e.Username)
-        .Select(e => new EmployeeRowViewModel
+        [HttpGet]
+        public async Task<IActionResult> Index()
         {
-            Id = e.Id,
+            var list = await _db.Employees
+                .Include(e => e.Role)
+                .OrderBy(e => e.Username)
+                .Select(e => new EmployeeRowViewModel
+                {
+                    Id = e.Id,
 
-            Username = e.Username,
-            FullName = e.FullName,
-            Email = e.Email,
-            IsActive = e.IsActive,
-            RoleName = e.Role != null ? e.Role.Name : "-"
-        })
-        .ToListAsync();
+                    Username = e.Username,
+                    FullName = e.FullName,
+                    Email = e.Email,
+                    IsActive = e.IsActive,
+                    RoleName = e.Role != null ? e.Role.Name : "-"
+                })
+                .ToListAsync();
 
-    return View(list);
-}
+            return View(list);
+        }
 
         // CREATE (GET)
         [HttpGet]

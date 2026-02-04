@@ -10,20 +10,20 @@ public class EmpDbContext : DbContext
 
     public EmpDbContext(DbContextOptions<EmpDbContext> options) : base(options) { }
 
-protected override void OnModelCreating(ModelBuilder modelBuilder)
-{
-    modelBuilder.Entity<Employee>(e =>
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        e.HasKey(x => x.Username);
+        modelBuilder.Entity<Employee>(e =>
+        {
+            e.HasKey(x => x.Username);
 
-        e.HasOne(x => x.Role)
-         .WithMany(r => r.Employees)
-         .HasForeignKey(x => x.RoleId)
-         .OnDelete(DeleteBehavior.Restrict);
-    });
+            e.HasOne(x => x.Role)
+             .WithMany(r => r.Employees)
+             .HasForeignKey(x => x.RoleId)
+             .OnDelete(DeleteBehavior.Restrict);
+        });
 
-    modelBuilder.Entity<Role>()
-        .HasIndex(r => r.Name)
-        .IsUnique();
-}
+        modelBuilder.Entity<Role>()
+            .HasIndex(r => r.Name)
+            .IsUnique();
+    }
 }

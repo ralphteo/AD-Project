@@ -2,7 +2,7 @@ namespace ADWebApplication.Models.DTOs
 {
     public class DisposalHistoryDto
     {
-          public int LogId { get; set; }
+        public int LogId { get; set; }
         public DateTime DisposalTimeStamp { get; set; }
         public double EstimatedTotalWeight { get; set; }
         public string? Feedback { get; set; }
