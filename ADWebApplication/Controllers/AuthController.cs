@@ -1,3 +1,4 @@
+using System.Reflection.Metadata;
 using ADWebApplication.Data;
 using ADWebApplication.Models;
 using ADWebApplication.Models.DTOs;
@@ -26,6 +27,25 @@ public class AuthController : ControllerBase
             .ToListAsync();
 
         return Ok(regions);
+    }
+    [HttpGet("profile")]
+    public async Task<ActionResult<UserProfileDto>> GetUser([FromQuery] int userId)
+    {
+        var user = await _db.PublicUser
+        .AsNoTracking()
+        .FirstOrDefaultAsync(u=>u.Id==userId);
+
+        if (user == null)
+        {
+            return Ok(new UserProfileDto());
+        }
+        return Ok(new UserProfileDto
+        {
+            UserId = user.Id,
+            UserName = user.Name,
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber
+        });
     }
 
     [HttpPost("register")]
@@ -104,7 +124,7 @@ public class AuthController : ControllerBase
         {
             Success = true,
             Message = "Logged in",
-            UserId = user.Id
+            UserId = user.Id,
         });
     }
 
