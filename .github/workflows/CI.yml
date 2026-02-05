@@ -39,7 +39,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sonar-report
-          path: .sonarqube/out || echo "No artifacts to upload"
+          path: .sonarqube/out
+          if-no-files-found: warn
 
       - name: Install OWASP Dependency-Check
         run: |
