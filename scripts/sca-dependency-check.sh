@@ -5,7 +5,16 @@ set -e
 DATA_DIR="./dependency-check-data"
 mkdir -p "$DATA_DIR"
 
-# Run OWASP Dependency-Check using binary installed in PATH
+# Determine if database already exists
+if [ -d "$DATA_DIR/nvd" ]; then
+    echo "Using cached Dependency-Check database"
+    UPDATE_FLAG="-n"  # don't auto-update
+else
+    echo "No cached database found, allowing update"
+    UPDATE_FLAG=""    # allow update for first run
+fi
+
+# Run Dependency-Check
 dependency-check.sh \
   --project ADWebApplication \
   --scan . \
@@ -14,4 +23,4 @@ dependency-check.sh \
   --data "$DATA_DIR" \
   --nvdApiKey "${NVD_API_KEY}" \
   --failOnCVSS 9 \
-  -n  # disables auto-update, uses cached DB
+  $UPDATE_FLAG
