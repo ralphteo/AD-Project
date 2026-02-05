@@ -12,7 +12,7 @@ dotnet sonarscanner begin \
   /d:sonar.coverage.exclusions="**/Program.cs"
 
 # Build solution
-dotnet build ./ADWebApplication.sln
+dotnet build ./AD-Project.sln.sln
 
 # Run tests and collect coverage
 dotnet test ./ADWebApplication.Tests/ADWebApplication.Tests.csproj \
