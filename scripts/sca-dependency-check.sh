@@ -6,7 +6,7 @@ DATA_DIR="./dependency-check-data"
 mkdir -p "$DATA_DIR"
 
 # Run Dependency-Check with API key and local cache
-dependency-check.sh \
+dependency-check \
   --project ADWebApplication \
   --scan . \
   --format ALL \

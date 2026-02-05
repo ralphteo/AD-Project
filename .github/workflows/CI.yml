@@ -8,6 +8,7 @@ on:
 
 env:
   DEPENDENCY_CHECK_VERSION: v9.0.7
+  NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
 
 jobs:
   build-and-scan:
@@ -49,7 +50,7 @@ jobs:
           unzip dependency-check-*.zip
           chmod +x dependency-check/bin/dependency-check.sh
           sudo mv dependency-check /usr/local/dependency-check
-          sudo ln -s /usr/local/dependency-check/bin/dependency-check.sh /usr/local/bin/dependency-check
+          sudo ln -s /usr/local/dependency-check/bin/dependency-check /usr/local/bin/dependency-check
 
       - name: Cache Dependency-Check DB
         uses: actions/cache@v3
@@ -61,6 +62,8 @@ jobs:
 
       - name: Run Dependency Check
         run: ./scripts/sca-dependency-check.sh
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
 
       - name: Upload Dependency Check Report
         if: success()
