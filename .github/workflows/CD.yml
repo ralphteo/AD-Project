@@ -46,8 +46,8 @@ jobs:
           package: publish
       
       # Wait for the app to be fully deployed and running
-      - name: Wait 10 minutes for app to stabilize
-        run: sleep 600    # 600 seconds = 10 minutes
+      - name: Wait 2 minutes for app to stabilize
+        run: sleep 120    # 120 seconds = 2 minutes
 
       # Run ZAP DAST scan
       - name: Run OWASP ZAP DAST on deployed app
@@ -60,10 +60,3 @@ jobs:
             -J report_json.json
             -r report_html.html
           allow_issue_writing: false
-
-      - name: Upload ZAP DAST Report
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-live-report
-          path: ./zap-live-report
