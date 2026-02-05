@@ -1,0 +1,28 @@
+name: Nightly DAST
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # Runs daily at 2 AM UTC
+  workflow_dispatch:
+
+jobs:
+  zap-nightly:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run OWASP ZAP Full Scan
+        uses: zaproxy/action-full-scan@v0.10.0
+        with:
+          target: "https://in5nite-e8d9b0g5cad9hrbg.southeastasia-01.azurewebsites.net/"
+          fail_action: false
+          artifact_name: zap-nightly-report
+          cmd_options: >
+            -J report_json.json
+            -r report_html.html
+
+      - name: Upload ZAP DAST Report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-nightly-report
+          path: ./zap-nightly-report

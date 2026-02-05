@@ -55,7 +55,7 @@ jobs:
           cmd_options: >
             -J report_json.json
             -r report_html.html
-          allow_issue_writing: falses
+          allow_issue_writing: false
 
       - name: Upload ZAP DAST Report
         if: success()

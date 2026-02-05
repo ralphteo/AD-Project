@@ -22,9 +22,6 @@ jobs:
       - name: Make scripts executable
         run: chmod +x ./scripts/*.sh
 
-      - name: Build
-        run: ./scripts/build.sh
-
       - name: Install SonarScanner
         run: dotnet tool install --global dotnet-sonarscanner
 
@@ -62,13 +59,3 @@ jobs:
         with:
           name: dependency-check-report
           path: ./dependency-check-report
-
-      - name: Local DAST Scan
-        run: ./scripts/dast-zap.sh
-
-      - name: Upload ZAP DAST Report
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-report
-          path: ./zap-report

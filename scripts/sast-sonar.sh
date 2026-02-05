@@ -8,7 +8,7 @@ dotnet sonarscanner begin \
   /d:sonar.host.url="https://sonarcloud.io" \
   /d:sonar.login="${SONAR_TOKEN}" \
   /d:sonar.projectBaseDir="." \
-  /d:sonar.cs.opencover.reportsPaths="./TestResults/**/coverage.opencover.xml" \
+  /d:sonar.cs.cobertura.reportsPaths="./TestResults/CoverageReport/Cobertura.xml" \
   /d:sonar.coverage.exclusions="**/Program.cs"
 
 # Build main project
