@@ -1,10 +1,10 @@
 name: CI
 
 on:
+  pull_request:          # Run CI check on Pull Requests
   push:
-    branches: [ main ]
-  pull_request:
-  workflow_dispatch:
+    branches: [ main ]   # Run CI check on main pushes
+  workflow_dispatch:     # Run CI check on manual trigger
 
 jobs:
   build-and-scan:
@@ -28,7 +28,10 @@ jobs:
       - name: Sonar Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./scripts/sonar.sh
+        run: ./scripts/sast-sonar.sh
 
       - name: Dependency Check
-        run: ./scripts/dependency-check.sh
+        run: ./scripts/sca-dependency-check.sh
+
+      - name: Local DAST Scan
+        run: ./scripts/dast-zap.sh

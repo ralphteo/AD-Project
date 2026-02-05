@@ -13,9 +13,10 @@ env:
 
 jobs:
   deploy:
+    # Only deploy if the CI run was on main branch
     if: |
       github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main'
+      github.event.workflow_run.head_branch == 'main' 
     runs-on: windows-latest
     environment: production
 
@@ -26,7 +27,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: ${{ env.DOTNET_VERSION}}
 
       - name: Restore
         run: dotnet restore ${{ env.PROJECT_PATH }}
@@ -44,7 +45,7 @@ jobs:
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: publish
 
-    # Deploy to Azure completed, now run ZAP DAST against deployed app (GitHub Action Orchestration + Implementation)
+      # Deploy to Azure completed, now run ZAP DAST against deployed app (GitHub Action Orchestration + Implementation)
       - name: Run OWASP ZAP DAST on deployed app
         uses: zaproxy/action-baseline@4ea3deb659d9a669dc5e5c10c49a423e8bb41420
         with:
