@@ -3,22 +3,24 @@
 @{
     ViewData["Title"] = "Route Management";
     Layout = "_DashboardLayout";
-    var activeOfficerIds = Model.AllStops.Where(s => s.AssignedCO > 0).Select(s => s.AssignedCO).Distinct().OrderBy(id =>
-    id).ToList();
-}
 
-@{
-    var totalHighPriority = Model.AllStops
-    .Where(s => s.IsHighPriority)
-    .Select(s => s.BinId)
+    var activeOfficerIds = Model.AllStops
+    .Select(s => s.RouteKey)
     .Distinct()
-    .Count();
+    .OrderBy(k => k)
+    .ToList();
+
+    var totalHighPriority = Model.AllStops
+        .Where(s => s.IsHighPriority)
+        .Select(s => s.BinId)
+        .Distinct()
+        .Count();
 
     var plannedHighPriority = Model.AllStops
-    .Where(s => s.IsHighPriority && s.AssignedCO > 0)
-    .Select(s => s.BinId)
-    .Distinct()
-    .Count();
+        .Where(s => s.IsHighPriority && !string.IsNullOrEmpty(s.AssignedOfficerName))
+        .Select(s => s.BinId)
+        .Distinct()
+        .Count();
 }
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -139,30 +141,67 @@ else
         <div class="sidebar-container pe-2">
             <h5 class="fw-bold mb-3">Officer Schedules</h5>
 
-            @foreach (var coId in activeOfficerIds)
+            @foreach (var route in Model.Routes)
             {
-                // 1. Get ALL stops for this officer, ordered correctly
-                var coStops = Model.AllStops
-                .Where(s => s.AssignedCO == coId)
-                .OrderBy(s => s.StopNumber)
-                .ToList();
+                var coStops = route.Stops;
 
-                <div class="card officer-card shadow-sm mb-3" data-officer-id="@coId">
+                <div class="card officer-card shadow-sm mb-3" data-officer-id="@route.RouteKey">
                     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center officer-header"
-                        role="button" aria-expanded="true" data-target="stops-@coId">
+                        role="button"
+                        aria-expanded="true"
+                        data-target="stops-@route.RouteKey">
 
                         <div class="d-flex align-items-center gap-2">
                             <i class="bi bi-chevron-down toggle-icon"></i>
-                            <h6 class="fw-bold mb-0 text-primary">Officer #@coId</h6>
+                            <h6 class="fw-bold mb-0 text-primary">
+                                Route #@route.RouteKey
+                            </h6>
                         </div>
 
                         <span class="badge bg-light text-dark border">
-                            @coStops.Count Stops · <span class="route-distance"></span> km
+                            @coStops.Count stops · <span class="route-distance"></span> km
                         </span>
                     </div>
 
-                    <!-- Collapsible body -->
-                    <div class="collapse show" id="stops-@coId">
+                    @if (!string.IsNullOrEmpty(route.AssignedOfficerName))
+                    {
+                        <div class="text-muted small mt-1">
+                            Assigned to: <strong>@route.AssignedOfficerName</strong>
+                        </div>
+                    }
+
+
+                    <form method="post" asp-action="AssignRoute" class="p-3 border-top">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="RouteId" value="@route.RouteKey" />
+
+                        <select name="OfficerUsername" class="form-select mb-2" required>
+                            <option value="">Select Officer</option>
+                            @foreach (var officer in Model.AvailableOfficers)
+                            {
+                                <option value="@officer.Username">
+                                    @officer.FullName
+                                </option>
+                            }
+                        </select>
+
+                        @if (!string.IsNullOrEmpty(route.AssignedOfficerName))
+                        {
+                            <button class="btn btn-sm btn-secondary w-100" disabled>
+                                Assigned
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="submit" class="btn btn-sm btn-primary w-100">
+                                Assign & Save Route
+                            </button>
+                        }
+                    </form>
+
+                    <!-- Stops -->
+                    <div class="collapse show" id="stops-@route.RouteKey">
                         <ul class="list-group list-group-flush">
                             @foreach (var stop in coStops)
                             {
@@ -180,18 +219,12 @@ else
                                             </span>
                                         }
                                     </div>
-
-                                    <div class="text-muted small mt-1">
-                                        <i class="bi bi-geo-alt"></i>
-                                        Lat: @stop.Latitude, Lng: @stop.Longitude
-                                    </div>
                                 </li>
                             }
-                        </ul>
-                    </div>
-                </div>
-
-            }
+                    </ul>
+               </div>
+            </div>
+        }
         </div>
     </div>
 
@@ -231,8 +264,8 @@ else
             // 2. Group data
             var grouped = {};
             rawStops.forEach(s => {
-                var id = getV(s, 'AssignedCO');
-                if (id > 0) (grouped[id] = grouped[id] || []).push(s);
+                var id = getV(s, 'RouteKey');
+                (grouped[id] = grouped[id] || []).push(s);
             });
 
             // 3. Draw Routes

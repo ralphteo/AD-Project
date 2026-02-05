@@ -15,6 +15,7 @@ namespace ADWebApplication.Models.DTOs
         //fields for web display
         public int AssignedCO {get; set;}
         public int StopNumber {get; set;}
+        public string? AssignedOfficerName { get; set; }
 
     }
 }

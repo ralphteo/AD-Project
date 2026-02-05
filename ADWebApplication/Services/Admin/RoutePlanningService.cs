@@ -178,7 +178,26 @@ namespace ADWebApplication.Services
             return new List<RoutePlanDto>();
 
         return GetOptimizedRoute(binsForPlanning, routing, manager, solution);
-        }
+    }
+
+   public async Task<List<SavedRouteStopDto>> GetPlannedRoutesAsync(DateTime date)
+    {
+        return await _db.RoutePlans
+            .Where(r => r.PlannedDate == date)
+            .Include(r => r.RouteAssignment)
+            .Include(r => r.RouteStops)
+                .ThenInclude(rs => rs.CollectionBin)
+            .SelectMany(r => r.RouteStops.Select(rs => new SavedRouteStopDto
+            {
+                RouteKey = r.RouteId,
+                BinId = rs.BinId,
+                Latitude = rs.CollectionBin!.Latitude.Value,
+                Longitude = rs.CollectionBin!.Longitude.Value,
+                StopNumber = rs.StopSequence,
+                AssignedOfficerName = r.RouteAssignment!.AssignedTo
+            }))
+            .ToListAsync();
+    }
 
 
         //helpers to calculate distance matrix

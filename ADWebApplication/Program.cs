@@ -20,6 +20,8 @@ builder.Services.AddScoped<ICollectorService, CollectorService>();
 builder.Services.AddScoped<ICollectorDashboardService, CollectorDashboardService>();
 builder.Services.AddScoped<ICollectorAssignmentService, CollectorAssignmentService>();
 builder.Services.AddScoped<ICollectorIssueService, CollectorIssueService>();
+builder.Services.AddScoped<IRouteAssignmentService, RouteAssignmentService>();
+
 
 
 builder.Services.AddDbContext<In5niteDbContext>(options =>
