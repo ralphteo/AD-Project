@@ -4,6 +4,18 @@ using ADWebApplication.Models.DTOs;
 using ADWebApplication.Models.ViewModels.BinPredictions;
 using ADWebApplication.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography.X509Certificates;
+using System.ComponentModel;
+using Microsoft.VisualBasic;
+using System.ComponentModel.DataAnnotations;
+using System.Runtime.InteropServices.Marshalling;
+using System.Net.WebSockets;
+using System.Reflection.Metadata;
+using System.Linq.Expressions;
+using System.Collections.Specialized;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Dynamic;
+using System.Reflection.Metadata.Ecma335;
 
 namespace ADWebApplication.Services;
 
@@ -316,4 +328,43 @@ public class BinPredictionService
         await db.SaveChangesAsync();
         return refreshed;
     }
+
+    //send high-priority bins to Route Planning (Sara)
+    public async Task<List<BinPriorityDto>> GetBinPrioritiesAsync()
+    {
+        var today = DateTimeOffset.UtcNow.Date;
+
+        var latestCollectionByBin = await GetLatestCollectionsAsync();
+        var latestPredictionByBin = await GetLatestPredictionsAsync();
+
+        var result = new List<BinPriorityDto>();
+
+        foreach (var (binId, latest) in latestCollectionByBin)
+        {
+            if (!latestPredictionByBin.TryGetValue(binId, out var prediction))
+            continue;
+
+            if(latest.CurrentCollectionDateTime == null)
+            continue;
+
+            var daysElapsed = Math.Max(
+                (today - latest.CurrentCollectionDateTime.Value).TotalDays, 0);
+
+            var estimatedFillToday = Math.Clamp(prediction.PredictedAvgDailyGrowth * daysElapsed, 0, 100);
+
+            int daysTo80 = estimatedFillToday >= 80
+            ? 0
+            : (int)Math.Ceiling(
+                (80 - estimatedFillToday) / prediction.PredictedAvgDailyGrowth
+            );
+
+            result.Add(new BinPriorityDto
+            {
+              BinId = binId,
+                DaysTo80 = daysTo80
+            });
+        }
+        return result;
+    }
+
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ADWebApplication.Services;
+using ADWebApplication.Models.ViewModels;
 
 [Authorize(Roles = "Admin")]
 [Route("Admin/RoutePlanning")]
@@ -14,17 +15,16 @@ public class AdminRoutePlanningController : Controller
     }
 
     [HttpGet("")]        
-    public async Task<IActionResult> Index(string? date = null)
+    public async Task<IActionResult>Index()
     {
-        // 1. Handle Date Logic
-        if (!DateTime.TryParse(date, out DateTime parsedDate))
+        var stops = await _routePlanningService.PlanRouteAsync();
+        var viewModel = new RoutePlanningViewModel
         {
-            parsedDate = DateTime.Today;
-        }
+            AllStops = stops,
+            CollectionDate = DateTime.Now.AddDays(1).ToString("dddd, dd MMMM")
+        };
 
-            var viewModel = await _routePlanningService
-            .GetRoutePlanningDetailsAsync(parsedDate);
+        return View(viewModel);
 
-            return View(viewModel);
-        }
+    }
 }

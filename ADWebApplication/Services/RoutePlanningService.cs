@@ -1,110 +1,257 @@
 using Google.OrTools.ConstraintSolver;
+using ADWebApplication.Data;
 using ADWebApplication.Models.DTOs;
+using ADWebApplication.Models.ViewModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace ADWebApplication.Services
 {
     public class RoutePlanningService
     {
-        public async Task<RoutePlanningViewModel> GetRoutePlanningDetailsAsync(DateTime date)
+        private readonly In5niteDbContext _db;
+        private readonly BinPredictionService _binPredictionService;
+
+        public RoutePlanningService(In5niteDbContext context, BinPredictionService binPredictionService)
         {
-            // 1. Define your raw mock data (The "Stops" we want to visit)
-            var rawStops = GetInitialMockStops();
+            _db = context;
+            _binPredictionService = binPredictionService;
 
-            // 2. Generate the Distance Matrix using coordinates
-            long[,] distanceMatrix = CreateDistanceMatrix(rawStops);
+        }
 
-            // 3. Solve using OR-Tools
-            var optimalIndices = SolveRoute(distanceMatrix, rawStops);
+        public async Task<List<RoutePlanDto>> PlanRouteAsync()
+        {
 
-            // 4. Reorder the stops based on the solution
-            var optimizedStops = new List<RouteStopDto>();
-            for (int i = 0; i < optimalIndices.Count; i++)
+        //this is to build the distance matrix from the lot/lan from database.
+        var bins = await _db.CollectionBins
+        .Where (bin => bin.BinStatus == "Active")
+        .Select(bin => new RoutePlanDto
+        {
+            BinId = bin.BinId,
+            Latitude = bin.Latitude,
+            Longitude = bin.Longitude
+        })
+        .ToListAsync();
+
+        //create a fake depot at index 0
+        var depot = new RoutePlanDto
+        {
+            BinId = 0, 
+            Latitude = 1.3521,
+            Longitude = 103.8198,
+            IsHighPriority = false
+        };
+
+        //combine bins with fake depot
+        var locations = new List<RoutePlanDto> {depot};
+        locations.AddRange(bins);
+
+        //flag high-priority bins here: this will refresh if BinPrediction also refreshes
+        var priorities = await _binPredictionService.GetBinPrioritiesAsync();
+        foreach (var loc in locations)
             {
-                var stop = rawStops[optimalIndices[i]];
-                stop.SequenceOrder = i + 1; // Update order based on optimization
-                optimizedStops.Add(stop);
+                var priorityData = priorities.FirstOrDefault(p => p.BinId == loc.BinId);
+                loc.IsHighPriority = priorityData?.IsHighPriority ?? false;
             }
 
-            return new RoutePlanningViewModel
+        //this is the actual matrix.
+        long[,] distanceMatrix = CreateDistanceMatrix(locations);
+
+        //create index manager (this is where OR-tools comes in)
+        int numberOfLocations = locations.Count;
+        int numberOfCOs = 7;
+        int startingNode = 0;
+
+        RoutingIndexManager manager = new RoutingIndexManager(
+            numberOfLocations,
+            numberOfCOs,
+            startingNode
+        );
+
+        RoutingModel routing = new RoutingModel(manager);
+
+        //now, make distance callback: a lookup rule given to OR-tools to explore routes
+        int transitCallbackIndex = routing.RegisterTransitCallback((long fromIndex, long toIndex) =>
+        {
+            var fromNode = manager.IndexToNode(fromIndex);
+            var toNode = manager.IndexToNode(toIndex);
+            return distanceMatrix[fromNode, toNode];
+        });
+
+        //tells OR-tools solver that this distance is to be minimized
+        routing.SetArcCostEvaluatorOfAllVehicles(transitCallbackIndex);
+
+        //create a distance dimension to track travel for each officer
+        routing.AddDimension(
+            transitCallbackIndex,
+            0, //no slack; officers don't wait
+            30000, //max distance per officer
+            true, //start at 0
+            "Distance"
+        );
+
+        RoutingDimension distanceDimension = routing.GetMutableDimension("Distance");
+
+
+        //set high cost to force solver to minimize difference between longest route and shortest route
+        distanceDimension.SetGlobalSpanCostCoefficient(100);
+
+        //to constraint the number of bins per officer
+        int countCallbackIndex = routing.RegisterUnaryTransitCallback((long fromIndex) =>
+        {
+            int nodeIndex = manager.IndexToNode(fromIndex);
+            return nodeIndex == 0 ? 0 : 1;
+        });
+
+        //set hard limit per officer
+        int maxBinsPerCO = (int)Math.Ceiling((double)locations.Count / numberOfCOs) + 2;
+        routing.AddDimension(
+            countCallbackIndex,
+            0,
+            maxBinsPerCO,
+            true, //start at 0
+            "BinCount"
+        );
+
+        RoutingDimension binCountDimension = routing.GetMutableDimension("BinCount");
+
+        //force the distribution evenness
+        int averageBins = (locations.Count - 1) / numberOfCOs;
+        for (int i = 0; i < numberOfCOs; i++)
             {
-                SelectedDate = date,
-                SelectedVehicleId = "All",
-                TotalStops = optimizedStops.Count,
-                EstimatedTotalDistance = 24.8, // Hardcoded for now
-                Stops = optimizedStops
-            };
+                binCountDimension.SetCumulVarSoftLowerBound(routing.End(i), averageBins, 100000);
+            }
+
+        //implement hard constraints for high-priority bins
+        long mandatoryPenalty = 10000000;
+        long optionalPenalty = 2000;
+        
+        //loop through all locations; node 0 is starting bin
+        for (int i = 1; i < locations.Count; i++)
+            {
+                long index = manager.NodeToIndex(i);
+                if (locations[i].IsHighPriority)
+                {
+                    routing.AddDisjunction(new long[] {index}, mandatoryPenalty);
+                }
+                else
+                {
+                    routing.AddDisjunction(new long[] {index}, optionalPenalty);
+                }
+            }
+
+        //search parameters
+        RoutingSearchParameters searchParameters = operations_research_constraint_solver.DefaultRoutingSearchParameters();
+
+        //pick cheapest path 
+        searchParameters.FirstSolutionStrategy = FirstSolutionStrategy.Types.Value.PathCheapestArc;
+
+        //untangle 7 routes
+        searchParameters.LocalSearchMetaheuristic = LocalSearchMetaheuristic.Types.Value.GuidedLocalSearch;
+
+        //give 2-second time limit to find best possible routes
+        searchParameters.TimeLimit = new Google.Protobuf.WellKnownTypes.Duration
+        {
+            Seconds = 2
+        };
+
+        //solve the problem
+        Assignment solution = routing.SolveWithParameters(searchParameters);
+
+        if (solution != null)
+            {
+                return GetOptimizedRoute(locations, routing, manager, solution);
+            }
+
+        return locations;
         }
 
-        private List<RouteStopDto> GetInitialMockStops()
-        {
-            return new List<RouteStopDto>
-            {
-                new RouteStopDto { LocationName = "Central Station (Depot)", Latitude = 1.290270, Longitude = 103.851959, BinType = "General", Status = "Completed" },
-                new RouteStopDto { LocationName = "North Plaza", Latitude = 1.352083, Longitude = 103.819836, BinType = "Recycling", Status = "Pending" },
-                new RouteStopDto { LocationName = "East Industrial Park", Latitude = 1.3236, Longitude = 103.9216, BinType = "Organic", Status = "Pending", IsHighRisk = true },
-                new RouteStopDto { LocationName = "West Mall", Latitude = 1.3331, Longitude = 103.7423, BinType = "General", Status = "Pending" },
-                new RouteStopDto { LocationName = "South Terminal", Latitude = 1.2655, Longitude = 103.8239, BinType = "Recycling", Status = "Pending" }
-            };
-        }
 
-        private long[,] CreateDistanceMatrix(List<RouteStopDto> stops)
-        {
-            int count = stops.Count;
-            long[,] matrix = new long[count, count];
+        //helpers to calculate distance matrix
+    private long[,] CreateDistanceMatrix(List<RoutePlanDto> locations)
+    {
+        int count = locations.Count;
+        long[,] distanceMatrix = new long[count, count];
 
-            for (int i = 0; i < count; i++)
+        for (int i = 0; i < count; i++)
             {
                 for (int j = 0; j < count; j++)
                 {
-                    // Haversine or simple Euclidean distance calculation
-                    matrix[i, j] = CalculateDistance(stops[i], stops[j]);
+                    if (i == j)
+                    {
+                        distanceMatrix[i, j] = 0;
+                        continue;
+                    }
+                    double dist = CalculateDistance(
+                        locations[i].Latitude ?? 0.0, 
+                        locations[i].Longitude ?? 0.0,
+                        locations[j].Latitude ?? 0.0, 
+                        locations[j].Longitude ?? 0.0);
+
+                        distanceMatrix[i, j] = (long)(dist * 1000); //scale to meters
+
                 }
             }
-            return matrix;
+            return distanceMatrix;
         }
 
-        private long CalculateDistance(RouteStopDto s1, RouteStopDto s2)
+        public double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
         {
-            // Simple integer-based distance for OR-Tools mock
-            double dLat = s2.Latitude - s1.Latitude;
-            double dLon = s2.Longitude - s1.Longitude;
-            return (long)(Math.Sqrt(dLat * dLat + dLon * dLon) * 100000); 
+            var R = 6371; // Earth's radius in kilometers
+            var dLat = ToRadians(lat2 - lat1);
+            var dLon = ToRadians(lon2 - lon1);
+            
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+            Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
+            Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return R * c;
         }
 
-        private List<int> SolveRoute(long[,] matrix, List<RouteStopDto> stops)
+        private double ToRadians(double angle) => Math.PI * angle / 180.0;
+    
+
+    //helper for getting optimized route
+    private List<RoutePlanDto> GetOptimizedRoute(
+        List<RoutePlanDto> locations,
+        RoutingModel routing, 
+        RoutingIndexManager manager, 
+        Assignment solution)
         {
-            int size = matrix.GetLength(0);
-            RoutingIndexManager manager = new RoutingIndexManager(size, 1, 0);
-            RoutingModel routing = new RoutingModel(manager);
+            var optimizedRoute = new List<RoutePlanDto>();
 
-            int transitCallbackIndex = routing.RegisterTransitCallback((long fromIndex, long toIndex) => {
-                return matrix[manager.IndexToNode(fromIndex), manager.IndexToNode(toIndex)];
-            });
-
-            routing.SetArcCostEvaluatorOfAllVehicles(transitCallbackIndex);
-
-            //ADD CONSTRAINT FOR HIGH RISK
-            for (int i = 1; i < size; i++)
+            //loop through 7 routes (routing.Vehicles() method from OR-tools)
+            for (int i = 0; i < routing.Vehicles(); ++i)
             {
-                if (stops[i].IsHighRisk)
+
+                var index = routing.Start(i);
+                int stopCount = 1;
+
+                while (!routing.IsEnd(index))
                 {
-                    long penalty = 100000;
-                    routing.AddDisjunction(new long[] {manager.NodeToIndex(i)}, penalty);
+                    var nodeIndex = manager.IndexToNode(index);
+                    var originalBin = locations[nodeIndex];
+
+                    //only add to list if it's not depot
+                    if (nodeIndex !=0)
+                    {
+                        var stopEntry = new RoutePlanDto
+                        {
+                            BinId = originalBin.BinId,
+                            Latitude = originalBin.Latitude,
+                            Longitude = originalBin.Longitude,
+                            IsHighPriority = originalBin.IsHighPriority,
+                            AssignedCO = i + 1,
+                            StopNumber = stopCount++
+                        };
+                        optimizedRoute.Add(stopEntry);
+                    }
+
+                    index = solution.Value(routing.NextVar(index));
                 }
             }
-            
-            RoutingSearchParameters searchParameters = operations_research_constraint_solver.DefaultRoutingSearchParameters();
-            searchParameters.FirstSolutionStrategy = FirstSolutionStrategy.Types.Value.PathCheapestArc;
-
-            Assignment solution = routing.SolveWithParameters(searchParameters);
-            
-            var result = new List<int>();
-            var index = routing.Start(0);
-            while (!routing.IsEnd(index)) {
-                result.Add(manager.IndexToNode(index));
-                index = solution.Value(routing.NextVar(index));
-            }
-            return result;
+            return optimizedRoute;
         }
+
     }
 }
