@@ -1,4 +1,4 @@
-name: CD - Deploy to Azure
+name: CD - Deploy to Azure and Run ZAP DAST
 
 on:
   workflow_run:
@@ -16,8 +16,8 @@ jobs:
     # Only deploy if the CI run was on main branch
     if: |
       github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main' 
-    runs-on: windows-latest
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest        # <-- Use Linux runner for ZAP Docker
     environment: production
 
     steps:
@@ -27,7 +27,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION}}
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore
         run: dotnet restore ${{ env.PROJECT_PATH }}
@@ -45,7 +45,10 @@ jobs:
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: publish
 
-      # Deploy to Azure completed, now run ZAP DAST against deployed app (GitHub Action Orchestration + Implementation)
+      - name: Wait 10 minutes for app to stabilize
+        run: sleep 600    # 600 seconds = 10 minutes
+
+      # Run ZAP DAST scan
       - name: Run OWASP ZAP DAST on deployed app
         uses: zaproxy/action-baseline@4ea3deb659d9a669dc5e5c10c49a423e8bb41420
         with:

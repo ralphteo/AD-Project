@@ -1,4 +1,4 @@
-name: CI
+name: CI - SonarCloud + OWASP Dependency-Check
 
 on:
   pull_request:
@@ -34,7 +34,15 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_ORG: ${{ secrets.SONAR_ORG }}
         run: ./scripts/sast-sonar.sh
-        
+      
+      #- name: Check SonarCloud Quality Gate
+      #  uses: sonarsource/sonarcloud-github-action@master
+      #  with:
+      #    args: >
+      #      /d:sonar.login='$'{{ secrets.SONAR_TOKEN }}
+      #  env:
+      #    SONAR_TOKEN: '$'{{ secrets.SONAR_TOKEN }}
+      
       - name: Upload Sonar Artifacts
         if: always()
         uses: actions/upload-artifact@v4
