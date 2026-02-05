@@ -2,13 +2,13 @@ name: CD - Deploy to Azure and Run ZAP DAST
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["CI - SonarCloud + OWASP Dependency-Check"]
     types:
       - completed
 
 env:
   AZURE_WEBAPP_NAME: in5nite
-  DOTNET_VERSION: '8.0.x'
+  DOTNET_VERSION: '10.0.x'
   PROJECT_PATH: './ADWebApplication/ADWebApplication.csproj'
 
 jobs:
@@ -44,7 +44,8 @@ jobs:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: publish
-
+      
+      # Wait for the app to be fully deployed and running
       - name: Wait 10 minutes for app to stabilize
         run: sleep 600    # 600 seconds = 10 minutes
 
