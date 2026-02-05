@@ -1,4 +1,4 @@
-name: CI - SonarCloud SAST + OWASP Dependency-Check SCA
+name: CI
 
 on:
   pull_request:
