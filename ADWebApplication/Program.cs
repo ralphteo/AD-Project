@@ -72,12 +72,10 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 //ML Flask
-builder.Services.AddHttpClient<BinPredictionService>(client =>
+builder.Services.AddHttpClient<IBinPredictionService, BinPredictionService>(client =>
 {
     client.BaseAddress = new Uri("https://in5nite-ml-fdcycfe6gkfnhdg2.southeastasia-01.azurewebsites.net");
 });
-
-builder.Services.AddScoped<IBinPredictionService, BinPredictionService>();
 
 builder.Services.AddAuthorization();
 
