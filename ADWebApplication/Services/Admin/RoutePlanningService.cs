@@ -50,15 +50,23 @@ namespace ADWebApplication.Services
         foreach (var loc in locations)
             {
                 var priorityData = priorities.FirstOrDefault(p => p.BinId == loc.BinId);
-                loc.IsHighPriority = priorityData?.IsHighPriority ?? false;
+                loc.IsHighPriority = priorityData != null && priorityData.DaysTo80 <= 1;
             }
 
+        //filter High risk bins only
+        var binsForPlanning = locations
+            .Where(l => l.BinId == 0 || l.IsHighPriority)
+            .ToList();
+
+        if (binsForPlanning.Count <= 1)
+            return new List<RoutePlanDto>();
+
         //this is the actual matrix.
-        long[,] distanceMatrix = CreateDistanceMatrix(locations);
+        long[,] distanceMatrix = CreateDistanceMatrix(binsForPlanning);
 
         //create index manager (this is where OR-tools comes in)
-        int numberOfLocations = locations.Count;
-        int numberOfCOs = 7;
+        int numberOfLocations = binsForPlanning.Count;
+        int numberOfCOs = 3;
         int startingNode = 0;
 
         RoutingIndexManager manager = new RoutingIndexManager(
@@ -84,7 +92,7 @@ namespace ADWebApplication.Services
         routing.AddDimension(
             transitCallbackIndex,
             0, //no slack; officers don't wait
-            30000, //max distance per officer
+            60000, //max distance per officer
             true, //start at 0
             "Distance"
         );
@@ -103,7 +111,7 @@ namespace ADWebApplication.Services
         });
 
         //set hard limit per officer
-        int maxBinsPerCO = (int)Math.Ceiling((double)locations.Count / numberOfCOs) + 2;
+        int maxBinsPerCO = (int)Math.Ceiling((double)(binsForPlanning.Count-1) / numberOfCOs) + 2;
         routing.AddDimension(
             countCallbackIndex,
             0,
@@ -115,27 +123,36 @@ namespace ADWebApplication.Services
         RoutingDimension binCountDimension = routing.GetMutableDimension("BinCount");
 
         //force the distribution evenness
-        int averageBins = (locations.Count - 1) / numberOfCOs;
+        int averageBins = (binsForPlanning.Count - 1) / numberOfCOs;
         for (int i = 0; i < numberOfCOs; i++)
             {
                 binCountDimension.SetCumulVarSoftLowerBound(routing.End(i), averageBins, 100000);
             }
 
         //implement hard constraints for high-priority bins
-        long mandatoryPenalty = 10000000;
+        //long mandatoryPenalty = 10000000;
         long optionalPenalty = 2000;
         
         //loop through all locations; node 0 is starting bin
-        for (int i = 1; i < locations.Count; i++)
+        // for (int i = 1; i < locations.Count; i++)
+        //     {
+        //         long index = manager.NodeToIndex(i);
+        //         if (locations[i].IsHighPriority)
+        //         {
+        //             routing.AddDisjunction(new long[] {index}, mandatoryPenalty);
+        //         }
+        //         else
+        //         {
+        //             routing.AddDisjunction(new long[] {index}, optionalPenalty);
+        //         }
+        //     }
+        for (int i = 1; i < binsForPlanning.Count; i++)
             {
                 long index = manager.NodeToIndex(i);
-                if (locations[i].IsHighPriority)
+
+                if (!binsForPlanning[i].IsHighPriority)
                 {
-                    routing.AddDisjunction(new long[] {index}, mandatoryPenalty);
-                }
-                else
-                {
-                    routing.AddDisjunction(new long[] {index}, optionalPenalty);
+                    routing.AddDisjunction(new long[] { index }, optionalPenalty);
                 }
             }
 
@@ -157,12 +174,10 @@ namespace ADWebApplication.Services
         //solve the problem
         Assignment solution = routing.SolveWithParameters(searchParameters);
 
-        if (solution != null)
-            {
-                return GetOptimizedRoute(locations, routing, manager, solution);
-            }
+        if (solution == null)
+            return new List<RoutePlanDto>();
 
-        return locations;
+        return GetOptimizedRoute(binsForPlanning, routing, manager, solution);
         }
 
 
