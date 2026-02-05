@@ -214,34 +214,45 @@ public class BinPredictionService : IBinPredictionService
             query = query.Where(r => r.EstimatedDaysToThreshold <= 7);
 
         // to list high risk unscheduled bins first
-        IOrderedEnumerable<BinPredictionsTableViewModel> orderedQuery =
-            query.OrderBy(r =>
-                r.RiskLevel == "High" && r.PlanningStatus == "Not Scheduled" ? 0 :
-                r.RiskLevel == "High" ? 1 :
-                r.RiskLevel == "Medium" ? 2 :
-                3
-            );
+        bool isDefaultSort = sort == "EstimatedFill" && sortDir == "desc";
 
-        // sorting
-        bool isDesc = sortDir == "desc";
+        IEnumerable<BinPredictionsTableViewModel> orderedQuery;
 
-        if (sort == "EstimatedFill")
+        if (isDefaultSort)
         {
-            orderedQuery = isDesc
-                ? query.OrderByDescending(r => r.EstimatedFillToday)
-                : query.OrderBy(r => r.EstimatedFillToday);
-        }
-        else if (sort == "AvgGrowth")
-        {
-            orderedQuery = isDesc
-                ? query.OrderByDescending(r => r.PredictedNextAvgDailyGrowth ?? -1)
-                : query.OrderBy(r => r.PredictedNextAvgDailyGrowth ?? double.MaxValue);
+            // Priority view
+            orderedQuery = query
+                .OrderBy(r =>
+                    r.RiskLevel == "High" && r.PlanningStatus == "Not Scheduled" ? 0 :
+                    r.RiskLevel == "High" ? 1 :
+                    r.RiskLevel == "Medium" ? 2 :
+                    3
+                )
+                .ThenByDescending(r => r.EstimatedFillToday);
         }
         else
         {
-            orderedQuery = isDesc
-                ? query.OrderByDescending(r => r.EstimatedDaysToThreshold ?? int.MaxValue)
-                : query.OrderBy(r => r.EstimatedDaysToThreshold ?? int.MaxValue);
+            // User-controlled sorting
+            bool isDesc = sortDir == "desc";
+
+            if (sort == "EstimatedFill")
+            {
+                orderedQuery = isDesc
+                    ? query.OrderByDescending(r => r.EstimatedFillToday)
+                    : query.OrderBy(r => r.EstimatedFillToday);
+            }
+            else if (sort == "AvgGrowth")
+            {
+                orderedQuery = isDesc
+                    ? query.OrderByDescending(r => r.PredictedNextAvgDailyGrowth ?? -1)
+                    : query.OrderBy(r => r.PredictedNextAvgDailyGrowth ?? double.MaxValue);
+            }
+            else
+            {
+                orderedQuery = isDesc
+                    ? query.OrderByDescending(r => r.EstimatedDaysToThreshold ?? int.MaxValue)
+                    : query.OrderBy(r => r.EstimatedDaysToThreshold ?? int.MaxValue);
+            }
         }
 
         //pagination
@@ -281,6 +292,7 @@ public class BinPredictionService : IBinPredictionService
             HighRiskUnscheduledCount = rows.Count(r =>
                 r.RiskLevel == "High" && r.PlanningStatus == "Not Scheduled"
             ),
+            IsDefaultPriorityView = isDefaultSort,
 
             NewCycleDetectedCount = newCycleDetectedCount,
             MissingPredictionCount = missingPredictionCount

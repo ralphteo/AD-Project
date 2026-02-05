@@ -16,6 +16,7 @@ public class BinPredictionsPageViewModel
 
     // Banner
     public int HighRiskUnscheduledCount { get; set; }
+    public bool IsDefaultPriorityView { get; set; }
 
     // Pagination
     public int CurrentPage { get; set; }
