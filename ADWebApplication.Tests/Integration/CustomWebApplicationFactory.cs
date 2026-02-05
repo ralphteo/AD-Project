@@ -17,9 +17,6 @@ namespace ADWebApplication.Tests.Integration
             builder.ConfigureServices(services =>
             {
                 ReplaceDbContext<In5niteDbContext>(services);
-                ReplaceDbContext<EmpDbContext>(services);
-                ReplaceDbContext<LogDisposalDbContext>(services);
-                ReplaceDbContext<DashboardDbContext>(services);
 
                 var sp = services.BuildServiceProvider();
                 using var scope = sp.CreateScope();
