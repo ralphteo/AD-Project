@@ -1,4 +1,5 @@
 using ADWebApplication.Data;
+using ADWebApplication.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,9 +9,9 @@ namespace ADWebApplication.Controllers
     [Route("api/lookup")]
     public class LookupController : ControllerBase
     {
-        private readonly LogDisposalDbContext _context;
+        private readonly In5niteDbContext _context;
 
-        public LookupController(LogDisposalDbContext context)
+        public LookupController(In5niteDbContext context)
         {
             _context = context;
         }

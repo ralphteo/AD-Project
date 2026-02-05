@@ -1,4 +1,5 @@
 using ADWebApplication.Data;
+using ADWebApplication.Data;
 using ADWebApplication.Models;
 using ADWebApplication.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -10,9 +11,9 @@ namespace ADWebApplication.Controllers
     [Authorize(Roles = "HR")]
     public class HrController : Controller
     {
-        private readonly EmpDbContext _db;
+        private readonly In5niteDbContext _db;
 
-        public HrController(EmpDbContext db)
+        public HrController(In5niteDbContext db)
         {
             _db = db;
         }

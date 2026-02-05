@@ -17,5 +17,6 @@ namespace ADWebApplication.Models.DTOs
         public string? CategoryName { get; set; }
         public int EarnedPoints { get; set; }   // calculated
         public string? LocationName { get; set; }
+
     }
 }
