@@ -17,7 +17,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       - name: Make scripts executable
         run: chmod +x ./scripts/*.sh
@@ -35,20 +35,20 @@ jobs:
         run: ./scripts/sast-sonar.sh
         
       - name: Upload Sonar Artifacts
-        if: success()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sonar-report
-          path: .sonarqube/out
+          path: .sonarqube/out || echo "No artifacts to upload"
 
       - name: Install OWASP Dependency-Check
         run: |
           VERSION=${DEPENDENCY_CHECK_VERSION}
-
           wget https://github.com/jeremylong/DependencyCheck/releases/download/${VERSION}/dependency-check-${VERSION#v}-release.zip
           unzip dependency-check-*.zip
           chmod +x dependency-check/bin/dependency-check.sh
-          sudo mv dependency-check/bin/dependency-check.sh /usr/local/bin/dependency-check.sh
+          sudo mv dependency-check /usr/local/dependency-check
+          sudo ln -s /usr/local/dependency-check/bin/dependency-check.sh /usr/local/bin/dependency-check
 
       - name: Run Dependency Check
         run: ./scripts/sca-dependency-check.sh
