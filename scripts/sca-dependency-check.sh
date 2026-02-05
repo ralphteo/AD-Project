@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-dependency-check.sh \
+# Run OWASP Dependency-Check
+dependency-check \
   --project ADWebApplication \
   --scan . \
   --format ALL \
