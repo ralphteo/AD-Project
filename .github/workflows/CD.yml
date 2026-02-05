@@ -1,0 +1,57 @@
+name: CD - Deploy to Azure
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+env:
+  AZURE_WEBAPP_NAME: in5nite
+  DOTNET_VERSION: '8.0.x'
+  PROJECT_PATH: './ADWebApplication/ADWebApplication.csproj'
+
+jobs:
+  deploy:
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: windows-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build
+        run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output publish
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: publish
+
+    # Deploy to Azure completed, now run ZAP DAST against deployed app (GitHub Action Orchestration + Implementation)
+      - name: Run OWASP ZAP DAST on deployed app
+        uses: zaproxy/action-baseline@4ea3deb659d9a669dc5e5c10c49a423e8bb41420
+        with:
+          target: "https://in5nite-e8d9b0g5cad9hrbg.southeastasia-01.azurewebsites.net/"
+          fail_action: false
+          artifact_name: zap-live-report
+          cmd_options: >
+            -J report_json.json
+            -r report_html.html
+          allow_issue_writing: false

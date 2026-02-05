@@ -1,8 +1,8 @@
-name: CI + SonarCloud + SCA + ZAP + Deploy
+name: ci
 
 on:
   push:
-    branches: [ main ]
+  #  branches: [ main ]
   pull_request:
   workflow_dispatch:
 
