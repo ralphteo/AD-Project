@@ -193,10 +193,14 @@
                 View in Route Planning
             </a>
         </div>
-        <p class="text-muted small mt-2 mb-3 d-flex align-items-center gap-2">
-            <i class="bi bi-info-circle"></i>
-            Unscheduled high-risk bins are automatically prioritised and displayed first in the table.
-        </p>
+        @if (Model.IsDefaultPriorityView)
+        {
+            <p class="text-muted small mt-2 mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-info-circle"></i>
+                Unscheduled high-risk bins are automatically prioritised and displayed first in the table.
+            </p>
+        }
+
     }
 
     @functions {
