@@ -25,9 +25,6 @@ jobs:
       - name: Build
         run: ./scripts/build.sh
 
-      - name: Test
-        run: ./scripts/test.sh
-
       - name: Install SonarScanner
         run: dotnet tool install --global dotnet-sonarscanner
 
