@@ -1,4 +1,5 @@
 using ADWebApplication.Data;
+using ADWebApplication.Data;
 using ADWebApplication.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,9 +16,9 @@ namespace ADWebApplication.Data.Repository
     }
     public class DashboardRepository : IDashboardRepository
     {
-        private readonly DashboardDbContext _db;
+        private readonly In5niteDbContext _db;
 
-        public DashboardRepository(DashboardDbContext db)
+        public DashboardRepository(In5niteDbContext db)
         {
             _db = db;
         }
@@ -30,20 +31,20 @@ namespace ADWebApplication.Data.Repository
             // 🔍 DEBUG: Multiple approaches
             Console.WriteLine("=== USER COUNT DEBUG ===");
 
-            var allUsers = await _db.Users.CountAsync();
+            var allUsers = await _db.PublicUser.CountAsync();
             Console.WriteLine($"All users: {allUsers}");
 
-            var activeUsers1 = await _db.Users.CountAsync(u => u.IsActive);
+            var activeUsers1 = await _db.PublicUser.CountAsync(u => u.IsActive);
             Console.WriteLine($"Active (u.IsActive): {activeUsers1}");
 
-            var activeUsers2 = await _db.Users.CountAsync(u => u.IsActive == true);
+            var activeUsers2 = await _db.PublicUser.CountAsync(u => u.IsActive == true);
             Console.WriteLine($"Active (u.IsActive == true): {activeUsers2}");
 
-            var activeUsers3 = await _db.Users.Where(u => u.IsActive).CountAsync();
+            var activeUsers3 = await _db.PublicUser.Where(u => u.IsActive).CountAsync();
             Console.WriteLine($"Active (Where clause): {activeUsers3}");
 
             // Check actual values
-            var sampleUsers = await _db.Users.Take(5).Select(u => new { u.Id, u.IsActive }).ToListAsync();
+            var sampleUsers = await _db.PublicUser.Take(5).Select(u => new { u.Id, u.IsActive }).ToListAsync();
             Console.WriteLine($"Sample users: {string.Join(", ", sampleUsers.Select(u => $"Id={u.Id},IsActive={u.IsActive}"))}");
 
             Console.WriteLine("=======================");
@@ -170,7 +171,7 @@ namespace ADWebApplication.Data.Repository
                 .OrderByDescending(g => g.Collections)
                 .ToListAsync();
 
-            var areaPopulation = await _db.Users
+            var areaPopulation = await _db.PublicUser
                 .Where(u => u.IsActive && u.RegionId != null)
                 .GroupBy(u => u.RegionId)
                 .Select(g => new

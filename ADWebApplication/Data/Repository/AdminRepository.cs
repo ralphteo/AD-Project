@@ -21,17 +21,16 @@ namespace ADWebApplication.Data.Repository
         Task<List<AssignedCollectionOfficerDto>> GetAssignedCollectionOfficersCalendarAsync(DateTime from, DateTime to);
     }
 
-   public class AdminRepository(DashboardDbContext dashboardDb, EmpDbContext empDb, In5niteDbContext infDb) : IAdminRepository
+   public class AdminRepository(In5niteDbContext infDb) : IAdminRepository
     {
-        private readonly DashboardDbContext _dashboardDb = dashboardDb;
-        private readonly EmpDbContext _empDb = empDb;
+
         private readonly In5niteDbContext _infDb = infDb;
 
 
         // View all collection bins and their current status
         public async Task<List<CollectionBin>> GetAllBinsAsync()
         {
-            return await _dashboardDb.CollectionBins
+            return await _infDb.CollectionBins
                 .AsNoTracking()
                 .Include(b => b.Region)
                 .OrderBy(b => b.RegionId)
@@ -42,7 +41,7 @@ namespace ADWebApplication.Data.Repository
         /// View all Collection Officers (username starts with CO-)
         public async Task<List<Employee>> GetAllCollectionOfficersAsync()
         {
-            return await _empDb.Employees
+            return await _infDb.Employees
                 .AsNoTracking()
                 .Include(e => e.Role)
                 .Where(e =>
@@ -55,7 +54,7 @@ namespace ADWebApplication.Data.Repository
         // View all Regions
         public async Task<List<Region>> GetAllRegionsAsync()
         {
-            return await _dashboardDb.Regions
+            return await _infDb.Regions
                 .AsNoTracking()
                 .OrderBy(r => r.RegionName)
                 .ToListAsync();
@@ -64,18 +63,18 @@ namespace ADWebApplication.Data.Repository
         // Delete a collection bin by ID
         public async Task DeleteBinAsync(int binId)
         {
-            var bin = await _dashboardDb.CollectionBins.FindAsync(binId);
+            var bin = await _infDb.CollectionBins.FindAsync(binId);
             if (bin != null)
             {
-                _dashboardDb.CollectionBins.Remove(bin);
-                await _dashboardDb.SaveChangesAsync();
+                _infDb.CollectionBins.Remove(bin);
+                await _infDb.SaveChangesAsync();
             }
         }
 
         // Get all Employees
         public async Task<List<Employee>> GetAllEmployeesAsync()
         {
-            return await _empDb.Employees
+            return await _infDb.Employees
                 .AsNoTracking()
                 .OrderBy(e => e.Username)
                 .ToListAsync();
@@ -94,7 +93,7 @@ namespace ADWebApplication.Data.Repository
             // After fetching RouteAssignments, manually load the Employee based on the AssignedTo username
             foreach (var routeAssignment in routeAssignments)
             {
-                var employee = await _empDb.Employees
+                var employee = await _infDb.Employees
                     .FirstOrDefaultAsync(e => e.Username == routeAssignment.AssignedTo); // Use AssignedTo as foreign key
 
                 // Manually assign the Employee to the AssignedToEmployee navigation property
@@ -116,9 +115,9 @@ namespace ADWebApplication.Data.Repository
             // Manually load Employee (cross-database)
             foreach (var ra in routeAssignments)
             {
-                ra.AssignedToEmployee = await _empDb.Employees
+                ra.AssignedToEmployee = await _infDb.Employees
                     .FirstOrDefaultAsync(e => e.Username == ra.AssignedTo);
-                ra.AssignedByEmployee = await _empDb.Employees
+                ra.AssignedByEmployee = await _infDb.Employees
                     .FirstOrDefaultAsync(a => a.Username == ra.AssignedBy);
             }
 
@@ -127,7 +126,7 @@ namespace ADWebApplication.Data.Repository
 
         public async Task<Employee> GetEmployeeByUsernameAsync(String username)
         {
-            var employee = await _empDb.Employees
+            var employee = await _infDb.Employees
                     .FirstAsync(e => e.Username == username);
             return employee;
         }
@@ -142,7 +141,7 @@ namespace ADWebApplication.Data.Repository
                 .ToListAsync();
 
             // Return officers that are NOT IN the BUSY list
-            return await _empDb.Employees
+            return await _infDb.Employees
                 .AsNoTracking()
                 .Include(e => e.Role)
                 .Where(e =>
@@ -155,19 +154,19 @@ namespace ADWebApplication.Data.Repository
 
         public async Task<CollectionBin?> GetBinByIdAsync(int binId)
         {
-            return await _dashboardDb.CollectionBins.FindAsync(binId);
+            return await _infDb.CollectionBins.FindAsync(binId);
         }
 
         public async Task UpdateBinAsync(CollectionBin bin)
         {
-            _dashboardDb.CollectionBins.Update(bin);
-            await _dashboardDb.SaveChangesAsync();
+            _infDb.CollectionBins.Update(bin);
+            await _infDb.SaveChangesAsync();
         }
 
         public async Task CreateBinAsync(CollectionBin bin)
         {
-            _dashboardDb.CollectionBins.Add(bin);
-            await _dashboardDb.SaveChangesAsync();
+            _infDb.CollectionBins.Add(bin);
+            await _infDb.SaveChangesAsync();
         }
 
        public async Task<List<CollectionOfficerDto>> GetAvailableCollectionOfficersCalendarAsync(DateTime from, DateTime to)
@@ -215,7 +214,7 @@ namespace ADWebApplication.Data.Repository
                 .ToList();
 
             // Get AVAILABLE officers (not in busy list)
-            return await _empDb.Employees
+            return await _infDb.Employees
                 .AsNoTracking()
                 .Include(e => e.Role)
                 .Where(e =>
@@ -266,7 +265,7 @@ namespace ADWebApplication.Data.Repository
         // Fetch all employees that are in grouped keys
         var usernames = grouped.Keys.ToList();
 
-        var employees = await _empDb.Employees
+        var employees = await _infDb.Employees
             .AsNoTracking()
             .Where(e => e.IsActive && e.Username.StartsWith("CO-") 
                         && usernames.Contains(e.Username.Trim().ToUpper()))

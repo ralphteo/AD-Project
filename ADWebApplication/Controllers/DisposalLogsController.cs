@@ -10,9 +10,9 @@ namespace ADWebApplication.Controllers
     [Route("api/disposallogs")]
     public class DisposalLogsController : ControllerBase
     {
-        private readonly LogDisposalDbContext _context;
+        private readonly In5niteDbContext _context;
 
-        public DisposalLogsController(LogDisposalDbContext context)
+        public DisposalLogsController(In5niteDbContext context)
         {
             _context = context;
         }
@@ -52,7 +52,7 @@ namespace ADWebApplication.Controllers
 
                 var earnedPoints = itemType?.BasePoints ?? 0;
 
-                var wallet = await _context.RewardWallets
+                var wallet = await _context.RewardWallet
                     .FirstOrDefaultAsync(w => w.UserId == request.UserId);
 
                 if (wallet == null)
@@ -62,7 +62,7 @@ namespace ADWebApplication.Controllers
                         UserId = request.UserId,
                         AvailablePoints = 0
                     };
-                    _context.RewardWallets.Add(wallet);
+                    _context.RewardWallet.Add(wallet);
                     await _context.SaveChangesAsync();
                 }
 
@@ -145,4 +145,3 @@ namespace ADWebApplication.Controllers
         }
     }
 }
-

@@ -11,9 +11,9 @@ namespace ADWebApplication.Controllers
     [Route("api/rewards")]
     public class RewardsController : ControllerBase
     {
-        private readonly LogDisposalDbContext _context;
+        private readonly In5niteDbContext _context;
 
-        public RewardsController(LogDisposalDbContext context)
+        public RewardsController(In5niteDbContext context)
         {
             _context = context;
         }
@@ -22,7 +22,7 @@ namespace ADWebApplication.Controllers
         [HttpGet("summary")]
         public async Task<ActionResult<RewardsSummaryDto>> GetSummary([FromQuery] int userId)
         {
-            var wallet = await _context.RewardWallets
+            var wallet = await _context.RewardWallet
                 .AsNoTracking()
                 .FirstOrDefaultAsync(w => w.UserId == userId);
 
@@ -58,7 +58,7 @@ namespace ADWebApplication.Controllers
         [HttpGet("history")]
         public async Task<ActionResult<List<RewardsHistoryDto>>> GetHistory([FromQuery] int userId)
         {
-            var wallet = await _context.RewardWallets
+            var wallet = await _context.RewardWallet
                 .AsNoTracking()
                 .FirstOrDefaultAsync(w => w.UserId == userId);
 
@@ -96,7 +96,7 @@ namespace ADWebApplication.Controllers
         [HttpGet("wallet")]
         public async Task<ActionResult<RewardWalletDto>> GetWallet([FromQuery] int userId)
         {
-            var wallet = await _context.RewardWallets
+            var wallet = await _context.RewardWallet
                 .AsNoTracking()
                 .FirstOrDefaultAsync(w => w.UserId == userId);
 
@@ -146,7 +146,7 @@ namespace ADWebApplication.Controllers
                 return BadRequest(new RedeemResponseDto { Success = false, Message = "Invalid request" });
             }
 
-            var wallet = await _context.RewardWallets
+            var wallet = await _context.RewardWallet
                 .FirstOrDefaultAsync(w => w.UserId == request.UserId);
 
             if (wallet == null)

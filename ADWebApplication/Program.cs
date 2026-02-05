@@ -27,24 +27,6 @@ builder.Services.AddDbContext<In5niteDbContext>(options =>
         new MySqlServerVersion(new Version(8, 0, 36))
     )
 );
-builder.Services.AddDbContext<EmpDbContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        new MySqlServerVersion(new Version(8, 0, 36))
-    )
-);
-builder.Services.AddDbContext<LogDisposalDbContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        new MySqlServerVersion(new Version(8, 0, 36))
-    )
-);
-builder.Services.AddDbContext<DashboardDbContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        new MySqlServerVersion(new Version(8, 0, 36))
-    )
-);
 
 // Admin Repisitory - Andrew
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
@@ -109,7 +91,7 @@ app.MapGet("/health", async (In5niteDbContext db) =>
         });
     }
 });
-app.MapGet("/emp-test", async (EmpDbContext db) =>
+app.MapGet("/emp-test", async (In5niteDbContext db) =>
 {
     var count = await db.Employees.CountAsync();
     return Results.Ok(new { employeeCount = count });
@@ -123,7 +105,7 @@ if (!app.Environment.IsDevelopment())
 }
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<EmpDbContext>();
+    var db = scope.ServiceProvider.GetRequiredService<In5niteDbContext>();
 
     if (!db.Roles.Any(r => r.Name == "HR"))
     {

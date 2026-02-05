@@ -1,4 +1,5 @@
 using ADWebApplication.Data;
+using ADWebApplication.Data;
 using ADWebApplication.Models;
 using ADWebApplication.Services;
 using ADWebApplication.ViewModels;
@@ -12,7 +13,7 @@ namespace ADWebApplication.Controllers;
 
 public class EmpAuthController : Controller
 {
-    private readonly EmpDbContext _db;
+    private readonly In5niteDbContext _db;
     private readonly IEmailService _email;
 
     // OTP session keys
@@ -22,9 +23,9 @@ public class EmpAuthController : Controller
     private const int OTP_MAX_ATTEMPTS = 5;
     private static readonly TimeSpan LOCK_DURATION = TimeSpan.FromMinutes(30);
 
-    public EmpAuthController(EmpDbContext empDb, IEmailService email)
+    public EmpAuthController(In5niteDbContext db, IEmailService email)
     {
-        _db = empDb;
+        _db = db;
         _email = email;
     }
 
