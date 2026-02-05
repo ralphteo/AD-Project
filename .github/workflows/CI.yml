@@ -31,11 +31,12 @@ jobs:
       - name: Add .NET global tools to PATH
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      - name: Run Sonar Scan
+      - name: Run SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ORG: ${{ secrets.SONAR_ORG }}
         run: ./scripts/sast-sonar.sh
-
+        
       - name: Upload Sonar Artifacts
         if: success()
         uses: actions/upload-artifact@v4

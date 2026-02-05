@@ -1,24 +1,31 @@
 #!/usr/bin/env bash
 set -e
 
-# Start Sonar analysis
+# Start SonarCloud scan
 dotnet sonarscanner begin \
   /k:"GDipSA-Team-5_AD-Project" \
-  /o:"gdipsa-team-5" \
+  /o:"${SONAR_ORG}" \
   /d:sonar.host.url="https://sonarcloud.io" \
-  /d:sonar.login="$SONAR_TOKEN" \
+  /d:sonar.login="${SONAR_TOKEN}" \
   /d:sonar.projectBaseDir="." \
-  /d:sonar.cs.cobertura.reportsPaths="**/coverage.cobertura.xml" \
+  /d:sonar.cs.opencover.reportsPaths="./TestResults/**/coverage.opencover.xml" \
   /d:sonar.coverage.exclusions="**/Program.cs"
 
-# Build (required)
+# Build main project
 dotnet build ./ADWebApplication/ADWebApplication.csproj
 
-# Run tests WITH coverage (this is what you asked about)
-dotnet test ./ADWebApplication/ADWebApplication.csproj \
+# Run tests and collect coverage
+dotnet test ./ADWebApplication.Tests/ADWebApplication.Tests.csproj \
   --collect:"XPlat Code Coverage" \
   --results-directory ./TestResults
 
-# End Sonar analysis (uploads results)
+# Convert coverage to a (cobertura) format for SonarCloud
+dotnet tool install --global dotnet-reportgenerator-globaltool
+reportgenerator \
+  -reports:./TestResults/*/coverage.cobertura.xml \
+  -targetdir:./TestResults/CoverageReport \
+  -reporttypes:Cobertura
+
+# End SonarCloud scan
 dotnet sonarscanner end \
-  /d:sonar.login="$SONAR_TOKEN"
+  /d:sonar.login="${SONAR_TOKEN}"
