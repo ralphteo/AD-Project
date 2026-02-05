@@ -51,6 +51,14 @@ jobs:
           sudo mv dependency-check /usr/local/dependency-check
           sudo ln -s /usr/local/dependency-check/bin/dependency-check.sh /usr/local/bin/dependency-check
 
+      - name: Cache Dependency-Check DB
+        uses: actions/cache@v3
+        with:
+          path: ./dependency-check-data
+          key: dependency-check-db-${{ runner.os }}-v1
+          restore-keys: |
+            dependency-check-db-${{ runner.os }}-v1
+
       - name: Run Dependency Check
         run: ./scripts/sca-dependency-check.sh
 
