@@ -109,6 +109,28 @@ public class BinPredictionService : IBinPredictionService
             if (NeedsPredictionRefresh(latestPrediction, latest))
             {
                 newCycleDetectedCount++;
+
+                rows.Add(new BinPredictionsTableViewModel
+                {
+                    BinId = bin.BinId,
+                    Region = bin.Region?.RegionName,
+                    LastCollectionDateTime = latest.CurrentCollectionDateTime.Value,
+
+                    // Prediction-related values are no longer valid
+                    PredictedNextAvgDailyGrowth = null,
+                    EstimatedFillToday = 0,
+                    EstimatedDaysToThreshold = null,
+
+                    RiskLevel = "—",
+                    PlanningStatus = "Collection done",
+
+                    CollectionDone = true,
+                    NeedsPredictionRefresh = true,
+
+                    AutoSelected = false,
+                    RouteId = null
+                });
+
                 continue;
             }
 
@@ -173,9 +195,11 @@ public class BinPredictionService : IBinPredictionService
         }
 
         // calculate avg fill growth rate
-        var avgGrowth = rows.Any()
-            ? rows.Average(r => r.PredictedNextAvgDailyGrowth)
-            : 0;
+        var avgGrowth = rows
+            .Where(r => r.PredictedNextAvgDailyGrowth.HasValue)
+            .Select(r => r.PredictedNextAvgDailyGrowth!.Value)
+            .DefaultIfEmpty(0)
+            .Average();
 
         // filters
         IEnumerable<BinPredictionsTableViewModel> query = rows;
@@ -189,47 +213,40 @@ public class BinPredictionService : IBinPredictionService
         else if (timeframe == "7")
             query = query.Where(r => r.EstimatedDaysToThreshold <= 7);
 
+        // to list high risk unscheduled bins first
+        IOrderedEnumerable<BinPredictionsTableViewModel> orderedQuery =
+            query.OrderBy(r =>
+                r.RiskLevel == "High" && r.PlanningStatus == "Not Scheduled" ? 0 :
+                r.RiskLevel == "High" ? 1 :
+                r.RiskLevel == "Medium" ? 2 :
+                3
+            );
+
         // sorting
         bool isDesc = sortDir == "desc";
 
         if (sort == "EstimatedFill")
         {
-            if (isDesc)
-            {
-                query = query.OrderByDescending(r => r.EstimatedFillToday);
-            }
-            else
-            {
-                query = query.OrderBy(r => r.EstimatedFillToday);
-            }
+            orderedQuery = isDesc
+                ? query.OrderByDescending(r => r.EstimatedFillToday)
+                : query.OrderBy(r => r.EstimatedFillToday);
         }
         else if (sort == "AvgGrowth")
         {
-            if (isDesc)
-            {
-                query = query.OrderByDescending(r => r.PredictedNextAvgDailyGrowth);
-            }
-            else
-            {
-                query = query.OrderBy(r => r.PredictedNextAvgDailyGrowth);
-            }
+            orderedQuery = isDesc
+                ? query.OrderByDescending(r => r.PredictedNextAvgDailyGrowth ?? -1)
+                : query.OrderBy(r => r.PredictedNextAvgDailyGrowth ?? double.MaxValue);
         }
         else
         {
-            // default sort
-            if (isDesc)
-            {
-                query = query.OrderByDescending(r => r.EstimatedDaysToThreshold);
-            }
-            else
-            {
-                query = query.OrderBy(r => r.EstimatedDaysToThreshold);
-            }
+            orderedQuery = isDesc
+                ? query.OrderByDescending(r => r.EstimatedDaysToThreshold ?? int.MaxValue)
+                : query.OrderBy(r => r.EstimatedDaysToThreshold ?? int.MaxValue);
         }
 
         //pagination
         //counts no. of rows after filtering/sorting
-        var totalItems = query.Count();
+        var totalItems = orderedQuery.Count();
         var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
         if (totalPages == 0)
@@ -241,7 +258,7 @@ public class BinPredictionService : IBinPredictionService
             page = Math.Clamp(page, 1, totalPages);
         }
         
-        var pagedRows = query
+        var pagedRows = orderedQuery
             .Skip((page - 1) * pageSize) //skip  rows belonging to the prev. page
             .Take(pageSize) //limit no. of rows displayed to 10
             .ToList();
