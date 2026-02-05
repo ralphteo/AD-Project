@@ -5,22 +5,26 @@ set -e
 DATA_DIR="./dependency-check-data"
 mkdir -p "$DATA_DIR"
 
-# Determine if database already exists
-if [ -d "$DATA_DIR/nvd" ]; then
-    echo "Using cached Dependency-Check database"
-    UPDATE_FLAG="-n"  # don't auto-update
+# Check if the DB exists
+if [ -z "$(ls -A "$DATA_DIR")" ]; then
+  echo "No cached DB found, performing initial update..."
+  /usr/local/dependency-check/bin/dependency-check.sh \
+    --project ADWebApplication \
+    --scan . \
+    --format ALL \
+    --out ./dependency-check-report \
+    --data "$DATA_DIR" \
+    --nvdApiKey "${NVD_API_KEY}" \
+    --failOnCVSS 9
 else
-    echo "No cached database found, allowing update"
-    UPDATE_FLAG=""    # allow update for first run
+  echo "Using cached DB..."
+  /usr/local/dependency-check/bin/dependency-check.sh \
+    --project ADWebApplication \
+    --scan . \
+    --format ALL \
+    --out ./dependency-check-report \
+    --data "$DATA_DIR" \
+    -n \
+    --nvdApiKey "${NVD_API_KEY}" \
+    --failOnCVSS 9
 fi
-
-# Run Dependency-Check
-dependency-check.sh \
-  --project ADWebApplication \
-  --scan . \
-  --format ALL \
-  --out ./dependency-check-report \
-  --data "$DATA_DIR" \
-  --nvdApiKey "${NVD_API_KEY}" \
-  --failOnCVSS 9 \
-  $UPDATE_FLAG
