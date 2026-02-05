@@ -35,25 +35,21 @@
             </div>
             <div class="filter-field">
                 <label class="form-label">Region</label>
-                <select name="regionId" class="form-select">
+                <select asp-for="SelectedRegionId" name="regionId" class="form-select">
                     <option value="">All Regions</option>
                     @foreach (var region in Model.AvailableRegions)
                     {
-                        <option value="@region.RegionId" selected="@(region.RegionId == Model.SelectedRegionId)">
-                            @region.RegionName
-                        </option>
+                        <option value="@region.RegionId">@region.RegionName</option>
                     }
                 </select>
             </div>
             <div class="filter-field">
                 <label class="form-label">Status</label>
-                <select name="status" class="form-select">
+                <select asp-for="SelectedStatus" name="status" class="form-select">
                     <option value="">All Statuses</option>
                     @foreach (var status in Model.AvailableStatuses)
                     {
-                        <option value="@status" selected="@(status == Model.SelectedStatus)">
-                            @status
-                        </option>
+                        <option value="@status">@status</option>
                     }
                 </select>
             </div>
@@ -311,223 +307,10 @@
     </div>
 </div>
 
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-
-<style>
-    .route-card {
-        border-radius: 16px;
-        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
-        border: 1px solid #eef2f7;
-    }
-
-    .filter-card {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 16px;
-        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
-        border: 1px solid #eef2f7;
-    }
-
-    .filter-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
-        gap: 16px;
-        align-items: end;
-    }
-
-    .filter-field .form-label {
-        font-weight: 600;
-        color: #0f172a;
-    }
-
-    .input-with-icon {
-        position: relative;
-    }
-
-    .input-with-icon i {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #94a3b8;
-    }
-
-    .input-with-icon input {
-        padding-left: 38px;
-    }
-
-    .filter-actions {
-        display: flex;
-        gap: 10px;
-    }
-
-    .route-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .route-status {
-        padding: 4px 10px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 600;
-    }
-
-    .status-pending { background: #ffedd5; color: #c2410c; }
-    .status-active { background: #dbeafe; color: #1d4ed8; }
-    .status-complete { background: #dcfce7; color: #15803d; }
-
-    .route-sub {
-        color: #94a3b8;
-        margin-top: 4px;
-    }
-
-    .route-chevron {
-        border: none;
-        background: transparent;
-        color: #94a3b8;
-        font-size: 20px;
-    }
-
-    .route-info-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px 16px;
-        margin-top: 18px;
-        color: #475569;
-    }
-
-    .route-info-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .route-progress {
-        margin-top: 16px;
-    }
-
-    .route-progress-label {
-        color: #64748b;
-        font-size: 14px;
-        margin-bottom: 8px;
-    }
-
-    .route-progress-meta {
-        text-align: right;
-        font-weight: 600;
-        margin-bottom: 6px;
-        color: #0f172a;
-    }
-
-    .route-footer {
-        margin-top: 12px;
-        color: #94a3b8;
-        font-size: 14px;
-    }
-
-    .route-drawer {
-        width: 360px;
-        border-left: none;
-        box-shadow: -16px 0 32px rgba(15, 23, 42, 0.12);
-    }
-
-    .route-drawer-title {
-        font-size: 18px;
-        font-weight: 700;
-        margin-bottom: 8px;
-    }
-
-    .drawer-section {
-        margin-bottom: 16px;
-    }
-
-    .drawer-label {
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: #94a3b8;
-        margin-bottom: 4px;
-    }
-
-    .drawer-value {
-        font-weight: 600;
-        color: #0f172a;
-    }
-
-    @@media (max-width: 768px) {
-        .route-drawer {
-            width: 100%;
-        }
-
-        .filter-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .filter-actions {
-            justify-content: flex-start;
-        }
-    }
-</style>
-
 @section Scripts {
-    <script>
-        const drawerElement = document.getElementById('routeDetailDrawer');
-        const drawer = drawerElement ? new bootstrap.Offcanvas(drawerElement) : null;
+    <script src="~/js/collector-dashboard.js" asp-append-version="true"></script>
+}
 
-        const statusBadge = document.getElementById('drawerRouteStatus');
-        const titleEl = document.getElementById('drawerRouteTitle');
-        const routeIdEl = document.getElementById('drawerRouteId');
-        const dateEl = document.getElementById('drawerPlannedDate');
-        const regionEl = document.getElementById('drawerRegion');
-        const assignedToEl = document.getElementById('drawerAssignedTo');
-        const assignedByEl = document.getElementById('drawerAssignedBy');
-        const progressTextEl = document.getElementById('drawerProgressText');
-        const progressBarEl = document.getElementById('drawerProgressBar');
-        const detailsLink = document.getElementById('drawerDetailsLink');
-
-        document.querySelectorAll('.route-detail-trigger').forEach((trigger) => {
-            trigger.addEventListener('click', () => {
-                const routeId = trigger.dataset.routeId || '-';
-                const status = trigger.dataset.routeStatus || 'Pending';
-                const plannedDate = trigger.dataset.plannedDate || '-';
-                const region = trigger.dataset.region || '-';
-                const assignedTo = trigger.dataset.assignedTo || '-';
-                const assignedBy = trigger.dataset.assignedBy || '-';
-                const totalStops = trigger.dataset.totalStops || '0';
-                const completedStops = trigger.dataset.completedStops || '0';
-                const progress = trigger.dataset.progress || '0';
-                const assignmentId = trigger.dataset.assignmentId;
-
-                titleEl.textContent = `Route #${routeId}`;
-                routeIdEl.textContent = routeId;
-                dateEl.textContent = plannedDate;
-                regionEl.textContent = region;
-                assignedToEl.textContent = assignedTo;
-                assignedByEl.textContent = assignedBy;
-                progressTextEl.textContent = `${completedStops}/${totalStops} bins completed`;
-                progressBarEl.style.width = `${progress}%`;
-
-                statusBadge.textContent = status;
-                statusBadge.className = 'badge mb-3';
-                if (status === 'Completed') {
-                    statusBadge.classList.add('bg-success');
-                } else if (status === 'Active' || status === 'In Progress') {
-                    statusBadge.classList.add('bg-primary');
-                } else {
-                    statusBadge.classList.add('bg-warning', 'text-dark');
-                }
-
-                if (assignmentId) {
-                    detailsLink.href = `/CollectorDashboard/RouteAssignmentDetails/${assignmentId}`;
-                }
-
-                if (drawer) {
-                    drawer.show();
-                }
-            });
-        });
-    </script>
+@section Styles {
+    <link rel="stylesheet" href="~/css/collector-dashboard.css" asp-append-version="true" />
 }

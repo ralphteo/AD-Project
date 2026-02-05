@@ -6,7 +6,7 @@ using ADWebApplication.Models;
 
 namespace ADWebApplication.Controllers
 {
-    // [Authorize(Roles = "Admin")] * Uncomment this line to restrict access to Admins only
+    [Authorize(Roles = "Admin")] //* Uncomment this line to restrict access to Admins only
     public class AdminController : Controller
     {
         private readonly IAdminRepository _adminRepository;
@@ -16,14 +16,14 @@ namespace ADWebApplication.Controllers
             _adminRepository = adminRepository;
         }
 
-    // ---------------------------------- Manage Collection Bins --------------------------------------------- //
+        // ---------------------------------- Manage Collection Bins --------------------------------------------- //
         public async Task<IActionResult> Bins()
         {
             var bins = await _adminRepository.GetAllBinsAsync();
             ViewBag.Regions = await _adminRepository.GetAllRegionsAsync();
             return View(bins);
         }
-        
+
         // POST: /Admin/EditBin
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -93,7 +93,7 @@ namespace ADWebApplication.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.Regions = await _adminRepository.GetAllRegionsAsync();
-                return View(newBin); 
+                return View(newBin);
             }
 
             await _adminRepository.CreateBinAsync(newBin);
@@ -104,7 +104,7 @@ namespace ADWebApplication.Controllers
             return RedirectToAction("Bins");
         }
 
-    // ---------------------------------- Manage Collection Officers --------------------------------------------- //
+        // ---------------------------------- Manage Collection Officers --------------------------------------------- //
 
         /*public async Task<IActionResult> CollectionOfficerRoster()
         {
@@ -121,10 +121,10 @@ namespace ADWebApplication.Controllers
             var routeAssignments = await _adminRepository.GetRouteAssignmentsForOfficerAsync(officerUsername, oneYearAgo);
             var officer = await _adminRepository.GetEmployeeByUsernameAsync(officerUsername);
             ViewBag.OfficerFullName = officer?.FullName ?? officerUsername;
-            
+
             return View(routeAssignments);
         }
-        
+
         public async Task<IActionResult> CollectionOfficerRoster(DateTime? dateFrom, DateTime? dateTo)
         {
             if (dateFrom.HasValue && dateTo.HasValue)
@@ -140,12 +140,25 @@ namespace ADWebApplication.Controllers
         }
 
 
-        public async Task<IActionResult> CollectionCalender (string username)
+        public async Task<IActionResult> CollectionCalendar (string username)
         {
-      
+
 
             return View();
         }
-    
+
+        [HttpGet]
+        public async Task<IActionResult> GetOfficerAvailability(DateTime from, DateTime to)
+        {
+            var available = await _adminRepository
+                .GetAvailableCollectionOfficersCalendarAsync(from, to);
+
+            var assigned = await _adminRepository
+                .GetAssignedCollectionOfficersCalendarAsync(from, to);
+
+            return Json(new { available, assigned });
+        }
+
+
     }
 }

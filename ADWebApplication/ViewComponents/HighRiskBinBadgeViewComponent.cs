@@ -5,9 +5,9 @@ namespace ADWebApplication.ViewComponents;
 
 public class HighRiskBinBadgeViewComponent : ViewComponent
 {
-    private readonly BinPredictionService _predictionService;
+    private readonly IBinPredictionService _predictionService;
 
-    public HighRiskBinBadgeViewComponent(BinPredictionService predictionService)
+    public HighRiskBinBadgeViewComponent(IBinPredictionService predictionService)
     {
         _predictionService = predictionService;
     }

@@ -58,20 +58,20 @@
             </div>
             <div class="filter-field">
                 <label class="form-label">Status</label>
-                <select name="status" class="form-select">
+                <select asp-for="StatusFilter" name="status" class="form-select">
                     <option value="">All Statuses</option>
-                    <option value="Open" selected="@(Model.StatusFilter == "Open")">Open</option>
-                    <option value="In Progress" selected="@(Model.StatusFilter == "In Progress")">In Progress</option>
-                    <option value="Resolved" selected="@(Model.StatusFilter == "Resolved")">Resolved</option>
+                    <option value="Open">Open</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Resolved">Resolved</option>
                 </select>
             </div>
             <div class="filter-field">
                 <label class="form-label">Priority</label>
-                <select name="priority" class="form-select">
+                <select asp-for="PriorityFilter" name="priority" class="form-select">
                     <option value="">All Priorities</option>
-                    <option value="High" selected="@(Model.PriorityFilter == "High")">High</option>
-                    <option value="Medium" selected="@(Model.PriorityFilter == "Medium")">Medium</option>
-                    <option value="Low" selected="@(Model.PriorityFilter == "Low")">Low</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
                 </select>
             </div>
             <div class="filter-actions">
@@ -210,143 +210,9 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        // Auto-populate location details when bin is selected
-        document.getElementById('binSelect').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const locationDetails = document.getElementById('locationDetails');
-            
-            if (this.value) {
-                // Get data attributes
-                const location = selectedOption.getAttribute('data-location');
-                const region = selectedOption.getAttribute('data-region');
-                
-                // Populate display fields
-                document.getElementById('displayLocation').textContent = location;
-                document.getElementById('displayRegion').textContent = region;
-                
-                // Show the location details box
-                locationDetails.style.display = 'block';
-            } else {
-                // Hide if no bin selected
-                locationDetails.style.display = 'none';
-            }
-        });
-    </script>
+    <script src="~/js/collector-dashboard.js" asp-append-version="true"></script>
 }
 
-<style>
-    .issue-log .stat-card {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 16px;
-        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
-        border: 1px solid #eef2f7;
-        position: relative;
-        min-height: 110px;
-    }
-
-    .issue-log .stat-label {
-        color: #64748b;
-        font-weight: 600;
-    }
-
-    .issue-log .stat-value {
-        font-size: 28px;
-        font-weight: 700;
-        margin-top: 6px;
-    }
-
-    .issue-log .stat-icon {
-        position: absolute;
-        right: 16px;
-        top: 16px;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .issue-log .stat-icon.neutral { background: #e2e8f0; color: #64748b; }
-    .issue-log .stat-icon.danger { background: #fee2e2; color: #ef4444; }
-    .issue-log .stat-icon.warning { background: #ffedd5; color: #f97316; }
-    .issue-log .stat-icon.success { background: #dcfce7; color: #16a34a; }
-
-    .issue-log .filter-card {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 16px;
-        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
-        border: 1px solid #eef2f7;
-    }
-
-    .issue-log .filter-grid {
-        display: grid;
-        grid-template-columns: 2fr 1fr 1fr auto;
-        gap: 16px;
-        align-items: end;
-    }
-
-    .issue-log .input-with-icon {
-        position: relative;
-    }
-
-    .issue-log .input-with-icon i {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #94a3b8;
-    }
-
-    .issue-log .input-with-icon input {
-        padding-left: 38px;
-    }
-
-    .issue-log .filter-actions {
-        display: flex;
-        gap: 10px;
-    }
-
-    .issue-log .issue-card {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 18px;
-        border: 1px solid #eef2f7;
-        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
-        margin-bottom: 18px;
-    }
-
-    .issue-log .issue-pills { display: flex; gap: 8px; margin-bottom: 12px; }
-    .issue-log .pill { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
-    .issue-log .pill-danger { background: #fee2e2; color: #b91c1c; }
-    .issue-log .pill-warning { background: #ffedd5; color: #c2410c; }
-    .issue-log .pill-success { background: #dcfce7; color: #15803d; }
-    .issue-log .pill-low { background: #e0f2fe; color: #0369a1; }
-
-    .issue-log .issue-title { font-weight: 700; margin-bottom: 4px; display: flex; gap: 8px; align-items: center; }
-    .issue-log .issue-sub { color: #64748b; margin-bottom: 10px; }
-    .issue-log .issue-desc { color: #0f172a; margin-bottom: 14px; }
-
-    .issue-log .issue-meta {
-        display: flex;
-        gap: 24px;
-        padding-top: 12px;
-        border-top: 1px solid #eef2f7;
-        color: #64748b;
-        flex-wrap: wrap;
-    }
-
-    .issue-log .issue-actions { margin-top: 14px; }
-
-    @@media (max-width: 768px) {
-        .issue-log .filter-grid {
-            grid-template-columns: 1fr;
-        }
-        .issue-log .filter-actions {
-            justify-content: flex-start;
-        }
-    }
-</style>
+@section Styles {
+    <link rel="stylesheet" href="~/css/collector-dashboard.css" asp-append-version="true" />
+}

@@ -32,7 +32,6 @@ namespace ADWebApplication.Data
             modelBuilder.Entity<RouteStop>().ToTable("routestop");
             modelBuilder.Entity<CollectionBin>().ToTable("collectionbin");
             modelBuilder.Entity<CollectionDetails>().ToTable("collectiondetails");
-            modelBuilder.Entity<CollectionDetails>().ToTable("collectiondetails");
             modelBuilder.Entity<FillLevelPrediction>().ToTable("filllevelprediction");
 
             // Configure foreign key relationships to match database column names

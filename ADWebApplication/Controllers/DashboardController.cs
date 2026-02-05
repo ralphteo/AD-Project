@@ -42,14 +42,14 @@ namespace ADWebApplication.Controllers
             try
             {
 
-            var kpis = await _dashboardRepository.GetAdminDashboardAsync();
-            return PartialView("_KPIsPartial", kpis);
-            } 
+                var kpis = await _dashboardRepository.GetAdminDashboardAsync();
+                return PartialView("_KPIsPartial", kpis);
+            }
             catch (Exception ex)
             {
-            // Log the exception (not implemented here for brevity)
-            _logger.LogError(ex, "Error retrieving admin dashboard KPIs.");
-            return StatusCode(500, "Internal server error");
+                // Log the exception (not implemented here for brevity)
+                _logger.LogError(ex, "Error retrieving admin dashboard KPIs.");
+                return StatusCode(500, "Internal server error");
             }
         }
     }

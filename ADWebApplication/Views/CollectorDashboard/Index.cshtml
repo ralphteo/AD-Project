@@ -5,11 +5,14 @@
 
 @{
     ViewData["Title"] = "Collector Dashboard";
-    var pendingPoints = Model.CollectionPoints.Where(p => p.Status != "Collected").ToList();
-    var completedPoints = Model.CollectionPoints.Where(p => p.Status == "Collected").ToList();
-    var totalPoints = Model.TotalPoints;
-    var completedCount = Model.CompletedPoints;
-    var pendingCount = totalPoints - completedCount;
+   
+    var pointsSource = Model.CollectionPoints;
+
+    var pendingPoints = pointsSource.Where(p => p.Status != "Collected").ToList();
+    var completedPoints = pointsSource.Where(p => p.Status == "Collected").ToList();
+    var totalPoints = pointsSource.Count;
+    var completedCount = completedPoints.Count;
+    var pendingCount = pendingPoints.Count;
     var progressPercentage = totalPoints > 0 ? (int)Math.Round(((double)completedCount / totalPoints) * 100) : 0;
     var routeStart = Model.ScheduledDate.Date.AddHours(9);
     var totalPendingMins = pendingPoints.Sum(p => p.EstimatedTimeMins);
@@ -22,6 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="~/css/collector-dashboard.css" asp-append-version="true" />
 
 <div class="collector-dashboard">
     <div class="row g-4">
@@ -42,10 +46,6 @@
                         <i class="bi bi-exclamation-circle"></i>
                         Issue Log
                     </a>
-                    <a class="sidebar-link" asp-action="RouteChangeRequest">
-                        <i class="bi bi-arrow-repeat"></i>
-                        Route Change Request
-                    </a>
                 </nav>
             </aside>
         </div>
@@ -61,8 +61,8 @@
                 <div class="col-md-6 col-xl-3">
                     <div class="metric-card metric-blue">
                         <div class="metric-label">Collection Progress</div>
-                        <div class="metric-value">@completedCount/@totalPoints</div>
-                        <div class="metric-sub">Pending: @pendingCount</div>
+                        <div class="metric-value" id="collectionProgressValue">@completedCount/@totalPoints</div>
+                        <div class="metric-sub" id="collectionProgressPending">Pending: @pendingCount</div>
                         <div class="metric-icon">
                             <i class="bi bi-trash"></i>
                         </div>
@@ -108,10 +108,10 @@
             <div class="progress-card">
                 <div class="progress-header">
                     <div class="progress-title">Today's Progress</div>
-                    <div class="progress-percent">@progressPercentage% Complete</div>
+                    <div class="progress-percent" id="progressPercent">@progressPercentage% Complete</div>
                 </div>
                 <div class="progress-track">
-                    <div class="progress-fill" style="width: @progressPercentage%"></div>
+                    <div class="progress-fill" id="progressFill" style="width: @progressPercentage%"></div>
                 </div>
                 <div class="progress-meta">
                     <span>@Model.RouteName</span>
@@ -155,7 +155,12 @@
                         var binLabel = point.BinId.HasValue ? $"B{point.BinId.Value:000}" : point.PointId;
                         cumulativeMinutes += point.EstimatedTimeMins;
                         var scheduledTime = point.PlannedCollectionTime ?? routeStart.AddMinutes(cumulativeMinutes);
-                            <div class="stop-card pending">
+                            <div class="stop-card pending"
+                                 data-stop-id="@point.StopId"
+                                 data-lat="@(point.Latitude?.ToString() ?? "")"
+                                 data-lng="@(point.Longitude?.ToString() ?? "")"
+                                 data-address="@point.Address"
+                                 data-location="@point.LocationName">
                                 <div class="stop-left">
                                     <div class="stop-badge pending">@binLabel</div>
                                     <div>
@@ -170,9 +175,16 @@
                                     </div>
                                 </div>
                                 <div class="stop-actions">
-                                    <a class="btn btn-light btn-sm" href="https://www.google.com/maps/search/?api=1&query=@Uri.EscapeDataString(point.Address)" target="_blank">
-                                        <i class="bi bi-send"></i> Navigate
-                                    </a>
+                                    <button type="button"
+                                            class="btn btn-primary btn-sm direction-trigger"
+                                            data-stop-id="@point.StopId">
+                                        <i class="bi bi-signpost"></i> Preview
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-outline-primary btn-sm start-nav-trigger"
+                                            data-stop-id="@point.StopId">
+                                        <i class="bi bi-navigation"></i> Start
+                                    </button>
                                     <button type="button"
                                             class="btn btn-success btn-sm collect-trigger"
                                             data-stop-id="@point.StopId"
@@ -201,7 +213,12 @@
                         foreach (var point in completedPoints)
                         {
                             var binLabel = point.BinId.HasValue ? $"B{point.BinId.Value:000}" : point.PointId;
-                            <div class="stop-card complete">
+                            <div class="stop-card complete"
+                                 data-stop-id="@point.StopId"
+                                 data-lat="@(point.Latitude?.ToString() ?? "")"
+                                 data-lng="@(point.Longitude?.ToString() ?? "")"
+                                 data-address="@point.Address"
+                                 data-location="@point.LocationName">
                                 <div class="stop-left">
                                     <div class="stop-badge complete">@binLabel</div>
                                     <div>
@@ -243,7 +260,8 @@
             </button>
         </div>
 
-        <form asp-action="ConfirmCollection" method="post" class="collect-modal-body">
+        <form asp-action="ConfirmCollection" method="post" class="collect-modal-body" id="collectForm">
+            @Html.AntiForgeryToken()
             <input type="hidden" name="StopId" id="collectStopId" />
             <input type="hidden" name="PointId" id="collectPointId" />
             <input type="hidden" name="LocationName" id="collectLocationName" />
@@ -266,6 +284,8 @@
                 </a>
             </div>
 
+            <div class="collect-feedback text-danger" id="collectFeedback" role="alert" aria-live="polite"></div>
+
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" id="collectCancel">Cancel</button>
                 <button type="submit" class="btn btn-success">
@@ -276,407 +296,12 @@
     </div>
 </div>
 
-<style>
-    .collector-dashboard {
-        font-family: "Manrope", "Segoe UI", sans-serif;
-        color: #0f172a;
-    }
-
-    .collector-sidebar {
-        background: #ffffff;
-        border-radius: 18px;
-        padding: 24px;
-        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
-    }
-
-    .sidebar-title {
-        font-size: 20px;
-        font-weight: 700;
-        margin-bottom: 2px;
-    }
-
-    .sidebar-subtitle {
-        color: #64748b;
-        margin-bottom: 20px;
-    }
-
-    .sidebar-nav {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .sidebar-link {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-        border-radius: 14px;
-        text-decoration: none;
-        color: #1f2937;
-        font-weight: 600;
-        background: #f8fafc;
-    }
-
-    .sidebar-link.active {
-        background: #3b5bfd;
-        color: #ffffff;
-        box-shadow: 0 10px 20px rgba(59, 91, 253, 0.25);
-    }
-
-    .dashboard-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 18px;
-    }
-
-    .dashboard-title {
-        font-size: 28px;
-        font-weight: 800;
-    }
-
-    .dashboard-date {
-        color: #64748b;
-        margin-top: 2px;
-    }
-
-    .dashboard-user {
-        font-weight: 600;
-        color: #475569;
-    }
-
-    .metric-card {
-        position: relative;
-        color: #ffffff;
-        border-radius: 18px;
-        padding: 18px;
-        min-height: 130px;
-        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
-        overflow: hidden;
-    }
-
-    .metric-blue { background: linear-gradient(135deg, #2f5bff, #3a7bff); }
-    .metric-purple { background: linear-gradient(135deg, #8b2cf5, #b43bff); }
-    .metric-green { background: linear-gradient(135deg, #0aa84a, #22c55e); }
-    .metric-orange { background: linear-gradient(135deg, #ff7a00, #ff5a1f); }
-
-    .metric-label {
-        font-size: 14px;
-        opacity: 0.9;
-        margin-bottom: 6px;
-    }
-
-    .metric-value {
-        font-size: 26px;
-        font-weight: 800;
-        display: flex;
-        align-items: baseline;
-        gap: 6px;
-    }
-
-    .metric-unit {
-        font-size: 14px;
-        font-weight: 700;
-        margin: 0;
-    }
-
-    .metric-sub {
-        margin-top: 4px;
-        font-size: 14px;
-        opacity: 0.85;
-    }
-
-    .metric-icon {
-        position: absolute;
-        right: 16px;
-        bottom: 14px;
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.2);
-        font-size: 18px;
-    }
-
-    .progress-card {
-        background: #ffffff;
-        border-radius: 18px;
-        padding: 18px 20px;
-        margin-top: 18px;
-        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
-    }
-
-    .progress-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 14px;
-    }
-
-    .progress-title { font-weight: 700; }
-    .progress-percent { color: #475569; font-weight: 600; }
-
-    .progress-track {
-        height: 10px;
-        background: #e2e8f0;
-        border-radius: 999px;
-        overflow: hidden;
-    }
-
-    .progress-fill {
-        height: 100%;
-        background: #111827;
-        border-radius: 999px;
-    }
-
-    .progress-meta {
-        display: flex;
-        justify-content: space-between;
-        color: #64748b;
-        margin-top: 10px;
-        font-size: 14px;
-    }
-
-    .map-card {
-        background: #ffffff;
-        border-radius: 18px;
-        padding: 18px 20px 24px;
-        margin-top: 18px;
-        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
-    }
-
-    .map-title {
-        font-weight: 700;
-        margin-bottom: 14px;
-    }
-
-    .map-frame {
-        position: relative;
-        height: 340px;
-        border-radius: 16px;
-        overflow: hidden;
-        background: #e2e8f0;
-    }
-
-    .route-map {
-        position: absolute;
-        inset: 0;
-        z-index: 1;
-    }
-
-    .map-next {
-        position: absolute;
-        top: 16px;
-        left: 16px;
-        background: #ffffff;
-        padding: 10px 14px;
-        border-radius: 12px;
-        font-weight: 600;
-        box-shadow: 0 10px 18px rgba(15, 23, 42, 0.12);
-    }
-
-    .map-next,
-    .map-legend {
-        z-index: 2;
-    }
-
-    .map-controls {
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        background: #ffffff;
-        border-radius: 12px;
-        padding: 6px;
-        box-shadow: 0 10px 18px rgba(15, 23, 42, 0.12);
-        z-index: 2;
-    }
-
-    .map-btn {
-        border: none;
-        background: #f8fafc;
-        width: 30px;
-        height: 30px;
-        border-radius: 10px;
-        font-weight: 700;
-        color: #0f172a;
-    }
-
-    .gps-badge {
-        display: inline-flex;
-        align-items: center;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 2px 8px;
-        margin-left: 8px;
-        border-radius: 999px;
-        background: #fee2e2;
-        color: #b91c1c;
-    }
-
-
-    .map-legend {
-        position: absolute;
-        right: 16px;
-        bottom: 16px;
-        background: #ffffff;
-        border-radius: 12px;
-        padding: 10px 12px;
-        font-size: 13px;
-        color: #475569;
-        display: grid;
-        gap: 6px;
-        box-shadow: 0 10px 18px rgba(15, 23, 42, 0.12);
-    }
-
-    .legend-dot {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        margin-right: 6px;
-    }
-
-    .legend-complete { background: #22c55e; }
-    .legend-pending { background: #f97316; }
-    .legend-you { background: #3b82f6; }
-
-    .details-card {
-        background: #ffffff;
-        border-radius: 18px;
-        padding: 20px;
-        margin-top: 18px;
-        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
-    }
-
-    .details-title {
-        font-weight: 700;
-        margin-bottom: 16px;
-    }
-
-    .details-section { margin-bottom: 20px; }
-
-    .details-status {
-        font-weight: 700;
-        margin-bottom: 10px;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-    }
-
-    .details-status.pending { color: #f97316; }
-    .details-status.complete { color: #16a34a; }
-
-    .stop-card {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 14px 16px;
-        border-radius: 14px;
-        margin-bottom: 12px;
-    }
-
-    .stop-card.pending { background: #fff7ed; border: 1px solid #fed7aa; }
-    .stop-card.complete { background: #f0fdf4; border: 1px solid #bbf7d0; }
-
-    .stop-left { display: flex; align-items: center; gap: 12px; }
-
-    .stop-badge {
-        padding: 6px 10px;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 12px;
-    }
-
-    .stop-badge.pending { background: #f97316; color: #ffffff; }
-    .stop-badge.complete { background: #16a34a; color: #ffffff; }
-
-    .stop-title { font-weight: 700; }
-    .stop-meta { color: #64748b; font-size: 13px; }
-    .dot { margin: 0 6px; }
-
-    .stop-actions { display: flex; align-items: center; gap: 10px; }
-
-    .details-empty {
-        padding: 12px 16px;
-        border-radius: 12px;
-        background: #f8fafc;
-        color: #64748b;
-    }
-
-    .collect-modal {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.4);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        z-index: 1000;
-    }
-
-    .collect-modal.is-open {
-        display: flex;
-    }
-
-    .collect-modal-card {
-        width: 100%;
-        max-width: 720px;
-        background: #ffffff;
-        border-radius: 18px;
-        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
-        padding: 28px;
-    }
-
-    .collect-modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-
-    .collect-modal-header h4 {
-        margin: 0;
-        font-weight: 700;
-    }
-
-    .collect-modal-header p {
-        margin: 6px 0 0;
-        color: #6b7280;
-    }
-
-    @@media (max-width: 991px) {
-        .collector-sidebar { margin-bottom: 16px; }
-    }
-
-    @@media (max-width: 768px) {
-        .dashboard-header { flex-direction: column; align-items: flex-start; gap: 6px; }
-        .stop-card { flex-direction: column; align-items: flex-start; gap: 12px; }
-        .stop-actions { width: 100%; justify-content: flex-end; }
-    }
-
-    @@media (max-width: 640px) {
-        .collect-modal-card { padding: 20px; }
-        .modal-actions-row { flex-direction: column; }
-        .modal-footer { flex-direction: column-reverse; }
-    }
-</style>
-
 @section Scripts {
     <script>
         const googleMapsKey = @Html.Raw(JsonSerializer.Serialize(Configuration["GoogleMaps:ApiKey"] ?? ""));
-    </script>
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=@(Configuration["GoogleMaps:ApiKey"])&callback=initRouteMap"></script>
-    <script>
-        const stops = @Html.Raw(JsonSerializer.Serialize(
+        const rawStops = @Html.Raw(JsonSerializer.Serialize(
             Model.CollectionPoints.Select((p, index) => new {
+                id = p.StopId == 0 ? (index + 1) : p.StopId,
                 seq = index + 1,
                 lat = p.Latitude,
                 lng = p.Longitude,
@@ -686,216 +311,11 @@
                 location = p.LocationName
             })
         ));
-
+        const useDemoStops = false;
+        const demoStops = [];
+        const stops = useDemoStops && (!rawStops || rawStops.length === 0) ? demoStops : rawStops;
         const nextAddress = @Html.Raw(JsonSerializer.Serialize(nextPoint?.Address ?? ""));
-
-        function initRouteMap() {
-            const mapElement = document.getElementById('routeMap');
-            if (!mapElement) return;
-
-            if (!googleMapsKey) {
-                mapElement.innerHTML = '<div style="padding:16px; color:#475569;">Google Maps API key is missing.</div>';
-                return;
-            }
-
-            const defaultCenter = { lat: 1.3521, lng: 103.8198 };
-            const firstStop = stops.find(s => s.lat && s.lng);
-            const map = new google.maps.Map(mapElement, {
-                center: firstStop ? { lat: firstStop.lat, lng: firstStop.lng } : defaultCenter,
-                zoom: 12,
-                mapTypeControl: false,
-                streetViewControl: false,
-                fullscreenControl: false,
-                zoomControl: false
-            });
-
-            const pendingColor = '#f97316';
-            const doneColor = '#22c55e';
-
-            const bounds = new google.maps.LatLngBounds();
-            const routePath = [];
-
-            stops.forEach((stop) => {
-                if (!stop.lat || !stop.lng) return;
-
-                const color = stop.status === 'completed' ? doneColor : pendingColor;
-                const marker = new google.maps.Marker({
-                    position: { lat: stop.lat, lng: stop.lng },
-                    map,
-                    label: {
-                        text: String(stop.seq),
-                        color: '#ffffff',
-                        fontWeight: '700'
-                    },
-                    icon: {
-                        path: google.maps.SymbolPath.CIRCLE,
-                        scale: 14,
-                        fillColor: color,
-                        fillOpacity: 1,
-                        strokeColor: '#ffffff',
-                        strokeWeight: 4
-                    }
-                });
-
-                const info = new google.maps.InfoWindow({
-                    content: `<strong>Stop ${stop.seq}</strong><br>${stop.location}<br>${stop.address}`
-                });
-
-                marker.addListener('click', () => info.open({ anchor: marker, map }));
-
-                bounds.extend(marker.getPosition());
-                routePath.push(marker.getPosition());
-            });
-
-            if (routePath.length > 0) {
-                new google.maps.Polyline({
-                    path: routePath,
-                    strokeColor: '#93c5fd',
-                    strokeOpacity: 1,
-                    strokeWeight: 4,
-                    map
-                });
-                map.fitBounds(bounds, 40);
-            }
-
-            const nextEl = document.querySelector('.map-next');
-            if (nextEl && nextAddress) {
-                nextEl.textContent = `Next: ${nextAddress}`;
-            }
-
-            const pendingStops = stops.filter(stop => stop.status === 'pending' && stop.lat && stop.lng);
-
-            const toRad = (value) => (value * Math.PI) / 180;
-            const haversine = (a, b) => {
-                const earthRadius = 6371000;
-                const dLat = toRad(b[0] - a[0]);
-                const dLng = toRad(b[1] - a[1]);
-                const lat1 = toRad(a[0]);
-                const lat2 = toRad(b[0]);
-                const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-                return 2 * earthRadius * Math.asin(Math.sqrt(h));
-            };
-
-            const updateNextBanner = (currentLatLng) => {
-                if (!nextEl || pendingStops.length === 0) return;
-                const distances = pendingStops.map((stop, index) => ({
-                    stop,
-                    index,
-                    distance: haversine(currentLatLng, [stop.lat, stop.lng])
-                }));
-
-                distances.sort((a, b) => a.index - b.index);
-                const nearby = distances.find(item => item.distance <= 50);
-                if (nearby) {
-                    const nextIndex = nearby.index + 1;
-                    const nextStop = pendingStops[nextIndex] ?? nearby.stop;
-                    nextEl.textContent = `Next: ${nextStop.address || nextStop.location}`;
-                }
-            };
-
-            let myMarker = null;
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(
-                    (pos) => {
-                        const me = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                        if (!myMarker) {
-                            myMarker = new google.maps.Marker({
-                                position: me,
-                                map,
-                                icon: {
-                                    path: google.maps.SymbolPath.CIRCLE,
-                                    scale: 8,
-                                    fillColor: '#3b82f6',
-                                    fillOpacity: 0.9,
-                                    strokeColor: '#3b82f6',
-                                    strokeWeight: 2
-                                },
-                                title: 'Your Location'
-                            });
-                        } else {
-                            myMarker.setPosition(me);
-                        }
-                        updateNextBanner([me.lat, me.lng]);
-                    },
-                    (err) => console.log('Geolocation error:', err.message),
-                    { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
-                );
-            }
-
-            const zoomInButton = document.getElementById('zoomIn');
-            const zoomOutButton = document.getElementById('zoomOut');
-
-            if (zoomInButton && zoomOutButton) {
-                zoomInButton.addEventListener('click', () => map.setZoom(map.getZoom() + 1));
-                zoomOutButton.addEventListener('click', () => map.setZoom(map.getZoom() - 1));
-            }
-        }
-
-        const collectModal = document.getElementById('collectModal');
-        const collectModalClose = document.getElementById('collectModalClose');
-        const collectCancel = document.getElementById('collectCancel');
-        const collectSubtitle = document.getElementById('collectModalSubtitle');
-        const collectStopId = document.getElementById('collectStopId');
-        const collectPointId = document.getElementById('collectPointId');
-        const collectLocationName = document.getElementById('collectLocationName');
-        const collectAddress = document.getElementById('collectAddress');
-        const collectBinId = document.getElementById('collectBinId');
-        const collectFillRange = document.getElementById('collectFillRange');
-        const collectFillValue = document.getElementById('collectFillValue');
-
-        const openCollectModal = (data) => {
-            if (!collectModal) return;
-            collectStopId.value = data.stopId || '';
-            collectPointId.value = data.binLabel || '';
-            collectLocationName.value = data.locationName || '';
-            collectAddress.value = data.address || '';
-            collectBinId.value = data.binId || '';
-            collectFillRange.value = data.fillLevel || 0;
-            collectFillValue.textContent = `${collectFillRange.value}%`;
-            collectSubtitle.textContent = `Record collection details for ${data.locationName}`;
-            collectModal.classList.add('is-open');
-            collectModal.setAttribute('aria-hidden', 'false');
-        };
-
-        const closeCollectModal = () => {
-            if (!collectModal) return;
-            collectModal.classList.remove('is-open');
-            collectModal.setAttribute('aria-hidden', 'true');
-        };
-
-        document.querySelectorAll('.collect-trigger').forEach((button) => {
-            button.addEventListener('click', () => {
-                openCollectModal({
-                    stopId: button.dataset.stopId,
-                    binId: button.dataset.binId,
-                    binLabel: button.dataset.binId ? `B${String(button.dataset.binId).padStart(3, '0')}` : '',
-                    locationName: button.dataset.locationName,
-                    address: button.dataset.address,
-                    fillLevel: button.dataset.fillLevel
-                });
-            });
-        });
-
-        if (collectFillRange && collectFillValue) {
-            collectFillRange.addEventListener('input', () => {
-                collectFillValue.textContent = `${collectFillRange.value}%`;
-            });
-        }
-
-        if (collectModal) {
-            collectModal.addEventListener('click', (event) => {
-                if (event.target === collectModal) {
-                    closeCollectModal();
-                }
-            });
-        }
-
-        if (collectModalClose) {
-            collectModalClose.addEventListener('click', closeCollectModal);
-        }
-
-        if (collectCancel) {
-            collectCancel.addEventListener('click', closeCollectModal);
-        }
     </script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=@(Configuration["GoogleMaps:ApiKey"])&callback=initRouteMap"></script>
+    <script src="~/js/collector-dashboard.js" asp-append-version="true"></script>
 }

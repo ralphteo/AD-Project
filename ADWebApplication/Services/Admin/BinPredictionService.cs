@@ -19,9 +19,8 @@ using System.Reflection.Metadata.Ecma335;
 
 namespace ADWebApplication.Services;
 
-public class BinPredictionService
+public class BinPredictionService : IBinPredictionService
 {
-    // to call ML API
     private readonly HttpClient client;
     private readonly In5niteDbContext db;
 
@@ -31,8 +30,20 @@ public class BinPredictionService
         db = context;
     }
 
+    // bin fill risk classification
+    private static string GetRiskLevel(int daysToThreshold)
+    {
+        if (daysToThreshold <= 1)
+            return "High";
+
+        if (daysToThreshold <= 3)
+            return "Medium";
+
+        return "Low";
+    }
+
     // Check if ML prediction needs refresh
-    private bool NeedsPredictionRefresh(FillLevelPrediction? latestPrediction, CollectionDetails latestCollection)
+    private static bool NeedsPredictionRefresh(FillLevelPrediction? latestPrediction, CollectionDetails latestCollection)
     {
         if (latestPrediction == null)
             return true;
@@ -44,26 +55,31 @@ public class BinPredictionService
         return latestPrediction.PredictedDate < latestCollection.CurrentCollectionDateTime.Value.UtcDateTime;
     }
 
-    // Get the lastest collection records for all bins
-    private async Task<Dictionary<int, CollectionDetails>> GetLatestCollectionsAsync()
+    // Get the lastest 2 collection records for all bins
+    private async Task<Dictionary<int, List<CollectionDetails>>> GetCollectionHistoryAsync()
     {
         var records = await db.CollectionDetails
-            .GroupBy(cd => cd.BinId!.Value)
-            .Select(g => g.OrderByDescending(x => x.CurrentCollectionDateTime).First())
+            .Where(cd => cd.BinId != null && cd.CurrentCollectionDateTime != null)
             .ToListAsync();
 
-        return records.ToDictionary(x => x.BinId!.Value, x => x);
+        return records
+            .GroupBy(cd => cd.BinId!.Value)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderByDescending(x => x.CurrentCollectionDateTime).Take(2).ToList()
+            );
     }
 
     // Get the latest prediction records for all bins
     private async Task<Dictionary<int, FillLevelPrediction>> GetLatestPredictionsAsync()
     {
         var records = await db.FillLevelPredictions
-            .GroupBy(p => p.BinId)
-            .Select(g => g.OrderByDescending(x => x.PredictedDate).FirstOrDefault())
             .ToListAsync();
 
-        return records.ToDictionary(x => x.BinId!, x => x);
+        return records
+            .GroupBy(p => p.BinId)
+            .Select(g => g.OrderByDescending(x => x.PredictedDate).First())
+            .ToDictionary(p => p.BinId, p => p);
     }
 
     public async Task<BinPredictionsPageViewModel> BuildBinPredictionsPageAsync(int page, string sort, string sortDir, string risk, string timeframe)
@@ -71,12 +87,16 @@ public class BinPredictionService
         int pageSize = 10;
         var today = DateTimeOffset.UtcNow.Date;
 
+<<<<<<< HEAD:ADWebApplication/Services/BinPredictionService.cs
         // risk = string.IsNullOrWhiteSpace(risk) ? "All" : risk;
         // timeframe = string.IsNullOrWhiteSpace(timeframe) ? "All" : timeframe;
         // sort = string.IsNullOrWhiteSpace(sort) ? "DaysToThreshold" : sort;
         // sortDir = string.IsNullOrWhiteSpace(sortDir) ? "asc" : sortDir;
 
         var latestCollectionByBin = await GetLatestCollectionsAsync();
+=======
+        var collectionHistoryByBin = await GetCollectionHistoryAsync();
+>>>>>>> origin/main:ADWebApplication/Services/Admin/BinPredictionService.cs
         var latestPredictionByBin = await GetLatestPredictionsAsync();
 
         var bins = await db.CollectionBins
@@ -101,27 +121,61 @@ public class BinPredictionService
         int missingPredictionCount = 0;
 
         foreach (var bin in bins)
-        {   
-            // Retrieve latest collection record of each bin and store in var latest
-            if (!latestCollectionByBin.TryGetValue(bin.BinId, out var latest))
+        {
+            if (!collectionHistoryByBin.TryGetValue(bin.BinId, out var history) || history.Count == 0)
                 continue;
 
-            if (latest.CycleDurationDays == null ||
-                latest.CycleStartMonth == null ||
-                latest.CurrentCollectionDateTime == null)
-                continue;
+            var latestCollection = history[0];
+            var olderCollection = history.Count > 1 ? history[1] : null;
+
+            var latestCollectedAt = latestCollection.CurrentCollectionDateTime!.Value;
+
+            int? cycleDurationDays = null;
+            int? cycleStartMonth = null;
+
+            //compute cycle duration period
+            if (olderCollection?.CurrentCollectionDateTime != null)
+            {
+                cycleDurationDays = (int)Math.Ceiling(
+                    (latestCollectedAt - olderCollection.CurrentCollectionDateTime.Value).TotalDays
+                );
+                cycleStartMonth = latestCollectedAt.Month;
+            }
 
             latestPredictionByBin.TryGetValue(bin.BinId, out var latestPrediction);
+            nextStopByBin.TryGetValue(bin.BinId, out var nextStop);
 
-            bool needsRefresh = NeedsPredictionRefresh(latestPrediction, latest);
-
-            if (needsRefresh)
+            if (NeedsPredictionRefresh(latestPrediction, latestCollection))
             {
                 newCycleDetectedCount++;
+
+                rows.Add(new BinPredictionsTableViewModel
+                {
+                    BinId = bin.BinId,
+                    Region = bin.Region?.RegionName,
+                    LastCollectionDateTime = latestCollectedAt,
+
+                    // For bins that are collected/new, requiring refresh
+                    PredictedNextAvgDailyGrowth = null,
+                    EstimatedFillToday = 0,
+                    EstimatedDaysToThreshold = null,
+
+                    RiskLevel = "—",
+                    PlanningStatus = "Collection done",
+
+                    CollectionDone = true,
+                    NeedsPredictionRefresh = true,
+
+                    AutoSelected = false,
+                    RouteId = null
+                });
+
                 continue;
             }
 
-            if (latestPrediction == null)
+            if (latestPrediction == null ||
+                cycleDurationDays == null ||
+                cycleStartMonth == null)
             {
                 missingPredictionCount++;
                 continue;
@@ -130,8 +184,8 @@ public class BinPredictionService
             double predictedGrowth = latestPrediction.PredictedAvgDailyGrowth;
 
             // Count no. of days since last collection
-            var daysElapsed = Math.Max((today - latest.CurrentCollectionDateTime.Value).TotalDays, 0);
-            
+            var daysElapsed = Math.Max((today - latestCollection.CurrentCollectionDateTime.Value).TotalDays, 0);
+
             // Bin fill % starts from 0 after collection
             var estimatedFillToday = Math.Clamp(predictedGrowth * daysElapsed, 0, 100);
 
@@ -147,6 +201,7 @@ public class BinPredictionService
                 daysTo80 = (int)Math.Ceiling(remaining / predictedGrowth);
             }
 
+<<<<<<< HEAD:ADWebApplication/Services/BinPredictionService.cs
             // Bins are auto-selected as urgent if it is predicted to reach 80% the next day
             bool autoSelected = daysTo80 <= 1;
             
@@ -157,30 +212,44 @@ public class BinPredictionService
             var nextPlannedAt = nextStop?.PlannedCollectionTime;
 
             // A bin is considered scheduled if a planned collection exists and the planned date is after the last collection and not in the past
+=======
+>>>>>>> origin/main:ADWebApplication/Services/Admin/BinPredictionService.cs
             bool isScheduled =
-                nextPlannedAt.HasValue &&
-                lastCollectedAt.HasValue &&
-                nextPlannedAt.Value.Date >= today &&
-                nextPlannedAt > lastCollectedAt;
+                nextStop?.PlannedCollectionTime >= today &&
+                nextStop.PlannedCollectionTime > latestCollectedAt;
 
-            //create row in ViewModel
+            var planningStatus = isScheduled ? "Scheduled" : "Not Scheduled";
+            var riskLevel = GetRiskLevel(daysTo80);
+
+            // Auto-select bins that are high risk and unscheduled for scheduling
+            var autoSelected = riskLevel == "High" && !isScheduled;
+
             rows.Add(new BinPredictionsTableViewModel
             {
                 BinId = bin.BinId,
                 Region = bin.Region?.RegionName,
-                LastCollectionDateTime = latest.CurrentCollectionDateTime.Value,
+                LastCollectionDateTime = latestCollectedAt,
 
                 PredictedNextAvgDailyGrowth = predictedGrowth,
                 EstimatedFillToday = estimatedFillToday,
                 EstimatedDaysToThreshold = daysTo80,
+                RiskLevel = riskLevel,
+                PlanningStatus = planningStatus,
 
-                //WIP
-                PlanningStatus = isScheduled ? "Scheduled" : "Not Scheduled",
+                AutoSelected = autoSelected,
                 RouteId = isScheduled && nextStop?.RouteId != null
                     ? nextStop.RouteId.Value.ToString()
                     : null
             });
+
         }
+
+        // calculate avg fill growth rate
+        var avgGrowth = rows
+            .Where(r => r.PredictedNextAvgDailyGrowth.HasValue)
+            .Select(r => r.PredictedNextAvgDailyGrowth!.Value)
+            .DefaultIfEmpty(0)
+            .Average();
 
         // filters
         IEnumerable<BinPredictionsTableViewModel> query = rows;
@@ -194,47 +263,51 @@ public class BinPredictionService
         else if (timeframe == "7")
             query = query.Where(r => r.EstimatedDaysToThreshold <= 7);
 
-        // sorting
-        bool isDesc = sortDir == "desc";
+        // to list high risk unscheduled bins first
+        bool isDefaultSort = sort == "EstimatedFill" && sortDir == "desc";
 
-        if (sort == "EstimatedFill")
+        IEnumerable<BinPredictionsTableViewModel> orderedQuery;
+
+        if (isDefaultSort)
         {
-            if (isDesc)
-            {
-                query = query.OrderByDescending(r => r.EstimatedFillToday);
-            }
-            else
-            {
-                query = query.OrderBy(r => r.EstimatedFillToday);
-            }
-        }
-        else if (sort == "AvgGrowth")
-        {
-            if (isDesc)
-            {
-                query = query.OrderByDescending(r => r.PredictedNextAvgDailyGrowth);
-            }
-            else
-            {
-                query = query.OrderBy(r => r.PredictedNextAvgDailyGrowth);
-            }
+            // Priority view
+            orderedQuery = query
+                .OrderBy(r =>
+                    r.RiskLevel == "High" && r.PlanningStatus == "Not Scheduled" ? 0 :
+                    r.RiskLevel == "High" ? 1 :
+                    r.RiskLevel == "Medium" ? 2 :
+                    3
+                )
+                .ThenByDescending(r => r.EstimatedFillToday);
         }
         else
         {
-            // default sort
-            if (isDesc)
+            // User-controlled sorting
+            bool isDesc = sortDir == "desc";
+
+            if (sort == "EstimatedFill")
             {
-                query = query.OrderByDescending(r => r.EstimatedDaysToThreshold);
+                orderedQuery = isDesc
+                    ? query.OrderByDescending(r => r.EstimatedFillToday)
+                    : query.OrderBy(r => r.EstimatedFillToday);
+            }
+            else if (sort == "AvgGrowth")
+            {
+                orderedQuery = isDesc
+                    ? query.OrderByDescending(r => r.PredictedNextAvgDailyGrowth ?? -1)
+                    : query.OrderBy(r => r.PredictedNextAvgDailyGrowth ?? double.MaxValue);
             }
             else
             {
-                query = query.OrderBy(r => r.EstimatedDaysToThreshold);
+                orderedQuery = isDesc
+                    ? query.OrderByDescending(r => r.EstimatedDaysToThreshold ?? int.MaxValue)
+                    : query.OrderBy(r => r.EstimatedDaysToThreshold ?? int.MaxValue);
             }
         }
 
         //pagination
         //counts no. of rows after filtering/sorting
-        var totalItems = query.Count(); 
+        var totalItems = orderedQuery.Count();
         var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
         if (totalPages == 0)
@@ -246,7 +319,11 @@ public class BinPredictionService
             page = Math.Clamp(page, 1, totalPages);
         }
         
+<<<<<<< HEAD:ADWebApplication/Services/BinPredictionService.cs
         var pagedRows = query
+=======
+        var pagedRows = orderedQuery
+>>>>>>> origin/main:ADWebApplication/Services/Admin/BinPredictionService.cs
             .Skip((page - 1) * pageSize) //skip  rows belonging to the prev. page
             .Take(pageSize) //limit no. of rows displayed to 10
             .ToList();
@@ -255,7 +332,12 @@ public class BinPredictionService
         {
             Rows = pagedRows,
             TotalBins = bins.Count,
+<<<<<<< HEAD:ADWebApplication/Services/BinPredictionService.cs
             HighPriorityBins = query.Count(r => r.EstimatedDaysToThreshold <= 1),
+=======
+            HighPriorityBins = rows.Count(r => r.EstimatedDaysToThreshold <= 1),
+            AvgDailyFillGrowthOverall = avgGrowth,
+>>>>>>> origin/main:ADWebApplication/Services/Admin/BinPredictionService.cs
 
             SelectedRisk = risk,
             SelectedTimeframe = timeframe,
@@ -268,6 +350,7 @@ public class BinPredictionService
             HighRiskUnscheduledCount = rows.Count(r =>
                 r.RiskLevel == "High" && r.PlanningStatus == "Not Scheduled"
             ),
+            IsDefaultPriorityView = isDefaultSort,
 
             NewCycleDetectedCount = newCycleDetectedCount,
             MissingPredictionCount = missingPredictionCount
@@ -278,33 +361,41 @@ public class BinPredictionService
     {
         var now = DateTimeOffset.UtcNow;
 
-        var latestCollectionByBin = await GetLatestCollectionsAsync();
+        var collectionHistoryByBin = await GetCollectionHistoryAsync();
         var latestPredictionByBin = await GetLatestPredictionsAsync();
 
         int refreshed = 0;
 
-        foreach (var kvp in latestCollectionByBin)
+        foreach (var (binId, history) in collectionHistoryByBin)
         {
-            int binId = kvp.Key;
-            var latestCollection = kvp.Value;
+            if (history.Count < 2)
+                continue;
+
+            var latestCollection = history[0];
+            var olderCollection = history[1];
+
+            if (latestCollection.CurrentCollectionDateTime == null ||
+                olderCollection.CurrentCollectionDateTime == null)
+                continue;
 
             latestPredictionByBin.TryGetValue(binId, out var latestPrediction);
 
             if (!NeedsPredictionRefresh(latestPrediction, latestCollection))
                 continue;
 
-            if (latestCollection.CycleDurationDays == null ||
-                latestCollection.CycleStartMonth == null ||
-                latestCollection.CurrentCollectionDateTime == null)
-                continue;
+            var latestCollectedAt = latestCollection.CurrentCollectionDateTime.Value;
+
+            int cycleDurationDays = (int)Math.Ceiling((latestCollectedAt - olderCollection.CurrentCollectionDateTime.Value).TotalDays);
+
+            int cycleStartMonth = latestCollectedAt.Month;
 
             // Call ML
             var req = new MLPredictionRequestDto
             {
                 container_id = binId.ToString(),
                 collection_fill_percentage = latestCollection.BinFillLevel,
-                cycle_duration_days = latestCollection.CycleDurationDays.Value,
-                cycle_start_month = latestCollection.CycleStartMonth.Value
+                cycle_duration_days = cycleDurationDays,
+                cycle_start_month = cycleStartMonth
             };
 
             var response = await client.PostAsJsonAsync("/predict", req);
@@ -318,7 +409,7 @@ public class BinPredictionService
             {
                 BinId = binId,
                 PredictedAvgDailyGrowth = ml.predicted_next_avg_daily_growth,
-                PredictedDate = now.UtcDateTime,        
+                PredictedDate = now.UtcDateTime,
                 ModelVersion = "v1"
             });
 

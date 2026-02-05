@@ -24,7 +24,7 @@
             <input type="hidden" asp-for="BinId" />
 
             <div class="modal-section">
-                <div class="section-label">Fill Level: <span id="fillLevelValue">@Model.BinFillLevel%</span></div>
+                <div class="section-label">Fill Level: <span id="fillLevelValue">@(Model.BinFillLevel)%</span></div>
                 <input asp-for="BinFillLevel" type="range" min="0" max="100" class="form-range" id="fillLevelRange" />
                 <span asp-validation-for="BinFillLevel" class="text-danger"></span>
             </div>
@@ -35,10 +35,6 @@
             </div>
 
             <div class="modal-section modal-actions-row">
-                <label class="btn btn-outline-secondary">
-                    <i class="bi bi-camera"></i> Add Photo
-                    <input type="file" class="d-none" />
-                </label>
                 <a class="btn btn-outline-secondary" asp-action="ReportIssue">
                     <i class="bi bi-exclamation-circle"></i> Report Issue
                 </a>
@@ -56,90 +52,9 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        const fillLevelRange = document.getElementById('fillLevelRange');
-        const fillLevelValue = document.getElementById('fillLevelValue');
-
-        if (fillLevelRange && fillLevelValue) {
-            fillLevelValue.textContent = `${fillLevelRange.value}%`;
-            fillLevelRange.addEventListener('input', () => {
-                fillLevelValue.textContent = `${fillLevelRange.value}%`;
-            });
-        }
-    </script>
+    <script src="~/js/collector-dashboard.js" asp-append-version="true"></script>
 }
 
-<style>
-    .collection-modal {
-        min-height: calc(100vh - 120px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-    }
-
-    .modal-card {
-        width: 100%;
-        max-width: 720px;
-        background: #ffffff;
-        border-radius: 18px;
-        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
-        padding: 28px;
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-
-    .modal-header h4 {
-        margin: 0;
-        font-weight: 700;
-    }
-
-    .modal-header p {
-        margin: 6px 0 0;
-        color: #6b7280;
-    }
-
-    .modal-close {
-        width: 36px;
-        height: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        color: #6b7280;
-        background: #f3f4f6;
-        text-decoration: none;
-    }
-
-    .modal-section { margin-bottom: 20px; }
-
-    .section-label {
-        font-weight: 600;
-        margin-bottom: 10px;
-        display: inline-block;
-    }
-
-    .modal-actions-row {
-        display: flex;
-        gap: 12px;
-    }
-
-    .modal-footer {
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-        margin-top: 12px;
-    }
-
-    @@media (max-width: 640px) {
-        .modal-card { padding: 20px; }
-        .modal-actions-row { flex-direction: column; }
-        .modal-footer { flex-direction: column-reverse; }
-    }
-</style>
+@section Styles {
+    <link rel="stylesheet" href="~/css/collector-dashboard.css" asp-append-version="true" />
+}

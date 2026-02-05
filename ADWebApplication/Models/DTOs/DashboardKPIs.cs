@@ -11,5 +11,5 @@ namespace ADWebApplication.Models.DTOs
         public decimal AvgBinFillRate { get; set; }
         public decimal BinFillRateChange { get; set; }
     }
-    
+
 }

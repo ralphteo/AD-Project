@@ -7,6 +7,6 @@ namespace ADWebApplication.Models.DTOs
         public string SerialNo { get; set; } = "";
         public double EstimatedWeightKg { get; set; }
         public string? Feedback { get; set; }
-        public int UserId {get; set;}
+        public int UserId { get; set; }
     }
 }

@@ -49,7 +49,9 @@
             <a asp-action="Index" class="btn btn-outline-secondary">Back to Dashboard</a>
             @if (!string.IsNullOrEmpty(Model.NextAddress))
             {
-                <a class="btn btn-light" href="https://www.google.com/maps/search/?api=1&query=@Uri.EscapeDataString(Model.NextAddress)" target="_blank">
+                <a class="btn btn-light"
+                    href="https://www.google.com/maps/search/?api=1&query=@Uri.EscapeDataString(Model.NextAddress)"
+                    target="_blank">
                     <i class="bi bi-send"></i> Navigate
                 </a>
             }
@@ -113,7 +115,9 @@
         text-decoration: none;
     }
 
-    .modal-body { text-align: center; }
+    .modal-body {
+        text-align: center;
+    }
 
     .modal-title {
         font-weight: 700;
@@ -143,7 +147,9 @@
         margin-bottom: 8px;
     }
 
-    .next-title { font-weight: 700; }
+    .next-title {
+        font-weight: 700;
+    }
 
     .next-meta {
         color: #475569;
@@ -162,6 +168,8 @@
     }
 
     @@media (max-width: 640px) {
-        .modal-card { padding: 20px; }
+        .modal-card {
+            padding: 20px;
+        }
     }
 </style>

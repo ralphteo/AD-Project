@@ -3,6 +3,7 @@ using ADWebApplication.Data;
 using Microsoft.VisualBasic;
 using ADWebApplication.Models;
 using ADWebApplication.Services;
+using ADWebApplication.Services.Collector;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using ADWebApplication.Data.Repository;
 
@@ -15,6 +16,10 @@ builder.Logging.AddConsole();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 builder.Services.AddScoped<RoutePlanningService>();
+builder.Services.AddScoped<ICollectorService, CollectorService>();
+builder.Services.AddScoped<ICollectorDashboardService, CollectorDashboardService>();
+builder.Services.AddScoped<ICollectorAssignmentService, CollectorAssignmentService>();
+builder.Services.AddScoped<ICollectorIssueService, CollectorIssueService>();
 
 
 builder.Services.AddDbContext<In5niteDbContext>(options =>
@@ -68,9 +73,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 //ML Flask
-builder.Services.AddHttpClient<BinPredictionService>(client =>
+builder.Services.AddHttpClient<IBinPredictionService, BinPredictionService>(client =>
 {
-    client.BaseAddress = new Uri("https://in5nite-ml-fdcycfe6gkfnhdg2.southeastasia-01.azurewebsites.net"); 
+    client.BaseAddress = new Uri("https://in5nite-ml-fdcycfe6gkfnhdg2.southeastasia-01.azurewebsites.net");
 });
 
 builder.Services.AddAuthorization();
@@ -152,7 +157,7 @@ using (var scope = app.Services.CreateScope())
 
     db.SaveChanges();
 }
-app.UseStaticFiles();   
+app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAndroid");
 app.UseSession();
@@ -165,6 +170,12 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=EmpAuth}/{action=login}/{id?}");
 
+
 #pragma warning disable S6966 // Await RunAsync instead
 app.Run();
 #pragma warning restore S6966
+
+namespace ADWebApplication
+{
+    public partial class Program { }
+}

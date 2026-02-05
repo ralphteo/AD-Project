@@ -16,7 +16,6 @@ namespace ADWebApplication.Models
         public DateTime? PlannedCollectionTime { get; set; }
         public int CurrentFillLevel { get; set; } // Percentage
         public string Status { get; set; } = string.Empty; // "Pending", "Collected", "Issue"
-        public double CollectedWeightKg { get; set; }
         public DateTime? CollectedAt { get; set; }
     }
 }

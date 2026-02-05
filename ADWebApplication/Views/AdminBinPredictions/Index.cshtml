@@ -38,12 +38,22 @@
 
         <!-- High Priority -->
         <div class="col-12 col-md-6 col-lg-3">
-            <div class="card shadow-sm border-danger h-100">
+            <div class="card shadow-sm h-100 @(Model.HighPriorityBins > 0 ? "border-danger" : "border-success")">
                 <div class="card-body">
-                    <h6 class="text-muted">High Priority Bins</h6>
-                    <h3 class="fw-bold text-danger">@Model.HighPriorityBins</h3>
-                    <small class="text-muted">≤ 1 day to 80%</small>
-                    <div class="text-danger small">Urgent collection</div>
+                    <h6 class="text-muted">Total High Priority Bins</h6>
+
+                    @if (Model.HighPriorityBins > 0)
+                    {
+                        <h3 class="fw-bold text-danger">@Model.HighPriorityBins</h3>
+                        <small class="text-muted">≤ 1 day to 80%</small>
+                        <div class="text-danger small">Urgent collection required</div>
+                    }
+                    else
+                    {
+                        <h3 class="fw-bold text-success">0</h3>
+                        <small class="text-muted">≤ 1 day to 80%</small>
+                        <div class="text-success small">No urgent collections</div>
+                    }
                 </div>
             </div>
         </div>
@@ -54,6 +64,9 @@
                 <div class="card-body">
                     <h6 class="text-muted">Avg. Daily Fill Growth</h6>
                     <h3 class="fw-bold">@Model.AvgDailyFillGrowthOverall.ToString("0.0")%</h3>
+                    <div class="text-muted small">
+                        Mean predicted daily fill growth across active bins
+                    </div>
                 </div>
             </div>
         </div>
@@ -69,7 +82,7 @@
 
                     @if (Model.NewCycleDetectedCount > 0)
                     {
-                        <!-- Orange if refresh is needed -->
+                        <!-- Yellow if refresh is needed -->
                         <h5 class="fw-bold text-warning mb-1">
                             <i class="bi bi-stars me-1"></i>
                             Refresh required
@@ -113,17 +126,17 @@
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-funnel"></i>
 
-            <select name="risk" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                <option value="All" selected="@(Model.SelectedRisk == "All")">All Risk Levels</option>
-                <option value="High" selected="@(Model.SelectedRisk == "High")">High Risk</option>
-                <option value="Medium" selected="@(Model.SelectedRisk == "Medium")">Medium Risk</option>
-                <option value="Low" selected="@(Model.SelectedRisk == "Low")">Low Risk</option>
+            <select asp-for="SelectedRisk" name="risk" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                <option value="All">All Risk Levels</option>
+                <option value="High">High Risk</option>
+                <option value="Medium">Medium Risk</option>
+                <option value="Low">Low Risk</option>
             </select>
 
-            <select name="timeframe" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                <option value="All" selected="@(Model.SelectedTimeframe == "All")">All Timeframes</option>
-                <option value="3" selected="@(Model.SelectedTimeframe == "3")">≤ 3 days</option>
-                <option value="7" selected="@(Model.SelectedTimeframe == "7")">≤ 7 days</option>
+            <select asp-for="SelectedTimeframe" name="timeframe" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                <option value="All">All Timeframes</option>
+                <option value="3">≤ 3 days</option>
+                <option value="7">≤ 7 days</option>
             </select>
         </div>
 
@@ -135,15 +148,15 @@
                 <i class="bi bi-arrow-down-up @(Model.SortDir == "desc" ? "sort-desc" : "")"></i>
             </button>
 
-            <select name="sort" class="form-select form-select-sm w-auto" onchange="updateSortField(this.value)">
-                <option value="DaysToThreshold" selected="@(Model.SortBy=="DaysToThreshold")">
-                    Days to Threshold
-                </option>
-                <option value="EstimatedFill" selected="@(Model.SortBy=="EstimatedFill")">
+            <select asp-for="SortBy" name="sort" class="form-select form-select-sm w-auto" onchange="updateSortField(this.value)">
+                <option value="EstimatedFill">
                     Estimated Fill
                 </option>
-                <option value="AvgGrowth" selected="@(Model.SortBy=="AvgGrowth")">
-                    Avg Daily Growth
+                <option value="DaysToThreshold">
+                    Days to Threshold
+                </option>
+                <option value="AvgGrowth">
+                    Average Daily Growth
                 </option>
             </select>
 
@@ -180,16 +193,24 @@
                 View in Route Planning
             </a>
         </div>
+        @if (Model.IsDefaultPriorityView)
+        {
+            <p class="text-muted small mt-2 mb-3 d-flex align-items-center gap-2">
+                <i class="bi bi-info-circle"></i>
+                Unscheduled high-risk bins are automatically prioritised and displayed first in the table.
+            </p>
+        }
+
     }
 
     @functions {
-    string FillBarClass(double fill)
-    {
-        if (fill >= 75) return "bg-danger";
-        if (fill >= 60) return "bg-warning";
-        return "bg-success";
+        string FillBarClass(double fill)
+        {
+            if (fill >= 75) return "bg-danger";
+            if (fill >= 60) return "bg-warning";
+            return "bg-success";
+        }
     }
-}
 
     <!-- Prediction Bin table -->
     <div class="card shadow-sm overflow-hidden rounded-3">
@@ -224,9 +245,6 @@
                         <th class="th-tight text-center">Risk Status</th>
                         <th class="th-tight text-center">Planning Status</th>
 
-                        <th class="th-tight text-center actions-col">
-                            Actions
-                        </th>
                     </tr>
                 </thead>
 
@@ -234,8 +252,13 @@
                 @if (!Model.Rows.Any())
                 {
                     <tr>
+<<<<<<< HEAD
                         <td colspan="9" class="text-center text-muted py-4">
                             No data available
+=======
+                        <td colspan="8" class="text-center text-muted py-4">
+                            No bins found for the selected filters.
+>>>>>>> origin/main
                         </td>
                     </tr>
                 }
@@ -243,7 +266,11 @@
                 {
                     @foreach (var row in Model.Rows)
                     {
-                        <tr class="@(row.AutoSelected ? "row-high-risk" : "")">
+                        <tr class="@(row.AutoSelected
+                            ? "row-high-risk"
+                            : row.NeedsPredictionRefresh
+                                ? "row-refresh-needed"
+                                : "")">
 
                             <td style="width:32px;">
                                 <input type="checkbox"
@@ -260,50 +287,91 @@
                             </td>
 
                             <td>
-                                <div class="fw-bold fs-5">
-                                    @row.EstimatedFillToday.ToString("0")%
-                                </div>
-
-                                <div class="progress mt-2" style="height: 6px; background-color:#e9ecef;">
-                                    <div class="progress-bar @FillBarClass(row.EstimatedFillToday)"
-                                        role="progressbar"
-                                        style="width:@row.EstimatedFillToday%">
-                                    </div>
-                                </div>
-
-                                <div class="text-muted small">
-                                    @row.CycleStartDisplay
-                                </div>
-                            </td>
-
-                            <td class="text-nowrap text-center">
-                                <span class="fw-medium text-secondary">
-                                    +@row.PredictedNextAvgDailyGrowth.ToString("0.0")%
-                                </span>
-                                <span class="text-muted small">/ day</span>
-                            </td>
-
-                            <td>
-                                <div class="fw-bold">
-                                    @row.EstimatedDaysToThreshold day@(row.EstimatedDaysToThreshold == 1 ? "" : "s")
-                                </div>
-
-                                @if (row.EstimatedDaysToThreshold <= 3)
+                                @if (row.NeedsPredictionRefresh)
                                 {
-                                    <div class="text-danger small">Urgent collection</div>
+                                    <div class="fw-bold fs-5">0%</div>
+
+                                    <div class="progress mt-2" style="height: 6px; background-color:#e9ecef;">
+                                        <div class="progress-bar @FillBarClass(0)"
+                                            role="progressbar"
+                                            style="width:@row.EstimatedFillToday%">
+                                        </div>
+                                    </div>
+
+                                    <div class="text-muted small">
+                                        Collected on @row.LastCollectionDateTime.ToString("dd MMM yyyy")
+                                    </div>
                                 }
                                 else
                                 {
-                                    <div class="text-muted small">ML predicted</div>
+                                    <div class="fw-bold fs-5">
+                                        @row.EstimatedFillToday.ToString("0")%
+                                    </div>
+
+                                    <div class="progress mt-2" style="height: 6px; background-color:#e9ecef;">
+                                        <div class="progress-bar @FillBarClass(row.EstimatedFillToday)"
+                                            role="progressbar"
+                                            style="width:@row.EstimatedFillToday%">
+                                        </div>
+                                    </div>
+
+                                    <div class="text-muted small">
+                                        @row.CycleStartDisplay
+                                    </div>
+                                }
+                            </td>
+
+                            <td class="text-nowrap text-center">
+                                @if (row.PredictedNextAvgDailyGrowth.HasValue)
+                                {
+                                    <span class="fw-medium text-secondary">
+                                        +@row.PredictedNextAvgDailyGrowth.Value.ToString("0.0")%
+                                    </span>
+                                    <span class="text-muted small">/ day</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">
+                                        Prediction refresh needed
+                                    </span>
+                                }
+                            </td>
+
+                            <td>
+                                @if (row.NeedsPredictionRefresh)
+                                {
+                                    <div class="fw-bold text-muted text-center"></div>
+                                }
+                                else
+                                {
+                                    <div class="fw-bold">
+                                        @row.EstimatedDaysToThreshold
+                                        day@(row.EstimatedDaysToThreshold == 1 ? "" : "s")
+                                    </div>
+
+                                    @if (row.EstimatedDaysToThreshold <= 3)
+                                    {
+                                        <div class="text-danger small">Urgent collection</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-muted small">ML predicted</div>
+                                    }
                                 }
                             </td>
 
                             <td class="text-center">
-                                @if (row.RiskLevel == "High")
+                                @if (row.NeedsPredictionRefresh)
+                                {
+                                    <span class="badge rounded-pill bg-light text-muted">
+                                        —
+                                    </span>
+                                }
+                                else if (row.RiskLevel == "High")
                                 {
                                     <span class="badge rounded-pill px-3 py-2 bg-danger-subtle text-danger fw-medium"
                                         data-bs-toggle="tooltip"
-                                        title="Bin predicted to reach ≥ 80% fill within the next 3 days">
+                                        title="Bin predicted to reach ≥ 80% fill within the next 1 day">
                                         High Risk
                                     </span>
                                 }
@@ -311,7 +379,7 @@
                                 {
                                     <span class="badge rounded-pill px-3 py-2 bg-warning-subtle text-warning fw-medium"
                                         data-bs-toggle="tooltip"
-                                        title="Bin predicted to reach ≥ 80% fill within the next 4–7 days">
+                                        title="Bin predicted to reach ≥ 80% fill within the next 3 days">
                                         Medium Risk
                                     </span>
                                 }
@@ -319,13 +387,13 @@
                                 {
                                     <span class="badge rounded-pill bg-secondary-subtle text-secondary fw-semibold"
                                         data-bs-toggle="tooltip"
-                                        title="Bin predicted to reach ≥ 80% fill after 7 days">
+                                        title="Bin predicted to reach ≥ 80% fill after 4 days or more">
                                         Low Risk
                                     </span>
                                 }
                             </td>
 
-                            <td>
+                            <td class="text-center">
                                 @if (row.PlanningStatus == "Scheduled")
                                 {
                                     <span class="badge bg-success-subtle text-success d-inline-flex align-items-center gap-1">
@@ -335,32 +403,50 @@
                                     <div class="text-muted small">
                                         Route: @row.RouteId
                                     </div>
+                                            @if (row.NeedsPredictionRefresh)
+                                            {
+                                                <div class="mt-1">
+                                                    <span class="badge bg-warning-subtle text-warning d-inline-flex align-items-center gap-1"
+                                                        data-bs-toggle="tooltip"
+                                                        title="A new collection cycle was detected. Prediction refresh is required.">
+                                                        <i class="bi bi-stars"></i>
+                                                        Prediction Refresh needed
+                                                    </span>
+                                                </div>
+                                            }
                                 }
                                 else
                                 {
-                                    <span class="badge bg-danger-subtle text-danger d-inline-flex align-items-center gap-1"
-                                        data-bs-toggle="tooltip"
-                                        data-bs-placement="top"
-                                        title="High-risk bin flagged for collection planning. No route assigned yet.">
-                                        <i class="bi bi-x-circle"></i>
-                                        Not Scheduled
-                                    </span>
-                                }
-                            </td>
-
-                            <td>
-                                @if (row.AutoSelected)
-                                {
-                                    <button class="btn btn-sm btn-outline-danger route-action-btn">
-                                        <i class="bi bi-diagram-3"></i>
-                                        <span class="d-block small fw-semibold mt-1">
-                                            Include in Route Planning
+                                    @* High risk *@
+                                    if (row.RiskLevel == "High")
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger d-inline-flex align-items-center gap-1"
+                                            data-bs-toggle="tooltip"
+                                            title="Urgent action required. This high-risk bin has not been scheduled for collection yet.">
+                                            <i class="bi bi-exclamation-circle-fill"></i>
+                                            Not Scheduled
                                         </span>
-                                    </button>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">—</span>
+                                    }
+                                    @* Medium risk *@
+                                    else if (row.RiskLevel == "Medium")
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning d-inline-flex align-items-center gap-1"
+                                            data-bs-toggle="tooltip"
+                                            title="Collection not required yet. This bin is being monitored for future scheduling.">
+                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                            Not Scheduled
+                                        </span>
+                                    }
+                                    @* Low risk *@
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary d-inline-flex align-items-center gap-1"
+                                            data-bs-toggle="tooltip"
+                                            title="No immediate action required.">
+                                            <i class="bi bi-info-circle"></i>
+                                            Not Scheduled
+                                        </span>
+                                    }
                                 }
                             </td>
 
@@ -440,6 +526,7 @@
     // Sort direction toggle
     function toggleSortDir() {
         const url = new URL(window.location.href);
+        const defaultDir = "@Model.SortDir"; // e.g. "desc"
         const current = url.searchParams.get("sortDir") || "asc";
         url.searchParams.set("sortDir", current === "asc" ? "desc" : "asc");
         url.searchParams.set("page", 1);
@@ -474,8 +561,8 @@
     }
 
     .row-high-risk {
-        border-left: 4px solid #dc3545;
-        background-color: #fff;
+        border-left: 5px solid #dc3545;
+        background-color: #fff5f5;
     }
 
     .row-high-risk:hover {
@@ -515,8 +602,21 @@
         font-size: 1.15rem !important;
     }
 
-    .table tbody tr:hover {
-        background-color: #f9fafb;
+    .table tbody tr.row-high-risk {
+        background-color: #fff5f5 !important;
+    }
+
+    .table tbody tr.row-high-risk:hover {
+        background-color: #fff5f5 !important;
+    }
+
+    .row-refresh-needed {
+    border-left: 5px solid #ffc107; 
+    background-color: #fff9e6;  
+}
+
+    .row-refresh-needed:hover {
+        background-color: #fff9e6;
     }
 
 </style>

@@ -16,6 +16,5 @@ namespace ADWebApplication.Models
         // Computed Properties for Dashboard
         public int TotalPoints => CollectionPoints.Count;
         public int CompletedPoints => CollectionPoints.Count(p => p.Status == "Collected");
-        public double TotalWeightCollected => CollectionPoints.Sum(p => p.CollectedWeightKg);
     }
 }

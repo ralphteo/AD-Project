@@ -5,18 +5,14 @@ namespace ADWebApplication.Models
     public class CollectionConfirmationVM
     {
         public int StopId { get; set; }
-        public string PointId { get; set; } = string.Empty;
+        public string? PointId { get; set; }
         public string LocationName { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
-        public string BinId { get; set; } = string.Empty;
+        public string? BinId { get; set; }
         public string Zone { get; set; } = string.Empty;
 
         [Range(0, 100, ErrorMessage = "Fill level must be between 0 and 100")]
         public int BinFillLevel { get; set; }
-
-        [Required]
-        [Range(0.1, 1000, ErrorMessage = "Please enter a valid weight (0.1 - 1000 kg)")]
-        public double CollectedWeightKg { get; set; }
 
         public DateTime CollectionTime { get; set; } = DateTime.Now;
 
