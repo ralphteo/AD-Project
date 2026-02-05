@@ -410,7 +410,7 @@ public class BinPredictionService : IBinPredictionService
             if (!latestPredictionByBin.TryGetValue(binId, out var prediction))
             continue;
 
-            if(latest.CurrentCollectionDateTime.HasValue)
+            if(!latest.CurrentCollectionDateTime.HasValue)
             continue;
 
             if (prediction.PredictedAvgDailyGrowth <= 0)
