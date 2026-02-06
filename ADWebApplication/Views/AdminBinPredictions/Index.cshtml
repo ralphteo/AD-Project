@@ -162,12 +162,6 @@
 
         </div>
 
-        <!-- Generate routes -->
-        <button id="generateRoutesBtn" class="btn btn-primary ms-auto">
-            <i class="bi bi-diagram-3 me-1"></i>
-            Generate Routes for Selected Bins
-        </button>
-
     </form>
 </div>
 
@@ -188,7 +182,7 @@
                 </div>
             </div>
 
-            <a href="#" class="btn btn-danger">
+            <a class="btn btn-danger" asp-controller="AdminRoutePlanning" asp-action="Index">
                 <i class="bi bi-lightning-fill me-1"></i>
                 View in Route Planning
             </a>
@@ -218,10 +212,6 @@
             <table class="table table-hover mb-0 align-middle">
                 <thead class="table-light border-bottom">
                     <tr class="align-middle">
-                        <th style="width:36px;">
-                            <input type="checkbox" id="selectAllBins" />
-                        </th>
-
                         <th class="th-tight">Bin ID</th>
                         <th class="th-tight">Region</th>
 
@@ -252,7 +242,7 @@
                 @if (!Model.Rows.Any())
                 {
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-4">
+                        <td colspan="7" class="text-center text-muted py-4">
                             No bins found for the selected filters.
                         </td>
                     </tr>
@@ -263,13 +253,6 @@
                     {
                         var rowClass = row.AutoSelected ? "row-high-risk" : (row.NeedsPredictionRefresh ? "row-refresh-needed" : "");
                         <tr class="@rowClass">
-
-                            <td style="width:32px;">
-                                <input type="checkbox"
-                                    class="bin-checkbox"
-                                    value="@row.BinId" />
-                            </td>
-                            
                             <td class="fw-semibold text-center">
                                 @row.BinId
                             </td>
@@ -493,27 +476,6 @@
     document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll('[data-bs-toggle="tooltip"]')
             .forEach(el => new bootstrap.Tooltip(el));
-    });
-
-    // Select all bins
-    document.getElementById("selectAllBins")?.addEventListener("change", function () {
-        const checked = this.checked;
-        document.querySelectorAll(".bin-checkbox")
-            .forEach(cb => cb.checked = checked);
-    });
-
-    // Generate routes
-    document.getElementById("generateRoutesBtn")?.addEventListener("click", function () {
-        const selected = [...document.querySelectorAll(".bin-checkbox:checked")]
-            .map(cb => cb.value);
-
-        if (selected.length === 0) {
-            alert("Please select at least one bin.");
-            return;
-        }
-
-        console.log("Selected bin IDs:", selected);
-        // WIP: POST route assignment
     });
 
     // Sort direction toggle
