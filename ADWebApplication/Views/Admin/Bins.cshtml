@@ -128,7 +128,7 @@
                         <label for="editRegionId" class="form-label">Region</label>
                         <select id="editRegionId" name="RegionId" class="form-select" required>
                             <option value="">Select Region</option>
-                            @foreach (var region in ViewBag.Regions as List<ADWebApplication.Models.Region>)
+                            @foreach (var region in (ViewBag.Regions as List<ADWebApplication.Models.Region>)!)
                             {
                                 <option value="@region.RegionId">@region.RegionName</option>
                             }
@@ -260,7 +260,7 @@
                         <label for="createRegionId" class="form-label">Region</label>
                         <select id="createRegionId" name="RegionId" class="form-select" required>
                             <option value="">Select Region</option>
-                            @foreach (var region in ViewBag.Regions as List<ADWebApplication.Models.Region>)
+                            @foreach (var region in (ViewBag.Regions as List<ADWebApplication.Models.Region>)!)
                             {
                                 <option value="@region.RegionId">@region.RegionName</option>
                             }

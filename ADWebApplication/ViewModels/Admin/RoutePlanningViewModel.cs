@@ -11,7 +11,7 @@ namespace ADWebApplication.Models.ViewModels
 
         public string TodayDate { get; set; } = string.Empty;
         public int TotalBins => AllStops?.Count ?? 0;
-        public string CollectionDate {get; set;}
+        public required string CollectionDate {get; set;}
 
         public List<RouteGroupViewModel> Routes { get; set; } = new();
         public List<CollectionOfficerDto> AvailableOfficers { get; set; } = new();

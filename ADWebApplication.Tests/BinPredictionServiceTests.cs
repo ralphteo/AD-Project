@@ -73,13 +73,22 @@ namespace ADWebApplication.Tests
 
             dbContext.Regions.Add(region);
             dbContext.CollectionBins.Add(bin);
-            dbContext.CollectionDetails.Add(new CollectionDetails
-            {
-                CollectionId = 1,
-                BinId = 1,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
-                BinFillLevel = 20
-            });
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-10),
+                    BinFillLevel = 80
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 20
+                }
+            );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 1,
@@ -114,13 +123,22 @@ namespace ADWebApplication.Tests
             // High risk bin (days to threshold <= 1)
             var bin1 = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
             dbContext.CollectionBins.Add(bin1);
-            dbContext.CollectionDetails.Add(new CollectionDetails
-            {
-                CollectionId = 1,
-                BinId = 1,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-7),
-                BinFillLevel = 20
-            });
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-14),
+                    BinFillLevel = 80
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-7),
+                    BinFillLevel = 20
+                }
+            );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 1,
@@ -133,13 +151,22 @@ namespace ADWebApplication.Tests
             // Low risk bin
             var bin2 = new CollectionBin { BinId = 2, BinStatus = "Active", RegionId = 1, Region = region };
             dbContext.CollectionBins.Add(bin2);
-            dbContext.CollectionDetails.Add(new CollectionDetails
-            {
-                CollectionId = 2,
-                BinId = 2,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-2),
-                BinFillLevel = 20
-            });
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 3,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-9),
+                    BinFillLevel = 80
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 4,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-2),
+                    BinFillLevel = 20
+                }
+            );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 2,
@@ -174,13 +201,22 @@ namespace ADWebApplication.Tests
             // Bin reaching threshold in 2 days
             var bin1 = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
             dbContext.CollectionBins.Add(bin1);
-            dbContext.CollectionDetails.Add(new CollectionDetails
-            {
-                CollectionId = 1,
-                BinId = 1,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
-                BinFillLevel = 20
-            });
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-12),
+                    BinFillLevel = 80
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 20
+                }
+            );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 1,
@@ -193,13 +229,22 @@ namespace ADWebApplication.Tests
             // Bin reaching threshold in 10 days
             var bin2 = new CollectionBin { BinId = 2, BinStatus = "Active", RegionId = 1, Region = region };
             dbContext.CollectionBins.Add(bin2);
-            dbContext.CollectionDetails.Add(new CollectionDetails
-            {
-                CollectionId = 2,
-                BinId = 2,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-2),
-                BinFillLevel = 20
-            });
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 3,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-9),
+                    BinFillLevel = 80
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 4,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-2),
+                    BinFillLevel = 20
+                }
+            );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 2,
@@ -233,13 +278,22 @@ namespace ADWebApplication.Tests
             // Bin with high fill
             var bin1 = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
             dbContext.CollectionBins.Add(bin1);
-            dbContext.CollectionDetails.Add(new CollectionDetails
-            {
-                CollectionId = 1,
-                BinId = 1,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
-                BinFillLevel = 20
-            });
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-12),
+                    BinFillLevel = 80
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 20
+                }
+            );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 1,
@@ -252,13 +306,22 @@ namespace ADWebApplication.Tests
             // Bin with low fill
             var bin2 = new CollectionBin { BinId = 2, BinStatus = "Active", RegionId = 1, Region = region };
             dbContext.CollectionBins.Add(bin2);
-            dbContext.CollectionDetails.Add(new CollectionDetails
-            {
-                CollectionId = 2,
-                BinId = 2,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-2),
-                BinFillLevel = 20
-            });
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 3,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-9),
+                    BinFillLevel = 80
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 4,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-2),
+                    BinFillLevel = 20
+                }
+            );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 2,
@@ -295,13 +358,22 @@ namespace ADWebApplication.Tests
             {
                 var bin = new CollectionBin { BinId = i, BinStatus = "Active", RegionId = 1, Region = region };
                 dbContext.CollectionBins.Add(bin);
-                dbContext.CollectionDetails.Add(new CollectionDetails
-                {
-                    CollectionId = i,
-                    BinId = i,
-                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
-                    BinFillLevel = 20
-                });
+                dbContext.CollectionDetails.AddRange(
+                    new CollectionDetails
+                    {
+                        CollectionId = i * 2 - 1,
+                        BinId = i,
+                        CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-12),
+                        BinFillLevel = 80
+                    },
+                    new CollectionDetails
+                    {
+                        CollectionId = i * 2,
+                        BinId = i,
+                        CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                        BinFillLevel = 20
+                    }
+                );
                 dbContext.FillLevelPredictions.Add(new FillLevelPrediction
                 {
                     PredictionId = i,
@@ -338,13 +410,22 @@ namespace ADWebApplication.Tests
             var bin = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
 
             dbContext.CollectionBins.Add(bin);
-            dbContext.CollectionDetails.Add(new CollectionDetails
-            {
-                CollectionId = 1,
-                BinId = 1,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-1), // Recent collection
-                BinFillLevel = 25
-            });
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-8), // Older collection
+                    BinFillLevel = 80
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-1), // Recent collection
+                    BinFillLevel = 25
+                }
+            );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 1,
@@ -379,13 +460,22 @@ namespace ADWebApplication.Tests
             // High risk unscheduled bin
             var bin1 = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
             dbContext.CollectionBins.Add(bin1);
-            dbContext.CollectionDetails.Add(new CollectionDetails
-            {
-                CollectionId = 1,
-                BinId = 1,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-7),
-                BinFillLevel = 20
-            });
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-14),
+                    BinFillLevel = 80
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-7),
+                    BinFillLevel = 20
+                }
+            );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 1,
@@ -429,12 +519,26 @@ namespace ADWebApplication.Tests
                 {
                     CollectionId = 1,
                     BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-12),
+                    BinFillLevel = 80
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 1,
                     CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
                     BinFillLevel = 20
                 },
                 new CollectionDetails
                 {
-                    CollectionId = 2,
+                    CollectionId = 3,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-12),
+                    BinFillLevel = 80
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 4,
                     BinId = 2,
                     CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
                     BinFillLevel = 20
@@ -484,13 +588,22 @@ namespace ADWebApplication.Tests
             // Bin with growth rate 10
             var bin1 = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
             dbContext.CollectionBins.Add(bin1);
-            dbContext.CollectionDetails.Add(new CollectionDetails
-            {
-                CollectionId = 1,
-                BinId = 1,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
-                BinFillLevel = 20
-            });
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-12),
+                    BinFillLevel = 80
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 20
+                }
+            );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 1,
@@ -503,13 +616,22 @@ namespace ADWebApplication.Tests
             // Bin with growth rate 20
             var bin2 = new CollectionBin { BinId = 2, BinStatus = "Active", RegionId = 1, Region = region };
             dbContext.CollectionBins.Add(bin2);
-            dbContext.CollectionDetails.Add(new CollectionDetails
-            {
-                CollectionId = 2,
-                BinId = 2,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
-                BinFillLevel = 20
-            });
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 3,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-12),
+                    BinFillLevel = 80
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 4,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 20
+                }
+            );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 2,
@@ -728,7 +850,7 @@ namespace ADWebApplication.Tests
             {
                 CollectionId = 1,
                 BinId = 1,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-7),
+                CurrentCollectionDateTime = DateTimeOffset.UtcNow.Date.AddDays(-7),
                 BinFillLevel = 20
             });
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
@@ -745,7 +867,7 @@ namespace ADWebApplication.Tests
             {
                 CollectionId = 2,
                 BinId = 2,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-2),
+                CurrentCollectionDateTime = DateTimeOffset.UtcNow.Date.AddDays(-2),
                 BinFillLevel = 20
             });
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
@@ -789,7 +911,7 @@ namespace ADWebApplication.Tests
             {
                 CollectionId = 1,
                 BinId = 1,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                CurrentCollectionDateTime = DateTimeOffset.UtcNow.Date.AddDays(-5),
                 BinFillLevel = 20
             });
 
@@ -817,7 +939,7 @@ namespace ADWebApplication.Tests
             {
                 CollectionId = 1,
                 BinId = 1,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                CurrentCollectionDateTime = DateTimeOffset.UtcNow.Date.AddDays(-5),
                 BinFillLevel = 20
             });
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
@@ -834,7 +956,7 @@ namespace ADWebApplication.Tests
             {
                 CollectionId = 2,
                 BinId = 2,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                CurrentCollectionDateTime = DateTimeOffset.UtcNow.Date.AddDays(-5),
                 BinFillLevel = 20
             });
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
@@ -869,7 +991,7 @@ namespace ADWebApplication.Tests
             {
                 CollectionId = 1,
                 BinId = 1,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                CurrentCollectionDateTime = DateTimeOffset.UtcNow.Date.AddDays(-5),
                 BinFillLevel = 20
             });
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
@@ -906,7 +1028,7 @@ namespace ADWebApplication.Tests
             {
                 CollectionId = 1,
                 BinId = 1,
-                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-10),
+                CurrentCollectionDateTime = DateTimeOffset.UtcNow.Date.AddDays(-10),
                 BinFillLevel = 20
             });
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction

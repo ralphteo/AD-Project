@@ -29,8 +29,8 @@ namespace ADWebApplication.Services.Collector
                 .Select(rs => new BinOption
                 {
                     BinId = rs.CollectionBin!.BinId,
-                    LocationName = rs.CollectionBin.LocationName ?? "",
-                    Region = rs.CollectionBin.Region != null ? rs.CollectionBin.Region.RegionName : ""
+                    LocationName = rs.CollectionBin!.LocationName ?? "",
+                    Region = rs.CollectionBin!.Region != null ? rs.CollectionBin.Region.RegionName : ""
                 })
                 .Distinct()
                 .ToListAsync();
@@ -103,7 +103,7 @@ namespace ADWebApplication.Services.Collector
             var today = DateTime.Today;
             var stop = await _db.RouteStops
                 .Include(rs => rs.RoutePlan)
-                    .ThenInclude(rp => rp.RouteAssignment)
+                    .ThenInclude(rp => rp!.RouteAssignment)
                 .Where(rs => rs.BinId == model.BinId
                           && rs.RoutePlan != null
                           && rs.RoutePlan.RouteAssignment != null
@@ -130,7 +130,7 @@ namespace ADWebApplication.Services.Collector
             var stop = await _db.RouteStops
                 .Include(rs => rs.CollectionDetails)
                 .Include(rs => rs.RoutePlan)
-                    .ThenInclude(rp => rp.RouteAssignment)
+                    .ThenInclude(rp => rp!.RouteAssignment)
                 .Where(rs => rs.StopId == stopId
                           && rs.RoutePlan != null
                           && rs.RoutePlan.RouteAssignment != null

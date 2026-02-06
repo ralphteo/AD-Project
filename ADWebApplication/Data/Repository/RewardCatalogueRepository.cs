@@ -103,7 +103,7 @@ namespace ADWebApplication.Data.Repository
         {
             return await _context.RewardCatalogues
                 .Where(r => !string.IsNullOrEmpty(r.RewardCategory))
-                .Select(r => r.RewardCategory)
+                .Select(r => r.RewardCategory!)
                 .Distinct()
                 .OrderBy(c => c)
                 .ToListAsync();

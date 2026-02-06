@@ -124,12 +124,12 @@ namespace ADWebApplication.Controllers
                 .Select(r => new RewardCatalogueDto
                 {
                     RewardId = r.RewardId,
-                    RewardName = r.RewardName,
-                    Description = r.Description,
+                    RewardName = r.RewardName!,
+                    Description = r.Description!,
                     Points = r.Points,
-                    RewardCategory = r.RewardCategory,
+                    RewardCategory = r.RewardCategory!,
                     StockQuantity = r.StockQuantity,
-                    ImageUrl = r.ImageUrl,
+                    ImageUrl = r.ImageUrl!,
                     Availability = r.Availability
                 })
                 .ToListAsync();
@@ -237,10 +237,10 @@ namespace ADWebApplication.Controllers
                     {
                         RedemptionId = redemption.RedemptionId,
                         RewardId = reward.RewardId,
-                        RewardName = reward.RewardName,
-                        ImageUrl = reward.ImageUrl,
+                        RewardName = reward.RewardName!,
+                        ImageUrl = reward.ImageUrl!,
                         PointsUsed = redemption.PointsUsed,
-                        RedemptionStatus = redemption.RedemptionStatus,
+                        RedemptionStatus = redemption.RedemptionStatus!,
                         RedemptionDateTime = redemption.RedemptionDateTime
                     }
                 )

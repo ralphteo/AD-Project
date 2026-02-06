@@ -9,7 +9,7 @@ public class HighRiskBinBadgeViewComponent : ViewComponent
 
     public HighRiskBinBadgeViewComponent(IBinPredictionService predictionService)
     {
-        _predictionService = predictionService;
+        _predictionService = predictionService ?? throw new ArgumentNullException(nameof(predictionService));
     }
 
     public async Task<IViewComponentResult> InvokeAsync()

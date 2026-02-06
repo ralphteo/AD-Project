@@ -21,7 +21,7 @@ namespace ADWebApplication.Services.Collector
                 .Include(ra => ra.RoutePlans)
                     .ThenInclude(rp => rp.RouteStops)
                         .ThenInclude(rs => rs.CollectionBin)
-                            .ThenInclude(cb => cb.Region)
+                            .ThenInclude(cb => cb!.Region)
                 .Include(ra => ra.RoutePlans)
                     .ThenInclude(rp => rp.RouteStops)
                         .ThenInclude(rs => rs.CollectionDetails)
@@ -111,10 +111,10 @@ namespace ADWebApplication.Services.Collector
         {
             var stop = await _db.RouteStops
                 .Include(rs => rs.CollectionBin)
-                    .ThenInclude(cb => cb.Region)
+                    .ThenInclude(cb => cb!.Region)
                 .Include(rs => rs.CollectionDetails)
                 .Include(rs => rs.RoutePlan)
-                    .ThenInclude(rp => rp.RouteAssignment)
+                    .ThenInclude(rp => rp!.RouteAssignment)
                 .Where(rs => rs.StopId == stopId && rs.RoutePlan != null && rs.RoutePlan.RouteAssignment != null)
                 .Where(rs => rs.RoutePlan!.RouteAssignment!.AssignedTo == username)
                 .FirstOrDefaultAsync();
