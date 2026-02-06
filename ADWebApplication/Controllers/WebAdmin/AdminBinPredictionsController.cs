@@ -26,6 +26,11 @@ public class AdminBinPredictionsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Refresh()
     {
+        if (!ModelState.IsValid)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
         int refreshed = await _binPredictionService.RefreshPredictionsForNewCyclesAsync();
 
         TempData["PredictionRefreshSuccess"] = $"{refreshed} bin prediction(s) refreshed successfully.";

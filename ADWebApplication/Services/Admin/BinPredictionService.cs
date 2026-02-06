@@ -81,7 +81,7 @@ public class BinPredictionService : IBinPredictionService
             .ToDictionary(p => p.BinId, p => p);
     }
 
-    private int CalculateDaysTo80Percent(double currentFill, double dailyGrowth)
+    private static int CalculateDaysTo80Percent(double currentFill, double dailyGrowth)
     {
         if (currentFill >= 80)
         {
@@ -139,7 +139,7 @@ public class BinPredictionService : IBinPredictionService
             PlanningStatus = planningStatus,
             IsActualFillLevel = false,
             AutoSelected = autoSelected,
-            RouteId = isScheduled && nextStop?.RouteId != null
+            RouteId = isScheduled && nextStop!.RouteId != null
                 ? nextStop.RouteId.Value.ToString()
                 : null
         };
@@ -177,7 +177,7 @@ public class BinPredictionService : IBinPredictionService
             return CreateRowForBin(bin, latestCollection, latestCollectedAt, null, nextStop, today, true);
         }
 
-        if (latestPrediction == null || cycleDurationDays == null || cycleStartMonth == null)
+        if (latestPrediction == null || !cycleDurationDays.HasValue || !cycleStartMonth.HasValue)
         {
             missingPredictionCount++;
             return null;
@@ -264,7 +264,7 @@ public class BinPredictionService : IBinPredictionService
 
         var nextStopByBin = nextRouteStop
             .Where(x => x != null && x.BinId.HasValue)
-            .ToDictionary(x => x.BinId!.Value, x => x);
+            .ToDictionary(x => x!.BinId!.Value, x => x!);
 
         var rows = new List<BinPredictionsTableViewModel>();
 
