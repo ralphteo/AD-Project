@@ -298,7 +298,7 @@
 
 @section Scripts {
     <script>
-        const googleMapsKey = @Html.Raw(JsonSerializer.Serialize(Configuration["GoogleMaps:ApiKey"] ?? ""));
+        const googleMapsKey = @Html.Raw(JsonSerializer.Serialize(ViewBag.GoogleMapsKey ?? ""));
         const rawStops = @Html.Raw(JsonSerializer.Serialize(
             Model.CollectionPoints.Select((p, index) => new {
                 id = p.StopId == 0 ? (index + 1) : p.StopId,
