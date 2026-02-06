@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using ADWebApplication.Data.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
+var googleKey = builder.Configuration["GOOGLE_MAPS_API_KEY"];
 
 builder.Services.AddControllers();
 builder.Services.AddControllersWithViews();
