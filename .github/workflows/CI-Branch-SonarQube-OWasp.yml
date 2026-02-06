@@ -3,7 +3,8 @@ name: CI-Branch + SonarCloud + SCA
 on:
   push:
     branches: 
-    - angeline/backend
+    - angeline/test
+    - main
   pull_request:
   workflow_dispatch:
 
