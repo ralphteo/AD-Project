@@ -28,26 +28,6 @@ public class AuthController : ControllerBase
 
         return Ok(regions);
     }
-    [HttpGet("profile")]
-    public async Task<ActionResult<UserProfileDto>> GetUser([FromQuery] int userId)
-    {
-        var user = await _db.PublicUser
-        .AsNoTracking()
-        .FirstOrDefaultAsync(u=>u.Id==userId);
-
-        if (user == null)
-        {
-            return Ok(new UserProfileDto());
-        }
-        return Ok(new UserProfileDto
-        {
-            UserId = user.Id,
-            UserName = user.Name,
-            Email = user.Email,
-            PhoneNumber = user.PhoneNumber
-        });
-    }
-
     [HttpPost("register")]
     public async Task<ActionResult<RegisterResponse>> Register([FromBody] RegisterRequest request)
     {
