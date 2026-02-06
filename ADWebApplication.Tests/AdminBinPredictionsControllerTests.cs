@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using ADWebApplication.Services;
 using ADWebApplication.Models.ViewModels.BinPredictions;
+using ADWebApplication.Controllers.WebAdmin;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Security.Claims;
