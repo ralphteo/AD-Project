@@ -93,22 +93,60 @@ public class AdminRoutePlanningController : Controller
         return View(viewModel);
     }
 
-    [HttpPost("assign")]
+    [HttpPost("assign-all")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AssignRoute(AssignRouteRequestDto req)
+    public async Task<IActionResult> AssignAllRoutes(AssignAllRoutesRequestDto req)
     {
-        var adminUsername = User.Identity?.Name ?? "Admin";
         var date = DateTime.Today.AddDays(1);
+        var admin = User.Identity?.Name ?? "Admin";
 
-        var vrpStops = await _routePlanningService.PlanRouteAsync();
+        var savedStops = await _routePlanningService.GetPlannedRoutesAsync(date);
 
-        await _routeAssignmentService.SavePlannedRouteAsync(
-            vrpStops,
-            req.RouteKey,
-            req.OfficerUsername,
-            adminUsername,
+        List<UiRouteStopDto> uiStops;
+
+        if (savedStops.Any())
+        {
+            uiStops = savedStops.Select(s => new UiRouteStopDto
+            {
+                RouteKey = s.RouteKey,
+                BinId = s.BinId,
+                Latitude = s.Latitude,
+                Longitude = s.Longitude,
+                StopNumber = s.StopNumber,
+                AssignedOfficerName = s.AssignedOfficerName,
+                IsHighPriority = false
+            }).ToList();
+        }
+        else
+        {
+            var vrpStops = await _routePlanningService.PlanRouteAsync();
+            
+            uiStops = vrpStops.Select(s => new UiRouteStopDto
+            {
+                RouteKey = s.AssignedCO,
+                BinId = s.BinId,
+                Latitude = s.Latitude ?? 0,
+                Longitude = s.Longitude ?? 0,
+                StopNumber = s.StopNumber,
+                IsHighPriority = s.IsHighPriority,
+                AssignedOfficerName = s.AssignedOfficerName
+            }).ToList();
+        }
+
+        var totalRoutes = uiStops.Select(s => s.RouteKey).Distinct().Count();
+
+        var assignments = req.Assignments
+            .Where(a => !string.IsNullOrEmpty(a.OfficerUsername))
+            .ToDictionary(a => a.RouteKey, a => a.OfficerUsername);
+
+        await _routeAssignmentService.SavePlannedRoutesAsync(
+            uiStops,
+            assignments,
+            admin,
             date
         );
+
+        TempData["SuccessMessage"] = $"All {assignments.Count} route(s) assigned successfully.";
 
         return RedirectToAction(nameof(Index));
     }

@@ -5,6 +5,5 @@ namespace ADWebApplication.Services
 {
     public interface IRouteAssignmentService
     {
-        Task SavePlannedRouteAsync(List<RoutePlanDto> allStops, int routeKey, string officerUsername, string adminUsername, DateTime plannedDate);
-    }
+        Task SavePlannedRoutesAsync(List<UiRouteStopDto> allStops, Dictionary<int, string> routeAssignments, string adminUsername, DateTime date);    }
 }

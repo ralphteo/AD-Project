@@ -10,6 +10,9 @@
     .OrderBy(k => k)
     .ToList();
 
+    var totalRoutes = activeOfficerIds.Count;
+    var assignedRoutes = Model.Routes.Count(r => !string.IsNullOrEmpty(r.AssignedOfficerName));
+
     var totalHighPriority = Model.AllStops
         .Where(s => s.IsHighPriority)
         .Select(s => s.BinId)
@@ -69,6 +72,24 @@
     }
 </style>
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
 <div class="row g-3 mb-3 align-items-stretch">
 
     <div class="col-md-3">
@@ -85,7 +106,7 @@
     <div class="col-md-3">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h3 class="fw-bold text-danger">@totalHighPriority</h3>
+                <h3 class="fw-bold">@totalHighPriority</h3>
                 <div class="text-muted">High Priority Bins</div>
                 <small>≤ 1 day to 80%</small>
             </div>
@@ -106,8 +127,10 @@
     <div class="col-md-3">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h3 class="fw-bold">@activeOfficerIds.Count</h3>
-                <div class="text-muted">Officers Deployed</div>
+                <h3 class="fw-bold" id="officersDeployedCount">
+                    @assignedRoutes / @totalRoutes
+                </h3>
+                <div class="text-muted">Routes Assigned</div>
             </div>
         </div>
     </div>
@@ -141,92 +164,95 @@ else
         <div class="sidebar-container pe-2">
             <h5 class="fw-bold mb-3">Officer Schedules</h5>
 
-            @foreach (var route in Model.Routes)
-            {
-                var coStops = route.Stops;
+            <form method="post" asp-action="AssignAllRoutes" asp-controller="AdminRoutePlanning">
+                @Html.AntiForgeryToken()
 
-                <div class="card officer-card shadow-sm mb-3" data-officer-id="@route.RouteKey">
-                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center officer-header"
-                        role="button"
-                        aria-expanded="true"
-                        data-target="stops-@route.RouteKey">
+                @for (int i = 0; i < Model.Routes.Count; i++)
+                {
+                    var route = Model.Routes[i];
+                    var coStops = route.Stops;
 
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="bi bi-chevron-down toggle-icon"></i>
-                            <h6 class="fw-bold mb-0 text-primary">
-                                Route #@route.RouteKey
-                            </h6>
+                    <div class="card officer-card shadow-sm mb-3" data-officer-id="@route.RouteKey">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center officer-header"
+                            role="button"
+                            aria-expanded="true"
+                            data-target="stops-@route.RouteKey">
+
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-chevron-down toggle-icon"></i>
+                                <h6 class="fw-bold mb-0 text-primary">
+                                    Route #@route.RouteKey
+                                </h6>
+                            </div>
+
+                            <span class="badge bg-light text-dark border">
+                                @coStops.Count stops · <span class="route-distance"></span> km
+                            </span>
                         </div>
-
-                        <span class="badge bg-light text-dark border">
-                            @coStops.Count stops · <span class="route-distance"></span> km
-                        </span>
-                    </div>
-
-                    @if (!string.IsNullOrEmpty(route.AssignedOfficerName))
-                    {
-                        <div class="text-muted small mt-1">
-                            Assigned to: <strong>@route.AssignedOfficerName</strong>
-                        </div>
-                    }
-
-
-                    <form method="post" asp-action="AssignRoute" class="p-3 border-top">
-                        @Html.AntiForgeryToken()
-
-                        <input type="hidden" name="RouteId" value="@route.RouteKey" />
-
-                        <select name="OfficerUsername" class="form-select mb-2" required>
-                            <option value="">Select Officer</option>
-                            @foreach (var officer in Model.AvailableOfficers)
-                            {
-                                <option value="@officer.Username">
-                                    @officer.FullName
-                                </option>
-                            }
-                        </select>
 
                         @if (!string.IsNullOrEmpty(route.AssignedOfficerName))
                         {
-                            <button class="btn btn-sm btn-secondary w-100" disabled>
-                                Assigned
-                            </button>
+                            <div class="text-muted small mt-1 px-3">
+                                Assigned to: <strong>@route.AssignedOfficerName</strong>
+                            </div>
                         }
-                        else
-                        {
-                            <button type="submit" class="btn btn-sm btn-primary w-100">
-                                Assign & Save Route
-                            </button>
-                        }
-                    </form>
 
-                    <!-- Stops -->
-                    <div class="collapse show" id="stops-@route.RouteKey">
-                        <ul class="list-group list-group-flush">
-                            @foreach (var stop in coStops)
+                        <input type="hidden" name="Assignments[@i].RouteKey" value="@route.RouteKey" />
+
+                        <div class="p-3 border-top">
+                            <select name="Assignments[@i].OfficerUsername"
+                                    class="form-select"
+                                    disabled="@(!string.IsNullOrEmpty(route.AssignedOfficerName))">
+                                <option value="">Select Officer</option>
+                                @foreach (var officer in Model.AvailableOfficers)
+                                {
+                                    <option value="@officer.Username" selected="@(officer.Username == route.AssignedOfficerName)">
+                                        @officer.FullName
+                                    </option>
+                                }
+                            </select>
+
+                            @if (!string.IsNullOrEmpty(route.AssignedOfficerName))
                             {
-                                <li class="list-group-item border-0 py-2 px-3 border-bottom">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <span class="badge bg-primary me-2">@stop.StopNumber</span>
-                                            <span class="fw-bold">Bin @stop.BinId</span>
-                                        </div>
-
-                                        @if (stop.IsHighPriority)
-                                        {
-                                            <span class="badge bg-danger" style="font-size: 0.65rem;">
-                                                HIGH PRIORITY
-                                            </span>
-                                        }
-                                    </div>
-                                </li>
+                                <small class="text-muted d-block mt-2">
+                                    Assigned to <strong>@route.AssignedOfficerName</strong>
+                                </small>
                             }
-                    </ul>
-               </div>
-            </div>
-        }
-        </div>
-    </div>
+                        </div>
+
+                        <div class="collapse show" id="stops-@route.RouteKey">
+                            <ul class="list-group list-group-flush">
+                                @foreach (var stop in coStops)
+                                {
+                                    <li class="list-group-item border-0 py-2 px-3 border-bottom">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="badge bg-primary me-2">@stop.StopNumber</span>
+                                                <span class="fw-bold">Bin @stop.BinId</span>
+                                            </div>
+
+                                            @if (stop.IsHighPriority)
+                                            {
+                                                <span class="badge bg-danger" style="font-size: 0.65rem;">
+                                                    HIGH PRIORITY
+                                                </span>
+                                            }
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                }
+
+                <button type="submit" class="btn btn-primary w-100 mt-3" id="saveAllBtn" disabled>
+                    <i class="bi bi-check-circle me-2"></i>
+                    Save All Route Assignments
+                </button>
+                <small class="text-muted d-block text-center mt-2" id="assignmentStatus">
+                    Please assign all routes before saving
+                </small>
+            </form>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
@@ -381,5 +407,106 @@ else
                     header.setAttribute('aria-expanded', 'true');
                 }
             });
+        });
+
+        // 7. Form validation before submit
+        document.getElementById('saveAllBtn')?.addEventListener('click', function(e) {
+            const selects = document.querySelectorAll('select[name^="Assignments"]');
+            const totalRoutes = selects.length;
+            let assignedCount = 0;
+            const selectedOfficers = [];
+            const duplicates = [];
+
+            // Check each select
+            selects.forEach(select => {
+                const value = select.value;
+                if (value) {
+                    assignedCount++;
+                    if (selectedOfficers.includes(value)) {
+                        // Find officer name for better error message
+                        const selectedOption = select.options[select.selectedIndex];
+                        if (!duplicates.includes(selectedOption.text)) {
+                            duplicates.push(selectedOption.text);
+                        }
+                    } else {
+                        selectedOfficers.push(value);
+                    }
+                }
+            });
+
+            // Validate: All routes must be assigned
+            if (assignedCount < totalRoutes) {
+                e.preventDefault();
+                alert(`All ${totalRoutes} routes must be assigned to officers. You have only assigned ${assignedCount}.`);
+                return false;
+            }
+
+            // Validate: No duplicate officer assignments
+            if (duplicates.length > 0) {
+                e.preventDefault();
+                alert(`Each officer can only be assigned to one route. The following officer(s) are assigned to multiple routes:\n\n${duplicates.join(', ')}`);
+                return false;
+            }
+
+            return true;
+        });
+
+        // 8. Enable/disable submit button based on form completeness
+        function checkFormValidity() {
+            const selects = document.querySelectorAll('select[name^="Assignments"]');
+            const saveBtn = document.getElementById('saveAllBtn');
+            const statusText = document.getElementById('assignmentStatus');
+            
+            if (!selects.length || !saveBtn || !statusText) return;
+
+            const totalRoutes = selects.length;
+            let assignedCount = 0;
+            const selectedOfficers = [];
+            let hasDuplicates = false;
+
+            selects.forEach(select => {
+                const value = select.value;
+                if (value) {
+                    assignedCount++;
+                    if (selectedOfficers.includes(value)) {
+                        hasDuplicates = true;
+                    } else {
+                        selectedOfficers.push(value);
+                    }
+                }
+            });
+
+            const allAssigned = assignedCount === totalRoutes;
+            const isValid = allAssigned && !hasDuplicates;
+
+            saveBtn.disabled = !isValid;
+
+            // Update the officers deployed counter at the top
+            const officersCounter = document.getElementById('officersDeployedCount');
+            if (officersCounter) {
+                officersCounter.textContent = `${assignedCount} / ${totalRoutes}`;
+            }
+
+            if (!allAssigned) {
+                statusText.textContent = `${assignedCount} of ${totalRoutes} routes assigned`;
+                statusText.className = 'text-danger d-block text-center mt-2';
+            } else if (hasDuplicates) {
+                statusText.textContent = 'Each officer can only be assigned once';
+                statusText.className = 'text-danger d-block text-center mt-2';
+            } else {
+                statusText.textContent = 'All routes assigned - ready to save';
+                statusText.className = 'text-success d-block text-center mt-2';
+            }
+        }
+
+        // Listen for changes on all officer select dropdowns
+        document.addEventListener('DOMContentLoaded', function() {
+            const selects = document.querySelectorAll('select[name^="Assignments"]');
+            selects.forEach(select => {
+                select.addEventListener('change', checkFormValidity);
+            });
+            
+            // Check initial state
+            checkFormValidity();
         });
     </script>

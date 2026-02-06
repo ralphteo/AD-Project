@@ -16,44 +16,64 @@ namespace ADWebApplication.Services
         _db = db;
     }
 
-    public async Task SavePlannedRouteAsync(List<RoutePlanDto> allStops, int routeKey, string officerUsername, string adminUsername, DateTime plannedDate)
+    public async Task SavePlannedRoutesAsync(List<UiRouteStopDto> allStops, Dictionary<int, string> routeAssignments, string adminUsername, DateTime date)
     {
-        var routeStops = allStops
-            .Where(s => s.AssignedCO == routeKey)
-            .OrderBy(s => s.StopNumber)
-            .ToList();
+        var existingPlans = await _db.RoutePlans
+            .Include(r => r.RouteStops)
+            .Include(r => r.RouteAssignment)
+            .Where(r => r.PlannedDate == date)
+            .ToListAsync();
 
-        if (!routeStops.Any())
-            throw new InvalidOperationException("No stops found for route.");
-
-        var assignment = new RouteAssignment
+        if (!existingPlans.Any())
         {
-            AssignedTo = officerUsername,
-            AssignedBy = adminUsername,
-            AssignedDateTime = DateTime.UtcNow
-        };
-        _db.RouteAssignments.Add(assignment);
-        await _db.SaveChangesAsync();
+            var grouped = allStops.GroupBy(s => s.RouteKey);
 
-        var routePlan = new RoutePlan
-        {
-            AssignmentId = assignment.AssignmentId,
-            PlannedDate = plannedDate,
-            RouteStatus = "Assigned",
-            GeneratedBy = adminUsername
-        };
-        _db.RoutePlans.Add(routePlan);
-        await _db.SaveChangesAsync();
-
-        foreach (var stop in routeStops)
-        {
-            _db.RouteStops.Add(new RouteStop
+            foreach (var g in grouped)
             {
-                RouteId = routePlan.RouteId,
-                BinId = stop.BinId,
-                StopSequence = stop.StopNumber,
-                PlannedCollectionTime = DateTimeOffset.UtcNow
-            });
+                var route = new RoutePlan
+                {
+                    PlannedDate = date,
+                    GeneratedBy = adminUsername,
+                    RouteStatus = "Scheduled",
+                    RouteStops = g.Select(s => new RouteStop
+                    {
+                        BinId = s.BinId!.Value,
+                        StopSequence = s.StopNumber
+                    }).ToList()
+                };
+
+                if (routeAssignments.TryGetValue(g.Key, out var officer))
+                {
+                    route.RouteAssignment = new RouteAssignment
+                    {
+                        AssignedTo = officer,
+                        AssignedBy = adminUsername
+                    };
+                }
+
+                _db.RoutePlans.Add(route);
+            }
+        }
+        else
+        {
+            foreach (var plan in existingPlans)
+            {
+                if (routeAssignments.TryGetValue(plan.RouteId, out var officer))
+                {
+                    if (plan.RouteAssignment == null)
+                    {
+                        plan.RouteAssignment = new RouteAssignment
+                        {
+                            AssignedTo = officer,
+                            AssignedBy = adminUsername
+                        };
+                    }
+                    else
+                    {
+                        plan.RouteAssignment.AssignedTo = officer;
+                    }
+                }
+            }
         }
 
         await _db.SaveChangesAsync();
