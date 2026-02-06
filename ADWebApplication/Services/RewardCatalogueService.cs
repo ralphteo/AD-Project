@@ -25,12 +25,18 @@ namespace ADWebApplication.Services
         }
         public async Task<RewardCatalogue?> GetRewardByIdAsync(int rewardId)
         {
+            if(_logger.IsEnabled(LogLevel.Information))
+            {   
             _logger.LogInformation("Fetching reward with ID {RewardId}.", rewardId);
+            }
             return await _repository.GetRewardByIdAsync(rewardId);
         }
         public async Task<int> AddRewardAsync(RewardCatalogue reward)
         {
+            if(_logger.IsEnabled(LogLevel.Information))
+            {
             _logger.LogInformation("Adding new reward: {RewardName} to the catalogue.", reward.RewardName);
+            }
             if (reward.Points == 0)
             {
                 throw new InvalidOperationException("Reward points must be greater than zero.");
@@ -40,23 +46,35 @@ namespace ADWebApplication.Services
                 throw new InvalidOperationException("Stock quantity cannot be negative.");
             }
             var rewardId = await _repository.AddRewardAsync(reward);
+            if(_logger.IsEnabled(LogLevel.Information))
+            {
             _logger.LogInformation("Reward added with ID {RewardId}.", rewardId);
+            }
             return rewardId;
         }
         public async Task<bool> UpdateRewardAsync(RewardCatalogue reward)
         {
+            if(_logger.IsEnabled(LogLevel.Information))
+            {
             _logger.LogInformation("Updating reward with ID {RewardId}.", reward.RewardId);
-            // var result = await _repository.UpdateRewardAsync(reward);
+            }
+          
             if (reward.StockQuantity == 0 && reward.Availability)
             {
                 reward.Availability = false;
-                _logger.LogInformation("Reward with ID {RewardId} is out of stock. Setting availability to false.", reward.RewardId);
+                if(_logger.IsEnabled(LogLevel.Information))
+                {
+                    _logger.LogInformation("Reward with ID {RewardId} is out of stock. Setting availability to false.", reward.RewardId);
+                }
             }
             return await _repository.UpdateRewardAsync(reward);
         }
         public async Task<bool> DeleteRewardAsync(int rewardId)
         {
-            _logger.LogInformation("Deleting reward with ID {RewardId}.", rewardId);
+            if(_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Deleting reward with ID {RewardId}.", rewardId);
+            }
             return await _repository.DeleteRewardAsync(rewardId);
         }
         public async Task<IEnumerable<RewardCatalogue>> GetAvailableRewardsAsync()
@@ -78,12 +96,18 @@ namespace ADWebApplication.Services
                 return false;
             }
             var isAvailable = reward.Availability && reward.StockQuantity >= quantity;
-            _logger.LogInformation("Reward ID {RewardId} availability: {IsAvailable}, Stock Quantity: {StockQuantity}.", rewardId, isAvailable, reward.StockQuantity);
+            if(_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Reward ID {RewardId} availability: {IsAvailable}, Stock Quantity: {StockQuantity}.", rewardId, isAvailable, reward.StockQuantity);
+            }
             return isAvailable;
         }
         public async Task<IEnumerable<RewardCatalogue>> GetRewardsByCategoryAsync(string category)
         {
+            if(_logger.IsEnabled(LogLevel.Information))
+            {
             _logger.LogInformation("Fetching rewards in category: {Category}.", category);
+            }
             return await _repository.GetRewardsByCategoryAsync(category);
         }
         

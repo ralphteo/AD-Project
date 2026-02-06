@@ -35,12 +35,6 @@ namespace ADWebApplication.Data.Repository
 
             var activeUsers1 = await _db.PublicUser.CountAsync(u => u.IsActive);
             Console.WriteLine($"Active (u.IsActive): {activeUsers1}");
-/* 
-            var activeUsers2 = await _db.Users.CountAsync(u => u.IsActive == true);
-            Console.WriteLine($"Active (u.IsActive == true): {activeUsers2}");
-
-            var activeUsers3 = await _db.Users.Where(u => u.IsActive).CountAsync();
-            Console.WriteLine($"Active (Where clause): {activeUsers3}"); */
 
             // Check actual values
             var sampleUsers = await _db.PublicUser.Take(5).Select(u => new { u.Id, u.IsActive }).ToListAsync();
