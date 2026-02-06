@@ -45,9 +45,14 @@ jobs:
             /k:"GDipSA-Team-5_AD-Project" \
             /o:"gdipsa-team-5" \
             /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.login="$SONAR_TOKEN" \
+            /d:sonar.projectBaseDir="$GITHUB_WORKSPACE" \
+            /d:sonar.sources="ADWebApplication" \
+            /d:sonar.tests="ADWebApplication.Tests" \
             /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml" \
             /d:sonar.cs.vstest.reportsPaths="TestResults/**/*.trx" \
-            /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**"
+            /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**" \
+            /d:sonar.verbose=true
 
       # ---- Restore & Build main project ----
       - name: Restore Main Project
