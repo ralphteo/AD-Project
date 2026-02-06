@@ -35,6 +35,7 @@ namespace ADWebApplication.Data
         public DbSet<RewardCatalogue> RewardCatalogues { get; set; }
         public DbSet<RewardRedemption> RewardRedemptions { get; set; }
         public DbSet<PointTransaction> PointTransactions { get; set; }
+        public DbSet<Campaign> Campaigns { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -137,7 +138,7 @@ namespace ADWebApplication.Data
             
             modelBuilder.Entity<RewardCatalogue>()
                 .HasKey(r => r.RewardId);
-
+                
             // Constraints
             modelBuilder.Entity<PublicUser>()
                 .HasIndex(u => u.Email)

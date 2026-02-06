@@ -9,9 +9,9 @@ namespace ADWebApplication.Data.Repository
 {
     public class CampaignRepository : ICampaignRepository
     {
-        private readonly DashboardDbContext _context;
+        private readonly In5niteDbContext _context;
 
-        public CampaignRepository(DashboardDbContext context)
+        public CampaignRepository(In5niteDbContext context)
         {
             _context = context;
         }
