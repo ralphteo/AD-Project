@@ -316,6 +316,6 @@
         const stops = useDemoStops && (!rawStops || rawStops.length === 0) ? demoStops : rawStops;
         const nextAddress = @Html.Raw(JsonSerializer.Serialize(nextPoint?.Address ?? ""));
     </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=@ViewBag.GoogleMapsKey&callback=initMap"async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=@ViewBag.GoogleMapsKey&callback=initRouteMap"async defer></script>
     <script src="~/js/collector-dashboard.js" asp-append-version="true"></script>
 }
