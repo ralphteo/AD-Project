@@ -1,5 +1,4 @@
 using ADWebApplication.Data;
-using ADWebApplication.Data;
 using ADWebApplication.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,12 +35,12 @@ namespace ADWebApplication.Data.Repository
 
             var activeUsers1 = await _db.PublicUser.CountAsync(u => u.IsActive);
             Console.WriteLine($"Active (u.IsActive): {activeUsers1}");
-
-            var activeUsers2 = await _db.PublicUser.CountAsync(u => u.IsActive == true);
+/* 
+            var activeUsers2 = await _db.Users.CountAsync(u => u.IsActive == true);
             Console.WriteLine($"Active (u.IsActive == true): {activeUsers2}");
 
-            var activeUsers3 = await _db.PublicUser.Where(u => u.IsActive).CountAsync();
-            Console.WriteLine($"Active (Where clause): {activeUsers3}");
+            var activeUsers3 = await _db.Users.Where(u => u.IsActive).CountAsync();
+            Console.WriteLine($"Active (Where clause): {activeUsers3}"); */
 
             // Check actual values
             var sampleUsers = await _db.PublicUser.Take(5).Select(u => new { u.Id, u.IsActive }).ToListAsync();
@@ -73,17 +72,43 @@ namespace ADWebApplication.Data.Repository
                 .Where(l => l.DisposalTimeStamp.Year == previousMonth.Year
                             && l.DisposalTimeStamp.Month == previousMonth.Month)
                 .SumAsync(l => (decimal?)l.EstimatedTotalWeight) ?? 0;
+            //User Growth calculation
+            var currentActiveUsersWithDisposals = await (
+                from user in _db.PublicUser
+                join log in _db.DisposalLogs on user.Id equals log.UserId
+                where user.IsActive &&
+                      log.DisposalTimeStamp.Year == targetMonth.Year &&
+                      log.DisposalTimeStamp.Month == targetMonth.Month
+                select user.Id).Distinct().CountAsync();
 
+            // Previous month active users with disposals
+            var prevActiveUsersWithDisposals = await (
+                from user in _db.PublicUser
+                join log in _db.DisposalLogs on user.Id equals log.UserId
+                where user.IsActive &&
+                      log.DisposalTimeStamp.Year == previousMonth.Year &&
+                      log.DisposalTimeStamp.Month == previousMonth.Month
+                select user.Id).Distinct().CountAsync();
+
+            //calculate user growth percentage
+            var userGrowthPercent = prevActiveUsersWithDisposals > 0
+                ? ((currentActiveUsersWithDisposals - prevActiveUsersWithDisposals) * 100.0m / prevActiveUsersWithDisposals)
+                : 0;
+            Console.WriteLine($"Current Active Users with Disposals (Jan 2026): {currentActiveUsersWithDisposals}");
+            Console.WriteLine($"Prev Active Users with Disposals (Dec 2025): {prevActiveUsersWithDisposals}");
+            Console.WriteLine($"User Growth Percent: {userGrowthPercent:F2}%");
+            
             return new DashboardKPIs
             {
                 TotalUsers = totalUsers,
-                UserGrowthPercent = 0,
+                ActiveUsersWithDisposals = currentActiveUsersWithDisposals,
+                UserGrowthPercent = userGrowthPercent,
                 TotalCollections = currentCollections,
                 CollectionGrowthPercent = prevCollections > 0 ? ((currentCollections - prevCollections) * 100.0m / prevCollections) : 0,
                 TotalWeightRecycled = currentWeight,
                 WeightGrowthPercent = prevWeight > 0 ? ((currentWeight - prevWeight) * 100.0m / prevWeight) : 0,
-                AvgBinFillRate = 27.8m, // Placeholder value
-                BinFillRateChange = 5.4m  // Placeholder value
+                AvgBinFillRate = 23.5m, // Placeholder value
+                BinFillRateChange = 3.4m  // Placeholder value
             };
         }
 

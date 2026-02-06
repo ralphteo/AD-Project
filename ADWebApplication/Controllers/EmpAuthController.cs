@@ -1,5 +1,4 @@
 using ADWebApplication.Data;
-using ADWebApplication.Data;
 using ADWebApplication.Models;
 using ADWebApplication.Services;
 using ADWebApplication.ViewModels;

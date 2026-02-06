@@ -31,6 +31,8 @@ builder.Services.AddDbContext<In5niteDbContext>(options =>
     )
 );
 
+
+
 // Admin Repisitory - Andrew
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 
@@ -61,6 +63,16 @@ builder.Services.AddHttpClient<IBinPredictionService, BinPredictionService>(clie
 {
     client.BaseAddress = new Uri("https://in5nite-ml-fdcycfe6gkfnhdg2.southeastasia-01.azurewebsites.net");
 });
+
+builder.Services.AddScoped<IBinPredictionService, BinPredictionService>();
+
+//Campaign Service
+builder.Services.AddScoped<ICampaignService, CampaignService>();
+builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
+
+//Reward Catalogue Service
+builder.Services.AddScoped<IRewardCatalogueService, RewardCatalogueService>();
+builder.Services.AddScoped<IRewardCatalogueRepository, RewardCatalogueRepository>();
 
 builder.Services.AddAuthorization();
 

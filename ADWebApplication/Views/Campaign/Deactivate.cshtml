@@ -1,0 +1,12 @@
+@model  Campaign
+@{
+    ViewData["Title"] = "Deactivate Campaign";
+}
+<p>Are you sure you want to deactivate this campaign?
+<strong>@Model.CampaignName</strong>? </p>
+<form asp-action="Deactivate" method="post">
+@Html.AntiForgeryToken()    
+<input type="hidden" asp-for="CampaignId" />
+<button type="submit" class="btn btn-danger">Deactivate</button>
+<a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>

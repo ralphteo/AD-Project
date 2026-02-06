@@ -35,6 +35,8 @@ namespace ADWebApplication.Data
         public DbSet<RewardCatalogue> RewardCatalogues { get; set; }
         public DbSet<RewardRedemption> RewardRedemptions { get; set; }
         public DbSet<PointTransaction> PointTransactions { get; set; }
+        public DbSet<Campaign> Campaigns { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -49,6 +51,8 @@ namespace ADWebApplication.Data
             modelBuilder.Entity<CollectionDetails>().ToTable("collectiondetails");
             modelBuilder.Entity<FillLevelPrediction>().ToTable("filllevelprediction");
             modelBuilder.Entity<PublicUser>().ToTable("publicuser");
+            modelBuilder.Entity<RewardCatalogue>().ToTable("rewardcatalogue");
+            modelBuilder.Entity<Campaign>().ToTable("campaign");
 
             // Employee & Role
             modelBuilder.Entity<Employee>(e =>
@@ -130,6 +134,12 @@ namespace ADWebApplication.Data
                 .WithMany()
                 .HasForeignKey(p => p.LogId);
 
+            modelBuilder.Entity<Campaign>()
+                .HasKey(c => c.CampaignId);
+            
+            modelBuilder.Entity<RewardCatalogue>()
+                .HasKey(r => r.RewardId);
+                
             // Constraints
             modelBuilder.Entity<PublicUser>()
                 .HasIndex(u => u.Email)

@@ -1,0 +1,210 @@
+@model Campaign
+@{
+    ViewData["Title"] = "Create Campaign";
+}
+
+<!-- HEADER WITH BACK BUTTON -->
+<div class="dash-header mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h2 class="mb-1">Create Campaign</h2>
+            <p class="text-muted mb-0">Create a new incentive campaign</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- MAIN FORM SECTION -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    
+                    <!-- VALIDATION SUMMARY -->
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <!-- Campaign Name -->
+                    <div class="mb-3">
+                        <label asp-for="CampaignName" class="form-label"></label>
+                        <input asp-for="CampaignName" 
+                               class="form-control" 
+                               placeholder="e.g., Summer Double Points"
+                               autofocus />
+                        <span asp-validation-for="CampaignName" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label"></label>
+                        <textarea asp-for="Description" 
+                                  class="form-control" 
+                                  rows="3" 
+                                  placeholder="Describe the campaign purpose and benefits"></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Date Range -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="StartDate" class="form-label"></label>
+                            <input asp-for="StartDate" 
+                                   type="datetime-local" 
+                                   class="form-control" />
+                            <span asp-validation-for="StartDate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="EndDate" class="form-label"></label>
+                            <input asp-for="EndDate" 
+                                   type="datetime-local" 
+                                   class="form-control" />
+                            <span asp-validation-for="EndDate" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Incentive Configuration -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="IncentiveType" class="form-label"></label>
+                            <select asp-for="IncentiveType" class="form-select" id="incentiveTypeSelect">
+                                <option value="Multiplier">Points Multiplier</option>
+                                <option value="Bonus">Bonus Points</option>
+                            </select>
+                            <span asp-validation-for="IncentiveType" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="IncentiveValue" class="form-label"></label>
+                            <input asp-for="IncentiveValue" 
+                                   type="number" 
+                                   step="0.1" 
+                                   min="0.1"
+                                   class="form-control" 
+                                   id="incentiveValueInput" />
+                            <small class="text-muted" id="incentiveHint">
+                                e.g., 2.0 for double points
+                            </small>
+                            <span asp-validation-for="IncentiveValue" class="text-danger small d-block"></span>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="mb-3">
+                        <label asp-for="Status" class="form-label"></label>
+                        <select asp-for="Status" class="form-select">
+                            <option value="INACTIVE">Inactive (Create but don't activate)</option>
+                            <option value="SCHEDULED">Scheduled (Auto-activate on start date)</option>
+                            <option value="ACTIVE">Active (Start immediately)</option>
+                            <option value="EXPIRED">Expired (Already ended)</option>
+                        </select>
+                        <small class="text-muted">Choose "Scheduled" to auto-activate on start date</small>
+                        <span asp-validation-for="Status" class="text-danger small d-block"></span>
+                    </div>
+
+                    <!-- ACTION BUTTONS -->
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>Create Campaign
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR WITH TIPS -->
+    <div class="col-lg-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6 class="card-title mb-3">
+                    <i class="bi bi-info-circle me-2"></i>Campaign Tips
+                </h6>
+                <ul class="small mb-0">
+                    <li class="mb-2"><strong>Points Multiplier:</strong> Multiplies base points (e.g., 2.0 = double, 3.0 = triple)</li>
+                    <li class="mb-2"><strong>Bonus Points:</strong> Adds flat bonus to all disposals (e.g., +500 points)</li>
+                    <li class="mb-2">Set clear start and end dates</li>
+                    <li class="mb-2">Use "Scheduled" status for future campaigns</li>
+                    <li>Monitor active campaigns regularly</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Preview Card -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="card-title mb-3">
+                    <i class="bi bi-eye me-2"></i>Preview
+                </h6>
+                <div id="campaignPreview">
+                    <div class="mb-2">
+                        <strong>Type:</strong> <span id="previewType">Points Multiplier</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Value:</strong> <span id="previewValue">1.0x</span>
+                    </div>
+                    <div class="text-muted small">
+                        Example: 100 base points = <span id="previewResult">2</span> final points
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        // Update hint text based on incentive type
+        document.getElementById('incentiveTypeSelect').addEventListener('change', function() {
+            const hint = document.getElementById('incentiveHint');
+            const valueInput = document.getElementById('incentiveValueInput');
+            const type = this.value;
+            
+            switch(type) {
+                case 'Multiplier':
+                    hint.textContent = 'e.g., 2.0 for double points';
+                    valueInput.step = '0.1';
+                    valueInput.min = '0.1';
+                    break;
+                case 'Bonus':
+                    hint.textContent = 'e.g., 500 for +500 bonus points';
+                    valueInput.step = '1';
+                    valueInput.min = '1';
+                    break;
+            }
+            updatePreview();
+        });
+
+        // Update preview
+        function updatePreview() {
+            const type = document.getElementById('incentiveTypeSelect').value;
+            const value = parseFloat(document.getElementById('incentiveValueInput').value) || 0;
+            
+            const typeSpan = document.getElementById('previewType');
+            const valueSpan = document.getElementById('previewValue');
+            const resultSpan = document.getElementById('previewResult');
+            
+            switch(type) {
+                case 'Multiplier':
+                    typeSpan.textContent = 'Points Multiplier';
+                    valueSpan.textContent = value.toFixed(1) + 'x';
+                    resultSpan.textContent = Math.round(100 * value);
+                    break;
+                case 'Bonus':
+                    typeSpan.textContent = 'Bonus Points';
+                    valueSpan.textContent = '+' + value;
+                    resultSpan.textContent = Math.round(100 + value);
+                    break;
+            }
+        }
+
+        document.getElementById('incentiveValueInput').addEventListener('input', updatePreview);
+        
+        // Initialize preview
+        updatePreview();
+    </script>
+    }

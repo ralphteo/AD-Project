@@ -46,7 +46,7 @@
                     Bin Predictions
                     @await Component.InvokeAsync("HighRiskBinBadge")
                 </a>
-
+                
                 <a class="dash-link @(currentController == "AdminRoutePlanning" ? "active" : "")"
                     asp-controller="AdminRoutePlanning" asp-action="Index">
                     <i class="bi bi-diagram-3"></i> 
@@ -58,22 +58,22 @@
                         <i class="bi bi-graph-up"></i>
                         Bin Management
                     </a>
-                <a class="dash-link" href="#"><i class="bi bi-gift"></i> Incentive & Rewards</a>
-                <a class="dash-link" href="#"><i class="bi bi-clipboard-data"></i> Analysis & Report</a>
+                <a class="dash-link @(currentController == "Campaign" ? "active" : "")" 
+                asp-controller="Campaign" asp-action="Index">
+                <i class="bi bi-gift"></i> 
+                Incentive Campaigns Management
+                </a>
+                <a class="dash-link @(currentController == "RewardCatalogue" ? "active" : "")" 
+                asp-controller="RewardCatalogue" asp-action="Index">
+                <i class="bi bi-gift"></i> 
+                Rewards Catalogue Management
+                </a>
                 <a class="dash-link @(currentController == "Admin" && currentAction != "Bins" ? "active" : "")"
                 asp-controller="Admin" asp-action="CollectionOfficerRoster">
                     <i class="bi bi-graph-up"></i>
                     Collection Officers
                 </a>
 
-                <div class="dash-divider"></div>
-
-                <a class="dash-link" href="#">
-                    <i class="bi bi-bell"></i> Notifications
-                    <span class="badge rounded-pill text-bg-danger ms-auto">5</span>
-                </a>
-                <a class="dash-link" href="#"><i class="bi bi-gear"></i> Settings</a>
-            </nav>
 
             <div class="dash-user">
                 <div class="d-flex align-items-center gap-2">
