@@ -11,9 +11,9 @@ namespace ADWebApplication.Data.Repository
     
     public class RewardCatalogueRepository : IRewardCatalogueRepository
     {
-        private readonly DashboardDbContext _context;
+        private readonly In5niteDbContext _context;
 
-        public RewardCatalogueRepository(DashboardDbContext context)
+        public RewardCatalogueRepository(In5niteDbContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
