@@ -148,7 +148,7 @@ public class BinPredictionService : IBinPredictionService
 
                     // For bins that are collected/new, requiring refresh
                     PredictedNextAvgDailyGrowth = null,
-                    EstimatedFillToday = 0,
+                    EstimatedFillToday = latestCollection.BinFillLevel,
                     EstimatedDaysToThreshold = null,
 
                     RiskLevel = "—",
@@ -156,6 +156,7 @@ public class BinPredictionService : IBinPredictionService
 
                     CollectionDone = true,
                     NeedsPredictionRefresh = true,
+                    IsActualFillLevel = true,
 
                     AutoSelected = false,
                     RouteId = null
@@ -214,6 +215,7 @@ public class BinPredictionService : IBinPredictionService
                 RiskLevel = riskLevel,
                 PlanningStatus = planningStatus,
 
+                IsActualFillLevel = false,
                 AutoSelected = autoSelected,
                 RouteId = isScheduled && nextStop?.RouteId != null
                     ? nextStop.RouteId.Value.ToString()

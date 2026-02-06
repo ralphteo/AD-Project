@@ -284,10 +284,19 @@
                             <td>
                                 @if (row.NeedsPredictionRefresh)
                                 {
-                                    <div class="fw-bold fs-5">0%</div>
+                                    <div class="fw-bold fs-5">
+                                        @if (row.IsActualFillLevel)
+                                        {
+                                            <span class="text-info">Actual collected fill: @row.EstimatedFillToday.ToString("0")%</span>
+                                        }
+                                        else
+                                        {
+                                            <span>0%</span>
+                                        }
+                                    </div>
 
                                     <div class="progress mt-2" style="height: 6px; background-color:#e9ecef;">
-                                        <div class="progress-bar @FillBarClass(0)"
+                                        <div class="progress-bar @(row.IsActualFillLevel ? "bg-warning" : FillBarClass(row.EstimatedFillToday))"
                                             role="progressbar"
                                             style="width:@row.EstimatedFillToday%">
                                         </div>
