@@ -45,7 +45,8 @@ jobs:
             /k:"GDipSA-Team-5_AD-Project" \
             /o:"gdipsa-team-5" \
             /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
+            /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml" \
+            /d:sonar.cs.vstest.reportsPaths="TestResults/**/*.trx" \
             /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**"
 
       # ---- Restore & Build main project ----
@@ -65,10 +66,11 @@ jobs:
           dotnet test ./ADWebApplication.Tests/ADWebApplication.Tests.csproj \
             --collect:"XPlat Code Coverage" \
             --settings coverlet.runsettings \
-            --results-directory ./TestResults
+            --results-directory ./TestResults \
+            --logger "trx;LogFileName=test-results.trx"
 
       - name: Debug coverage files
-        run: find . -name "coverage.opencover.xml"
+        run: find TestResults -name "coverage.opencover.xml" -o -name "*.trx"
 
       # ---- SonarCloud End ----
       - name: SonarCloud End
