@@ -82,8 +82,8 @@ namespace ADWebApplication.Data.Repository
                 CollectionGrowthPercent = prevCollections > 0 ? ((currentCollections - prevCollections) * 100.0m / prevCollections) : 0,
                 TotalWeightRecycled = currentWeight,
                 WeightGrowthPercent = prevWeight > 0 ? ((currentWeight - prevWeight) * 100.0m / prevWeight) : 0,
-                AvgBinFillRate = 0,
-                BinFillRateChange = 0
+                AvgBinFillRate = 27.8m, // Placeholder value
+                BinFillRateChange = 5.4m  // Placeholder value
             };
         }
 
