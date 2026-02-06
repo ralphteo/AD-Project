@@ -598,14 +598,14 @@ namespace ADWebApplication.Tests
             dbContext.CollectionDetails.AddRange(
                 new CollectionDetails
                 {
-                    Collectionid = 1,
+                    CollectionId = 1,
                     BinId = 1,
                     CurrentCollectionDateTime = collectionTime.AddDays(-10),
                     BinFillLevel = 80
                 },
                 new CollectionDetails
                 {
-                    Collectionid = 2,
+                    CollectionId = 2,
                     BinId = 1,
                     CurrentCollectionDateTime = collectionTime,
                     BinFillLevel = 25
