@@ -45,7 +45,6 @@ jobs:
             /k:"GDipSA-Team-5_AD-Project" \
             /o:"gdipsa-team-5" \
             /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.login="$SONAR_TOKEN" \
             /d:sonar.projectBaseDir="$GITHUB_WORKSPACE" \
             /d:sonar.sources="ADWebApplication" \
             /d:sonar.tests="ADWebApplication.Tests" \
