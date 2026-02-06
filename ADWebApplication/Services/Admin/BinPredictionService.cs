@@ -84,7 +84,9 @@ public class BinPredictionService : IBinPredictionService
     private int CalculateDaysTo80Percent(double currentFill, double dailyGrowth)
     {
         if (currentFill >= 80)
+        {
             return 0;
+        }
 
         var remaining = 80 - currentFill;
         return (int)Math.Ceiling(remaining / dailyGrowth);
@@ -99,7 +101,7 @@ public class BinPredictionService : IBinPredictionService
             return new BinPredictionsTableViewModel
             {
                 BinId = bin.BinId,
-                Region = bin.Region?.RegionName,
+                Region = bin.Region?.RegionName ?? "",
                 LastCollectionDateTime = latestCollectedAt,
                 PredictedNextAvgDailyGrowth = null,
                 EstimatedFillToday = latestCollection.BinFillLevel,
@@ -128,7 +130,7 @@ public class BinPredictionService : IBinPredictionService
         return new BinPredictionsTableViewModel
         {
             BinId = bin.BinId,
-            Region = bin.Region?.RegionName,
+            Region = bin.Region?.RegionName ?? "",
             LastCollectionDateTime = latestCollectedAt,
             PredictedNextAvgDailyGrowth = predictedGrowth,
             EstimatedFillToday = estimatedFillToday,
@@ -147,7 +149,9 @@ public class BinPredictionService : IBinPredictionService
         Dictionary<int, RouteStop> nextStopByBin, DateTimeOffset today, ref int newCycleDetectedCount, ref int missingPredictionCount)
     {
         if (!collectionHistoryByBin.TryGetValue(bin.BinId, out var history) || history.Count == 0)
+        {
             return null;
+        }
 
         var latestCollection = history[0];
         var olderCollection = history.Count > 1 ? history[1] : null;
@@ -188,12 +192,18 @@ public class BinPredictionService : IBinPredictionService
         var query = rows;
 
         if (risk != "All")
+        {
             query = query.Where(r => r.RiskLevel == risk);
+        }
 
         if (timeframe == "3")
+        {
             query = query.Where(r => r.EstimatedDaysToThreshold <= 3);
+        }
         else if (timeframe == "7")
+        {
             query = query.Where(r => r.EstimatedDaysToThreshold <= 7);
+        }
 
         bool isDefaultSort = sort == "EstimatedFill" && sortDir == "desc";
 
@@ -247,14 +257,14 @@ public class BinPredictionService : IBinPredictionService
 
         // Fetch next scheduled route stop for each bin (from today onwards)
         var nextRouteStop = await db.RouteStops
-            .Where(rs => rs.PlannedCollectionTime >= today)
-            .GroupBy(rs => rs.BinId)
+            .Where(rs => rs.PlannedCollectionTime >= today && rs.BinId.HasValue)
+            .GroupBy(rs => rs.BinId!.Value)
             .Select(g => g.OrderBy(x => x.PlannedCollectionTime).FirstOrDefault())
             .ToListAsync();
 
         var nextStopByBin = nextRouteStop
             .Where(x => x != null && x.BinId.HasValue)
-            .ToDictionary(x => x!.BinId!.Value, x => x!);
+            .ToDictionary(x => x.BinId!.Value, x => x);
 
         var rows = new List<BinPredictionsTableViewModel>();
 
@@ -274,7 +284,9 @@ public class BinPredictionService : IBinPredictionService
                 ref missingPredictionCount);
 
             if (row != null)
+            {
                 rows.Add(row);
+            }
         }
 
         // calculate avg fill growth rate
@@ -345,18 +357,24 @@ public class BinPredictionService : IBinPredictionService
         foreach (var (binId, history) in collectionHistoryByBin)
         {
             if (history.Count < 2)
+            {
                 continue;
+            }
 
             var latestCollection = history[0];
             var olderCollection = history[1];
 
             if (latestCollection.CurrentCollectionDateTime == null || olderCollection.CurrentCollectionDateTime == null)
+            {
                 continue;
+            }
 
             latestPredictionByBin.TryGetValue(binId, out var latestPrediction);
 
             if (!NeedsPredictionRefresh(latestPrediction, latestCollection))
+            {
                 continue;
+            }
 
             var latestCollectedAt = latestCollection.CurrentCollectionDateTime.Value;
 
@@ -408,18 +426,26 @@ public class BinPredictionService : IBinPredictionService
         foreach (var (binId, history) in collectionHistoryByBin)
         {
             if (history.Count == 0)
-            continue;
+            {
+                continue;
+            }
 
             var latest = history[0];
 
             if (!latestPredictionByBin.TryGetValue(binId, out var prediction))
-            continue;
+            {
+                continue;
+            }
 
             if(!latest.CurrentCollectionDateTime.HasValue)
-            continue;
+            {
+                continue;
+            }
 
             if (prediction.PredictedAvgDailyGrowth <= 0)
-            continue;
+            {
+                continue;
+            }
 
             var daysElapsed = Math.Max((today - latest.CurrentCollectionDateTime.Value).TotalDays, 0);
 

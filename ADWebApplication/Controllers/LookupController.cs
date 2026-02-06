@@ -1,5 +1,4 @@
 using ADWebApplication.Data;
-using ADWebApplication.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
