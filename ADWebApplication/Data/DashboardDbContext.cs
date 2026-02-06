@@ -16,8 +16,9 @@ namespace ADWebApplication.Data
         public DbSet<Region> Regions => Set<Region>();
         public DbSet<FillLevelPrediction> FillLevelPredictions => Set<FillLevelPrediction>();
 
-        //Campaigns
+        //Campaigns and reward catalogue
         public DbSet<Campaign> Campaigns => Set<Campaign>();
+        public DbSet<RewardCatalogue> RewardCatalogues => Set<RewardCatalogue>();
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<PublicUser>()
@@ -82,6 +83,58 @@ namespace ADWebApplication.Data
                 // Indexes
                 entity.HasIndex(e => e.Status);
                 entity.HasIndex(e => new { e.StartDate, e.EndDate });
+            });
+            modelBuilder.Entity<RewardCatalogue>(entity =>
+            {
+                entity.ToTable("rewardcatalogue");
+                entity.HasKey(e => e.RewardId);
+                entity.Property(e => e.RewardId)
+                    .HasColumnName("rewardId")
+                    .ValueGeneratedOnAdd();
+
+                entity.Property(e => e.RewardName)
+                    .HasColumnName("rewardName")
+                    .HasMaxLength(200)
+                    .IsRequired();
+
+                entity.Property(e => e.Points)
+                    .HasColumnName("points")
+                    .IsRequired();
+
+                entity.Property(e => e.Description)
+                    .HasColumnName("description")
+                    .HasColumnType("text");
+
+                entity.Property(e => e.RewardCategory)
+                    .HasColumnName("rewardCategory")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.StockQuantity)
+                    .HasColumnName("stockQuantity")
+                    .IsRequired();
+
+                entity.Property(e => e.ImageUrl)
+                    .HasColumnName("imageUrl")
+                    .HasMaxLength(400);
+
+                entity.Property(e => e.Availability)
+                    .HasColumnName("availability")
+                    .HasConversion<bool>()
+                    .IsRequired();
+
+                entity.Property(e => e.CreatedDate)
+                    .HasColumnName("createdDateTime")
+                    .HasColumnType("datetime(6)")
+                    .IsRequired();
+
+                entity.Property(e => e.UpdatedDate)
+                    .HasColumnName("updatedDatetime")
+                    .HasColumnType("datetime(6)")
+                    .IsRequired();
+
+                // Indexes
+                entity.HasIndex(e => e.RewardCategory);
+                entity.HasIndex(e => e.Availability);
             });
 
         }

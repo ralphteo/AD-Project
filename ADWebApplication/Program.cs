@@ -71,7 +71,10 @@ builder.Services.AddScoped<IBinPredictionService, BinPredictionService>();
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
 
->>>>>>> ef6e1cb (Incentive Campaign management feature)
+//Reward Catalogue Service
+builder.Services.AddScoped<IRewardCatalogueService, RewardCatalogueService>();
+builder.Services.AddScoped<IRewardCatalogueRepository, RewardCatalogueRepository>();
+
 builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
