@@ -11,12 +11,12 @@ using ADWebApplication.Models.ViewModels;
 [Route("Admin/RoutePlanning")]
 public class AdminRoutePlanningController : Controller
 {
-    private readonly RoutePlanningService _routePlanningService;
+    private readonly IRoutePlanningService _routePlanningService;
     private readonly IRouteAssignmentService _routeAssignmentService;
     private readonly In5niteDbContext _db;
 
     public AdminRoutePlanningController(
-        RoutePlanningService routePlanningService,
+        IRoutePlanningService routePlanningService,
         IRouteAssignmentService routeAssignmentService,
         In5niteDbContext db)
     {

@@ -22,6 +22,7 @@ builder.Services.AddScoped<ICollectorDashboardService, CollectorDashboardService
 builder.Services.AddScoped<ICollectorAssignmentService, CollectorAssignmentService>();
 builder.Services.AddScoped<ICollectorIssueService, CollectorIssueService>();
 builder.Services.AddScoped<IRouteAssignmentService, RouteAssignmentService>();
+builder.Services.AddScoped<IRoutePlanningService, RoutePlanningService>();
 
 
 

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ADWebApplication.Services
 {
-    public class RoutePlanningService
+    public class RoutePlanningService : IRoutePlanningService
     {
         private readonly In5niteDbContext _db;
         private readonly IBinPredictionService _binPredictionService;
@@ -254,7 +254,7 @@ namespace ADWebApplication.Services
         {
             var optimizedRoute = new List<RoutePlanDto>();
 
-            //loop through 7 routes (routing.Vehicles() method from OR-tools)
+            //loop through 3 routes (routing.Vehicles() method from OR-tools)
             for (int i = 0; i < routing.Vehicles(); ++i)
             {
 
