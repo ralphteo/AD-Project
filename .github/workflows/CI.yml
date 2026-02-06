@@ -1,13 +1,14 @@
 name: CI
 
 on:
-  pull_request:          # Run CI check on Pull Requests
+  pull_request:
   push:
-    branches: [ main ]   # Run CI check on main pushes
-  workflow_dispatch:     # Run CI check on manual trigger
+    branches: [ main ]
+  workflow_dispatch:
 
 env:
   DEPENDENCY_CHECK_VERSION: v9.0.7
+  NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
 
 jobs:
   build-and-scan:
@@ -33,28 +34,61 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_ORG: ${{ secrets.SONAR_ORG }}
         run: ./scripts/sast-sonar.sh
-        
+      
+      #- name: Check SonarCloud Quality Gate
+      #  uses: sonarsource/sonarcloud-github-action@master
+      #  with:
+      #    args: >
+      #      /d:sonar.login='$'{{ secrets.SONAR_TOKEN }}
+      #  env:
+      #    SONAR_TOKEN: '$'{{ secrets.SONAR_TOKEN }}
+      
       - name: Upload Sonar Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sonar-report
-          path: .sonarqube/out || echo "No artifacts to upload"
+          path: .sonarqube/out
+          if-no-files-found: warn
 
-      - name: Install OWASP Dependency-Check
-        run: |
-          VERSION=${DEPENDENCY_CHECK_VERSION}
-          wget https://github.com/jeremylong/DependencyCheck/releases/download/${VERSION}/dependency-check-${VERSION#v}-release.zip
-          unzip dependency-check-*.zip
-          chmod +x dependency-check/bin/dependency-check.sh
-          sudo mv dependency-check /usr/local/dependency-check
-          sudo ln -s /usr/local/dependency-check/bin/dependency-check.sh /usr/local/bin/dependency-check
+      #- name: Install OWASP Dependency-Check
+      #  run: |
+      #    VERSION=${DEPENDENCY_CHECK_VERSION}
+      #    wget https://github.com/jeremylong/DependencyCheck/releases/download/${VERSION}/dependency-check-${VERSION#v}-release.zip
+      #    unzip dependency-check-*.zip
+      #    chmod +x dependency-check/bin/dependency-check.sh
+      #    sudo mv dependency-check /usr/local/dependency-check
+      #    echo "/usr/local/dependency-check/bin" >> $GITHUB_PATH
 
-      - name: Run Dependency Check
-        run: ./scripts/sca-dependency-check.sh
+      #- name: Cache Dependency-Check DB
+      #  uses: actions/cache@v3
+      #  with:
+      #    path: ./dependency-check-data
+      #    key: dependency-check-db-'$'{{ runner.os }}-v1
+      #    restore-keys: |
+      #      dependency-check-db-'$'{{ runner.os }}-v1
 
-      - name: Upload Dependency Check Report
-        if: success()
+      #- name: Run Dependency-Check SCA
+      #  run: ./scripts/sca-dependency-check.sh
+      #  env:
+      #    NVD_API_KEY: '$'{{ secrets.NVD_API_KEY }}
+
+      
+      # ---- OWASP Dependency-Check ----
+      - name: Run OWASP Dependency-Check SCA
+        uses: dependency-check/Dependency-Check_Action@1e54355a8b4c8abaa8cc7d0b70aa655a3bb15a6c
+        with:
+          project: ADWebApplication
+          path: .
+          format: ALL
+          out: ./dependency-check-report
+          args: >
+            --failOnCVSS 12
+            --suppression dependency-check-suppressions.xml
+            --exclude '**/test/**'
+
+      - name: Upload Dependency-Check report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report

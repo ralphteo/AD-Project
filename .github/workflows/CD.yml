@@ -1,4 +1,4 @@
-name: CD - Deploy to Azure
+name: CD
 
 on:
   workflow_run:
@@ -8,7 +8,7 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: in5nite
-  DOTNET_VERSION: '8.0.x'
+  DOTNET_VERSION: '10.0.x'
   PROJECT_PATH: './ADWebApplication/ADWebApplication.csproj'
 
 jobs:
@@ -16,8 +16,8 @@ jobs:
     # Only deploy if the CI run was on main branch
     if: |
       github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main' 
-    runs-on: windows-latest
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest        # <-- Use Linux runner for ZAP Docker
     environment: production
 
     steps:
@@ -27,7 +27,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION}}
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore
         run: dotnet restore ${{ env.PROJECT_PATH }}
@@ -44,8 +44,12 @@ jobs:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: publish
+      
+      # Wait for the app to be fully deployed and running
+      - name: Wait 2 minutes for app to stabilize
+        run: sleep 120    # 120 seconds = 2 minutes
 
-      # Deploy to Azure completed, now run ZAP DAST against deployed app (GitHub Action Orchestration + Implementation)
+      # Run ZAP DAST scan
       - name: Run OWASP ZAP DAST on deployed app
         uses: zaproxy/action-baseline@4ea3deb659d9a669dc5e5c10c49a423e8bb41420
         with:
@@ -56,10 +60,3 @@ jobs:
             -J report_json.json
             -r report_html.html
           allow_issue_writing: false
-
-      - name: Upload ZAP DAST Report
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-live-report
-          path: ./zap-live-report
