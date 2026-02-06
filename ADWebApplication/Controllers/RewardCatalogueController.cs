@@ -16,6 +16,8 @@ namespace ADWebApplication.Controllers
     {
         private readonly IRewardCatalogueService _rewardCatalogueService;
         private readonly ILogger<RewardCatalogueController> _logger;
+        private const string SuccessMessageKey = "SuccessMessage";
+        private const string ErrorMessageKey = "ErrorMessage";
 
         public RewardCatalogueController(IRewardCatalogueService rewardCatalogueService, ILogger<RewardCatalogueController> logger)
         {
@@ -36,7 +38,7 @@ namespace ADWebApplication.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error accessing Reward Catalogue index page.");
-                TempData["ErrorMessage"] = "An error occurred while loading the reward catalogue.";
+                TempData[ErrorMessageKey] = "An error occurred while loading the reward catalogue.";
                 return View(new List<RewardCatalogue>());
             }
             
@@ -62,26 +64,32 @@ namespace ADWebApplication.Controllers
         {
             try
             {
+                if(_logger.IsEnabled(LogLevel.Information))
+                {
                 _logger.LogInformation("Attempting to create a new reward: {RewardName}", reward.RewardName);
+                }
                 if (!ModelState.IsValid)
                 {
-                    foreach (var modelState in ModelState.Values)
+                    if(_logger.IsEnabled(LogLevel.Warning))
                     {
-                        foreach (var error in modelState.Errors)
+                        foreach (var modelState in ModelState.Values)
                         {
+                            foreach (var error in modelState.Errors)
+                            {
                             _logger.LogWarning("Model validation error: {ErrorMessage}", error.ErrorMessage);
+                            }
                         }
                     }
                     return View(reward);
                 }
                 await _rewardCatalogueService.AddRewardAsync(reward);
-                TempData["SuccessMessage"] = "Reward created successfully.";
+                TempData[SuccessMessageKey] = "Reward created successfully.";
                 return RedirectToAction(nameof(Index));
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogError(ex, "Error creating reward: {RewardName}", reward.RewardName);
-                ModelState.AddModelError(string.Empty, $"Error creating reward: {ex.Message}");
+                ModelState.AddModelError(string.Empty, "Unable to create reward. Please check your input and try again.");
                 return View(reward);
             }
             catch (Exception ex)
@@ -95,13 +103,24 @@ namespace ADWebApplication.Controllers
         [HttpGet("Edit/{id:int}")]
         public async Task<IActionResult> Edit(int id)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData[ErrorMessageKey] = "Invalid request.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (id <= 0)
+            {
+                TempData[ErrorMessageKey] = "Invalid reward ID.";
+                return RedirectToAction(nameof(Index));
+            }
             try
             {
                 var reward = await _rewardCatalogueService.GetRewardByIdAsync(id);
                 
                 if (reward == null)
                 {
-                    TempData["Error"] = "Reward not found.";
+                    TempData[ErrorMessageKey] = "Reward not found.";
                     return RedirectToAction(nameof(Index));
                 }
                 
@@ -110,7 +129,7 @@ namespace ADWebApplication.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading reward {RewardId}", id);
-                TempData["Error"] = "Error loading reward.";
+                TempData[ErrorMessageKey] = "Error loading reward.";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -134,17 +153,17 @@ namespace ADWebApplication.Controllers
 
                 if (!success)
                 {
-                    TempData["Error"] = "Failed to update reward.";
+                    TempData[ErrorMessageKey] = "Failed to update reward.";
                     return View(reward);
                 }
 
-                TempData["Success"] = "Reward updated successfully.";
+                TempData[SuccessMessageKey] = "Reward updated successfully.";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating reward {RewardId}", reward.RewardId);
-                TempData["Error"] = "Error updating reward.";
+                TempData[ErrorMessageKey] = "Error updating reward.";
                 return View(reward);
             }
         }
@@ -153,40 +172,27 @@ namespace ADWebApplication.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
+            if(!ModelState.IsValid)
+            {
+                TempData[ErrorMessageKey] = "Invalid request.";
+                return RedirectToAction(nameof(Index));
+            }
+            if (id <= 0)
+            {
+                TempData[ErrorMessageKey] = "Invalid reward ID.";
+                return RedirectToAction(nameof(Index));
+            }
             try
             {
                await _rewardCatalogueService.DeleteRewardAsync(id);
-                TempData["SuccessMessage"] = "Reward deleted successfully.";
+                TempData[SuccessMessageKey] = "Reward deleted successfully.";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting reward {RewardId}", id);
-                TempData["ErrorMessage"] = "An error occurred while deleting the reward.";  
+                TempData[ErrorMessageKey] = "An error occurred while deleting the reward.";  
             }
             return RedirectToAction(nameof(Index));
-        }
-        [HttpGet("TestConnection")]
-        public async Task<IActionResult> TestConnection()
-        {
-            try
-                {
-                    var rewards = await _rewardCatalogueService.GetAllRewardsAsync();
-        
-                    return Json(new
-                    {
-                        Success = true,
-                        Count = rewards.Count(),
-                        Data = rewards
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return Json(new
-                    {
-                        Success = false,
-                        Error = ex.Message
-                    });
-                }
         }
     }
 }  

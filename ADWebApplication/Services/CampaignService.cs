@@ -28,13 +28,20 @@ namespace ADWebApplication.Services
 
         public async Task<Campaign?> GetCampaignByIdAsync(int campaignId)
         {
-            _logger.LogInformation($"Retrieving campaign with ID: {campaignId}");
+            if(_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Retrieving campaign with ID: {campaignId}", campaignId);
+            }
+            
             return await _campaignRepository.GetCampaignByIdAsync(campaignId);
         }
 
         public async Task<int> AddCampaignAsync(Campaign campaign)
         {
-            _logger.LogInformation("Adding a new campaign: {@Campaign}", campaign.CampaignName);
+            if(_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Adding a new campaign: {@Campaign}", campaign.CampaignName);
+            }
             if (campaign.EndDate < campaign.StartDate)
             {
                 throw new InvalidOperationException("EndDate cannot be earlier than StartDate.");
@@ -53,12 +60,15 @@ namespace ADWebApplication.Services
                 campaign.Status = "Completed";
             }
             var campaignId = await _campaignRepository.AddCampaignAsync(campaign);
-            _logger.LogInformation($"Campaign added with ID: {campaignId}--{campaign.CampaignName}", campaignId, campaign.CampaignName);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Campaign added with ID: {campaignId}", campaignId);
+            }
             return campaignId;
         }
         public async Task<bool> UpdateCampaignAsync(Campaign campaign)
         {
-            _logger.LogInformation($"Updating campaign with ID: {campaign.CampaignId}");
+            _logger.LogInformation("Updating campaign with ID: {campaignId}", campaign.CampaignId);
             if (campaign.EndDate < campaign.StartDate)
             {
                 throw new InvalidOperationException("EndDate cannot be earlier than StartDate.");
@@ -79,28 +89,40 @@ namespace ADWebApplication.Services
             var result = await _campaignRepository.UpdateCampaignAsync(campaign);
             if (result)
             {
-                _logger.LogInformation($"Campaign with ID: {campaign.CampaignId} updated successfully.");
+                _logger.LogInformation("Campaign with ID: {campaignId} updated successfully.", campaign.CampaignId);
             }
             else
             {
-                _logger.LogWarning($"Failed to update campaign with ID: {campaign.CampaignId}. It may not exist.");
+                _logger.LogWarning("Failed to update campaign with ID: {campaignId}. It may not exist.", campaign.CampaignId);
             }
-            return await _campaignRepository.UpdateCampaignAsync(campaign);
+            return result;
         }
         public async Task<bool> DeleteCampaignAsync(int campaignId)
         {
             _logger.LogInformation("Deleting campaign with ID: {campaignId}", campaignId);
+
             var campaign = await _campaignRepository.GetCampaignByIdAsync(campaignId);
             if (campaign == null)
             {
-                _logger.LogWarning($"Campaign with ID: {campaignId} not found.");
+                _logger.LogWarning("Campaign with ID: {campaignId} not found.", campaignId);
                 return false;
             }
             if (campaign.Status == "Active")
             {
                 throw new InvalidOperationException("Cannot delete an active campaign.");
             }
-            return await _campaignRepository.DeleteCampaignAsync(campaignId);
+            var result = await _campaignRepository.DeleteCampaignAsync(campaignId);
+    
+            if (result)
+            {
+                _logger.LogInformation("Campaign with ID: {CampaignId} deleted successfully", campaignId);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to delete campaign with ID: {CampaignId}", campaignId);
+            }
+            
+            return result;
         }
         public async Task<IEnumerable<Campaign>> GetActiveCampaignsAsync()
         {
@@ -114,28 +136,58 @@ namespace ADWebApplication.Services
         }
         public async Task<bool> ActivateCampaignAsync(int campaignId)
         {
-            _logger.LogInformation("Activating campaign with ID: {campaignId}", campaignId);
+            if(_logger.IsEnabled(LogLevel.Information))
+            {   
+            _logger.LogInformation("Activating campaign with ID: {CampaignId}", campaignId);
+            }
             var campaign = await _campaignRepository.GetCampaignByIdAsync(campaignId);
             if (campaign == null)
+            {
+                _logger.LogWarning("Campaign with ID: {CampaignId} not found.", campaignId);
                 return false;
-            
+            }
             var now = DateTime.UtcNow;
             if (now < campaign.StartDate || now > campaign.EndDate)
             {
                 throw new InvalidOperationException("Campaign cannot be activated outside its start and end dates.");
             }
             campaign.Status = "ACTIVE";
-            return await _campaignRepository.UpdateCampaignAsync(campaign);
+            var result = await _campaignRepository.UpdateCampaignAsync(campaign);
+    
+            if (result)
+            {
+                _logger.LogInformation("Campaign with ID: {CampaignId} activated successfully", campaignId);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to activate campaign with ID: {CampaignId}", campaignId);
+            }
+            
+            return result;
         }
         public async Task<bool> DeactivateCampaignAsync(int campaignId)
         {
-            _logger.LogInformation("Deactivating campaign with ID: {campaignId}", campaignId);
+            if(_logger.IsEnabled(LogLevel.Information))
+            {   
+            _logger.LogInformation("Deactivating campaign with ID: {CampaignId}", campaignId);
+            }
             var campaign = await _campaignRepository.GetCampaignByIdAsync(campaignId);
             if (campaign == null)
                 return false;
             
             campaign.Status = "INACTIVE";
-            return await _campaignRepository.UpdateCampaignAsync(campaign);
+            var result = await _campaignRepository.UpdateCampaignAsync(campaign);
+    
+            if (result)
+            {
+                _logger.LogInformation("Campaign with ID: {CampaignId} deactivated successfully", campaignId);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to deactivate campaign with ID: {CampaignId}", campaignId);
+            }
+            
+            return result;
         }
         public async Task<decimal> CalculateTotalIncentivesAsync(int basePoints)
         {

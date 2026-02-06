@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace ADWebApplication.Models;
 
@@ -8,6 +9,8 @@ public class Campaign
 {
     [Key]
     [Column("campaignId")]
+    [Required(ErrorMessage = "Campaign ID is required.")]
+    [JsonRequired]
     public int CampaignId { get; set; }
 
     [Required(ErrorMessage = "Campaign name is required.")]
@@ -18,11 +21,13 @@ public class Campaign
 
     [Required(ErrorMessage = "Start date is required.")]
     [DisplayFormat(DataFormatString = "{0:yyyy-MM-ddTHH:mm}", ApplyFormatInEditMode = true)]
+    [JsonRequired]
     [Column("startDate")]
     public DateTime StartDate { get; set; }
 
     [Required(ErrorMessage = "End date is required.")]
     [DisplayFormat(DataFormatString = "{0:yyyy-MM-ddTHH:mm}", ApplyFormatInEditMode = true)]
+    [JsonRequired]
     [Column("endDate")]
     public DateTime EndDate { get; set; }
 

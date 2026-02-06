@@ -34,7 +34,7 @@ namespace ADWebApplication.Controllers
             {
                 // Log the exception (not implemented here for brevity)
                 _logger.LogError(ex, "Error retrieving admin dashboard data.");
-                return Content($"ERROR: {ex.Message},<br><br>Stack Trace:<br>{ex.StackTrace}");
+                return View("Error");
             }
         }
         public async Task<IActionResult> RefreshKPIs()

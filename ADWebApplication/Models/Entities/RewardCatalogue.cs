@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace ADWebApplication.Models;
 
@@ -9,6 +10,8 @@ public class RewardCatalogue
 {
     [Key]
     [Column("rewardId")]
+    [Required(ErrorMessage = "Reward ID is required.")]
+    [JsonRequired]
     public int RewardId { get; set; }
 
     [Required(ErrorMessage = "Reward name is required.")]
@@ -43,9 +46,13 @@ public class RewardCatalogue
     public bool Availability {get; set; } = true;
 
     [Column("createdDateTime")]
+    [Required]
+    [JsonRequired]
     public DateTime CreatedDate { get; set; } 
 
     [Column("updatedDatetime")]
+    [Required]
+    [JsonRequired]
     public DateTime UpdatedDate { get; set; } 
 
     [NotMapped]
@@ -56,8 +63,14 @@ public class RewardCatalogue
     {
         get
         {
-        if (StockQuantity == 0) return "Out of Stock";
-        if (StockQuantity < 10) return "Low Stock";
+            if (StockQuantity == 0) 
+            {
+                return "Out of Stock";
+            }
+            if (StockQuantity < 10) 
+            {
+                return "Low Stock";
+            }
             return "In Stock";
         }
     }

@@ -11,6 +11,9 @@ namespace ADWebApplication.Controllers
      [Authorize(Roles = "Admin")]
     public class CampaignController : Controller
     {
+        private const string SuccessMessageKey = "SuccessMessage";
+        private const string ErrorMessageKey = "ErrorMessage";
+        private const string IndexAction = "Index";
         private readonly ICampaignService _campaignService;
 
         public CampaignController(ICampaignService campaignService)
@@ -51,12 +54,13 @@ namespace ADWebApplication.Controllers
             try
             {
                 await _campaignService.AddCampaignAsync(campaign);
-                TempData["SuccessMessage"] = "Campaign created successfully.";
+                TempData[SuccessMessageKey] = "Campaign created successfully.";
                 return RedirectToAction(nameof(Index));       
             }
             catch (InvalidOperationException ex)
             {
-                ModelState.AddModelError(string.Empty, $"Error creating campaign: {ex.Message}");
+                TempData[ErrorMessageKey] = "Error creating campaign";
+                ModelState.AddModelError(string.Empty, "Unable to create campaign.");
                 return View(campaign);
             }
         }
@@ -65,18 +69,24 @@ namespace ADWebApplication.Controllers
         [HttpGet("Edit/{id}")]
         public async Task<IActionResult> Edit(int id)
         {
+            //Validate Id parameter
+            if (id <= 0)
+            {
+                TempData[ErrorMessageKey] = "Invalid campaign ID.";
+                return RedirectToAction(IndexAction);
+            }
             var campaign = await _campaignService.GetCampaignByIdAsync(id);
             if (campaign == null)
             {
-                TempData["ErrorMessage"] = "Campaign not found.";
-                return RedirectToAction("Index");
+                TempData[ErrorMessageKey] = "Campaign not found.";
+                return RedirectToAction(IndexAction);
             }
             return View(campaign);
         }
         //POST: Campaigns/Edit/
         [HttpPost("Edit/{id}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Campaign campaign)
+        public async Task<IActionResult> Edit(int id, Campaign campaign)
         {
             if (!ModelState.IsValid)
             {
@@ -85,8 +95,8 @@ namespace ADWebApplication.Controllers
             try
             {
                 await _campaignService.UpdateCampaignAsync(campaign);
-                TempData["SuccessMessage"] = "Campaign updated successfully.";
-                return RedirectToAction("Index");
+                TempData[SuccessMessageKey] = "Campaign updated successfully.";
+                return RedirectToAction(IndexAction);
             }
             catch (InvalidOperationException ex)
             {
@@ -99,16 +109,25 @@ namespace ADWebApplication.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(IndexAction);
+            }
+            if (id <= 0)
+            {
+                TempData[ErrorMessageKey] = "Invalid campaign ID.";
+                return RedirectToAction(IndexAction);
+            }
             try
             {
                 await _campaignService.DeleteCampaignAsync(id);
-                TempData["SuccessMessage"] = "Campaign deleted successfully.";
+                TempData[SuccessMessageKey] = "Campaign deleted successfully.";
             }
             catch (InvalidOperationException ex)
             {
-                TempData["ErrorMessage"] = $"Error deleting campaign: {ex.Message}";
+                TempData[ErrorMessageKey] = $"Error deleting campaign: {ex.Message}";
             }
-            return RedirectToAction("Index");
+            return RedirectToAction(IndexAction);
         }
     
     //Post: Campaign/Activate
@@ -116,32 +135,50 @@ namespace ADWebApplication.Controllers
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Activate(int id)
     {
+        if (!ModelState.IsValid)
+            {
+                return RedirectToAction(IndexAction);
+            }
+            if (id <= 0)
+            {
+                TempData[ErrorMessageKey] = "Invalid campaign ID.";
+                return RedirectToAction(IndexAction);
+            }
         try
         {
             await _campaignService.ActivateCampaignAsync(id);
-            TempData["SuccessMessage"] = "Campaign activated successfully.";
+            TempData[SuccessMessageKey] = "Campaign activated successfully.";
         }
         catch (InvalidOperationException ex)
         {
-            TempData["ErrorMessage"] = $"Error activating campaign: {ex.Message}";
+            TempData[ErrorMessageKey] = $"Error activating campaign: {ex.Message}";
         }
-        return RedirectToAction("Index");
+        return RedirectToAction(IndexAction);
     }
     //Post: Campaign/Deactivate
     [HttpPost("Deactivate/{id}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Deactivate(int id)
     {
+        if (!ModelState.IsValid)
+            {
+                return RedirectToAction(IndexAction);
+            }
+            if (id <= 0)
+            {
+                TempData[ErrorMessageKey] = "Invalid campaign ID.";
+                return RedirectToAction(IndexAction);
+            }
         try
         {
             await _campaignService.DeactivateCampaignAsync(id);
-            TempData["SuccessMessage"] = "Campaign deactivated successfully.";
+            TempData[SuccessMessageKey] = "Campaign deactivated successfully.";
         }
         catch (InvalidOperationException ex)
         {
-            TempData["ErrorMessage"] = $"Error deactivating campaign: {ex.Message}";
+            TempData[ErrorMessageKey] = $"Error deactivating campaign: {ex.Message}";
         }
-        return RedirectToAction("Index");
+        return RedirectToAction(IndexAction);
     }
 }
 }

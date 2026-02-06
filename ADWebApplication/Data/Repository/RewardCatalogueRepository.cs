@@ -40,14 +40,6 @@ namespace ADWebApplication.Data.Repository
             return reward.RewardId;
         }
         public async Task<bool> UpdateRewardAsync(RewardCatalogue reward)
-       /*  {
-           reward.UpdatedDate = DateTime.UtcNow;
-
-            _context.RewardCatalogues.Update(reward);
-            var rowsAffected = await _context.SaveChangesAsync();
-
-            return rowsAffected > 0;
-        } */
         {
             var existing = await _context.RewardCatalogues
                 .FirstOrDefaultAsync(r => r.RewardId == reward.RewardId);
