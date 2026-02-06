@@ -194,7 +194,7 @@ namespace ADWebApplication.Services
                 Latitude = rs.CollectionBin!.Latitude!.Value,
                 Longitude = rs.CollectionBin!.Longitude!.Value,
                 StopNumber = rs.StopSequence,
-                AssignedOfficerName = r.RouteAssignment != null ? (r.RouteAssignment!.AssignedTo ?? "") : null
+                AssignedOfficerName = r.RouteAssignment != null ? (r.RouteAssignment!.AssignedTo ?? "") : ""
             }))
             .ToListAsync();
     }

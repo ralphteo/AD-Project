@@ -77,6 +77,7 @@ builder.Services.AddScoped<IRewardCatalogueRepository, RewardCatalogueRepository
 
 builder.Services.AddAuthorization();
 
+// CORS policy for Android mobile app - requires AllowAnyOrigin for mobile connectivity
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAndroid", policy =>
@@ -123,15 +124,15 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<In5niteDbContext>();
 
-    if (!db.Roles.Any(r => r.Name == "HR"))
+    if (!await db.Roles.AnyAsync(r => r.Name == "HR"))
     {
         db.Roles.Add(new Role { Name = "HR" });
-        db.SaveChanges();
+        await db.SaveChangesAsync();
     }
 
-    var hrRoleId = db.Roles.First(r => r.Name == "HR").RoleId;
+    var hrRoleId = (await db.Roles.FirstAsync(r => r.Name == "HR")).RoleId;
 
-    var hr = db.Employees.FirstOrDefault(e => e.Username == "HR-001");
+    var hr = await db.Employees.FirstOrDefaultAsync(e => e.Username == "HR-001");
     if (hr == null)
     {
         hr = new Employee
