@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Azure.Security.KeyVault.Secrets;
+using Azure.Identity;
 
 namespace ADWebApplication.Tests.Integration
 {
@@ -16,8 +18,24 @@ namespace ADWebApplication.Tests.Integration
         {
             builder.ConfigureServices(services =>
             {
+                // --- Existing DB replacement ---
                 ReplaceDbContext<In5niteDbContext>(services);
 
+                // --- Key Vault mocking for CI ---
+                var skipKeyVault = Environment.GetEnvironmentVariable("SKIP_KEYVAULT_IN_TESTS") == "true";
+
+                if (skipKeyVault)
+                {
+                    // Replace SecretClient with a fake
+                    services.AddSingleton<SecretClient>(provider => new FakeSecretClient());
+                }
+                else
+                {
+                    var keyVaultUrl = "https://in5nite-keyvault.vault.azure.net/";
+                    services.AddSingleton(new SecretClient(new Uri(keyVaultUrl), new DefaultAzureCredential()));
+                }
+
+                // --- Ensure DB is created ---
                 var sp = services.BuildServiceProvider();
                 using var scope = sp.CreateScope();
                 scope.ServiceProvider.GetRequiredService<In5niteDbContext>().Database.EnsureCreated();
@@ -54,6 +72,17 @@ namespace ADWebApplication.Tests.Integration
                     connection.Dispose();
                 }
             }
+        }
+    }
+
+    // --- Fake KeyVault client for CI ---
+    public class FakeSecretClient : SecretClient
+    {
+        public FakeSecretClient() : base(new Uri("https://fake/"), new DefaultAzureCredential()) { }
+
+        public override Azure.Response<KeyVaultSecret> GetSecret(string name, string version = null, System.Threading.CancellationToken cancellationToken = default)
+        {
+            return Azure.Response.FromValue(new KeyVaultSecret(name, "FAKE_SECRET"), null);
         }
     }
 }
