@@ -20,7 +20,7 @@ namespace ADWebApplication.Tests
 {
     public class BinPredictionServiceTests
     {
-        private In5niteDbContext CreateInMemoryDbContext()
+        private static In5niteDbContext CreateInMemoryDbContext()
         {
             var options = new DbContextOptionsBuilder<In5niteDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
@@ -29,7 +29,7 @@ namespace ADWebApplication.Tests
             return new In5niteDbContext(options);
         }
 
-        private Mock<HttpMessageHandler> CreateMockHttpMessageHandler(HttpStatusCode statusCode, object responseContent)
+        private static Mock<HttpMessageHandler> CreateMockHttpMessageHandler(HttpStatusCode statusCode, object responseContent)
         {
             var mockHandler = new Mock<HttpMessageHandler>();
             var responseJson = JsonSerializer.Serialize(responseContent);
@@ -49,7 +49,7 @@ namespace ADWebApplication.Tests
             return mockHandler;
         }
 
-        private HttpClient CreateMockHttpClient(Mock<HttpMessageHandler> mockHandler)
+        private static HttpClient CreateMockHttpClient(Mock<HttpMessageHandler> mockHandler)
         {
             return new HttpClient(mockHandler.Object)
             {

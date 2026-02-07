@@ -14,7 +14,7 @@ namespace ADWebApplication.Tests
 {
     public class AdminBinPredictionsControllerTests
     {
-        private Mock<IBinPredictionService> CreateMockBinPredictionService()
+        private static Mock<IBinPredictionService> CreateMockBinPredictionService()
         {
             return new Mock<IBinPredictionService>();
         }
@@ -74,7 +74,7 @@ namespace ADWebApplication.Tests
 
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
-            var model = Assert.IsAssignableFrom<BinPredictionsPageViewModel>(viewResult.Model);
+            var model = Assert.IsType<BinPredictionsPageViewModel>(viewResult.Model);
             Assert.Equal(expectedViewModel, model);
             Assert.Equal(10, model.TotalBins);
         }
@@ -140,7 +140,7 @@ namespace ADWebApplication.Tests
 
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
-            var model = Assert.IsAssignableFrom<BinPredictionsPageViewModel>(viewResult.Model);
+            var model = Assert.IsType<BinPredictionsPageViewModel>(viewResult.Model);
             Assert.Equal(5, model.CurrentPage);
         }
 
@@ -165,7 +165,7 @@ namespace ADWebApplication.Tests
 
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
-            var model = Assert.IsAssignableFrom<BinPredictionsPageViewModel>(viewResult.Model);
+            var model = Assert.IsType<BinPredictionsPageViewModel>(viewResult.Model);
             Assert.Equal("AvgGrowth", model.SortBy);
             Assert.Equal("asc", model.SortDir);
         }
@@ -194,7 +194,7 @@ namespace ADWebApplication.Tests
 
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
-            var model = Assert.IsAssignableFrom<BinPredictionsPageViewModel>(viewResult.Model);
+            var model = Assert.IsType<BinPredictionsPageViewModel>(viewResult.Model);
             Assert.Equal("High", model.SelectedRisk);
         }
 
@@ -218,7 +218,7 @@ namespace ADWebApplication.Tests
 
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
-            var model = Assert.IsAssignableFrom<BinPredictionsPageViewModel>(viewResult.Model);
+            var model = Assert.IsType<BinPredictionsPageViewModel>(viewResult.Model);
             Assert.Equal("3", model.SelectedTimeframe);
         }
 
@@ -242,7 +242,7 @@ namespace ADWebApplication.Tests
 
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
-            var model = Assert.IsAssignableFrom<BinPredictionsPageViewModel>(viewResult.Model);
+            var model = Assert.IsType<BinPredictionsPageViewModel>(viewResult.Model);
             Assert.Equal("Medium", model.SelectedRisk);
         }
 
@@ -266,7 +266,7 @@ namespace ADWebApplication.Tests
 
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
-            var model = Assert.IsAssignableFrom<BinPredictionsPageViewModel>(viewResult.Model);
+            var model = Assert.IsType<BinPredictionsPageViewModel>(viewResult.Model);
             Assert.Equal("7", model.SelectedTimeframe);
         }
 
