@@ -17,17 +17,14 @@ namespace ADWebApplication.Controllers
     {
         private readonly IDashboardRepository _dashboardRepository;
         private readonly ILogger<AdminDashboardController> _logger;
-
-        private readonly RoutePlanningService _routePlanningService;
         private readonly IBinPredictionService _binPredictionService;
 
 
-        public AdminDashboardController(IDashboardRepository dashboardRepository, ILogger<AdminDashboardController> logger, IBinPredictionService binPredictionService, RoutePlanningService routePlanningService)
+        public AdminDashboardController(IDashboardRepository dashboardRepository, ILogger<AdminDashboardController> logger, IBinPredictionService binPredictionService)
         {
             _dashboardRepository = dashboardRepository;
             _logger = logger;
             _binPredictionService = binPredictionService;
-            _routePlanningService = routePlanningService;
         }
 
         //GET: AdminDashBoard
