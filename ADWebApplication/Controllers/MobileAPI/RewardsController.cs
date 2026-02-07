@@ -58,6 +58,9 @@ namespace ADWebApplication.Controllers
         [HttpGet("history")]
         public async Task<ActionResult<List<RewardsHistoryDto>>> GetHistory([FromQuery] int userId)
         {
+            if (userId <= 0)
+                return BadRequest("Invalid userId.");
+
             var wallet = await _context.RewardWallet
                 .AsNoTracking()
                 .FirstOrDefaultAsync(w => w.UserId == userId);

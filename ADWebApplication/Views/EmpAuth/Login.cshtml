@@ -4,7 +4,7 @@
     Layout = null;
 }
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <title>Login</title>
@@ -47,14 +47,14 @@
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                 <div class="mb-3">
-                    <label asp-for="EmployeeId" class="form-label"></label>
-                    <input asp-for="EmployeeId" class="form-control" autocomplete="username" />
+                    <label asp-for="EmployeeId" class="form-label">EmployeeId</label>
+                    <input asp-for="EmployeeId" id="EmployeeId" class="form-control" autocomplete="username" />
                     <span asp-validation-for="EmployeeId" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="Password" class="form-label"></label>
-                    <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                    <label asp-for="Password" class="form-label">Password</label>
+                    <input asp-for="Password" id="Password" class="form-control" autocomplete="current-password" />
                     <span asp-validation-for="Password" class="text-danger"></span>
                 </div>
 
