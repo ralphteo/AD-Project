@@ -92,7 +92,7 @@ namespace ADWebApplication.Tests.Integration
     {
         public Response<KeyVaultSecret> GetSecret(string name)
         {
-            return Response.FromValue(new KeyVaultSecret(name, "FAKE_SECRET"), null);
+            return Response.FromValue(new KeyVaultSecret(name, "FAKE_SECRET"), default!);
         }
     }
 

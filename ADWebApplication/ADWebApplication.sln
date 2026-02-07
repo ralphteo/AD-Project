@@ -5,7 +5,7 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ADWebApplication", "ADWebApplication.csproj", "{03A9DC66-F939-3901-1FB2-E53CA646B5F0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ADWebApplication.Tests", "ADWebApplication.Tests\ADWebApplication.Tests.csproj", "{E71626A7-0015-4176-8011-2A903A070CF7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ADWebApplication.Tests", "..\ADWebApplication.Tests\ADWebApplication.Tests.csproj", "{E71626A7-0015-4176-8011-2A903A070CF7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

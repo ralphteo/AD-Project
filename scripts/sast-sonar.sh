@@ -8,13 +8,17 @@ dotnet sonarscanner begin \
   /d:sonar.host.url="https://sonarcloud.io" \
   /d:sonar.login="${SONAR_TOKEN}" \
   /d:sonar.sources="./ADWebApplication" \
+  /d:sonar.tests="./ADWebApplication.Tests" \
+  /d:sonar.javascript.lcov.reportPaths="./ADWebApplication.Tests/JavaScript/coverage/lcov.info" \
   /d:sonar.cs.cobertura.reportsPaths="./TestResults/CoverageReport/Cobertura.xml" \
-  /d:sonar.coverage.exclusions="**/Program.cs"
+  /d:sonar.coverage.exclusions="**/Program.cs,**/wwwroot/lib/**,**/*.min.js,**/wwwroot/js/collector-dashboard.js" \
+  /d:sonar.exclusions="**/wwwroot/lib/**,**/*.min.js" \
+  /d:sonar.test.inclusions="**/*.test.js"
 
 # Build solution
 dotnet build ./AD-Project.sln
 
-# Run tests and collect coverage
+# Run .NET tests and collect coverage
 dotnet test ./ADWebApplication.Tests/ADWebApplication.Tests.csproj \
   --collect:"XPlat Code Coverage" \
   --settings coverlet.runsettings \
@@ -26,6 +30,19 @@ reportgenerator \
   -reports:./TestResults/*/coverage.cobertura.xml \
   -targetdir:./TestResults/CoverageReport \
   -reporttypes:Cobertura
+
+# Run JavaScript tests with coverage if Node.js is available
+if command -v node &> /dev/null; then
+  echo "Running JavaScript tests with coverage..."
+  cd ADWebApplication.Tests/JavaScript
+  if [ ! -d "node_modules" ]; then
+    npm install
+  fi
+  npm test -- --coverage
+  cd ../..
+else
+  echo "Node.js not found. Skipping JavaScript tests."
+fi
 
 # End SonarCloud scan
 dotnet sonarscanner end \

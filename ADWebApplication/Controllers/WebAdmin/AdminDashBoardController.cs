@@ -124,6 +124,21 @@ namespace ADWebApplication.Controllers
                 });
             }
         }
+
+        [HttpGet("RefreshKPIs")]
+        public async Task<IActionResult> RefreshKPIs()
+        {
+            try
+            {
+                var kpis = await _dashboardRepository.GetAdminDashboardAsync();
+                return PartialView("_KPICards", kpis);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving admin dashboard KPIs.");
+                return StatusCode(500, "Internal server error");
+            }
+        }
     }
 }
 
