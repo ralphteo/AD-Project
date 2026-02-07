@@ -72,23 +72,25 @@ namespace ADWebApplication.Controllers
                 .AsNoTracking()
                 .Where(t => t.WalletId == wallet.WalletId && t.Status == "COMPLETED")
                 .OrderByDescending(t => t.CreatedDateTime)
-                .Select(t => new RewardsHistoryDto
+                .Select(t => new
                 {
-                    TransactionId = t.TransactionId,
-                    Title = t.Points > 0
-                        ? (t.DisposalLog != null
-                            ? (t.DisposalLog.DisposalLogItem.ItemType != null
-                                ? t.DisposalLog.DisposalLogItem.ItemType.ItemName
-                                : "E-Waste Disposal")
-                            : "E-Waste Disposal")
-                        : "Redeemed Rewards",
-                    CategoryName = t.DisposalLog != null
-                        ? (t.DisposalLog.DisposalLogItem.ItemType != null
-                            ? t.DisposalLog.DisposalLogItem.ItemType.Category.CategoryName
-                            : "Other")
-                        : "Other",
-                    Points = t.Points,
-                    CreatedAt = t.CreatedDateTime
+                    t.TransactionId,
+                    t.Points,
+                    t.CreatedDateTime,
+                    ItemName = (t.DisposalLog != null && t.DisposalLog.DisposalLogItem.ItemType != null)
+                        ? t.DisposalLog.DisposalLogItem.ItemType.ItemName
+                        : null,
+                    Category = (t.DisposalLog != null && t.DisposalLog.DisposalLogItem.ItemType != null)
+                        ? t.DisposalLog.DisposalLogItem.ItemType.Category.CategoryName
+                        : null
+                })
+                .Select(x => new RewardsHistoryDto
+                {
+                    TransactionId = x.TransactionId,
+                    Title = x.Points > 0 ? (x.ItemName ?? "E-Waste Disposal") : "Redeemed Rewards",
+                    CategoryName = x.Category ?? "Other",
+                    Points = x.Points,
+                    CreatedAt = x.CreatedDateTime
                 })
                 .ToListAsync();
 
@@ -144,6 +146,9 @@ namespace ADWebApplication.Controllers
         [HttpPost("redeem")]
         public async Task<ActionResult<RedeemResponseDto>> Redeem([FromBody] RedeemRequestDto request)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             if (request == null)
             {
                 return BadRequest(new RedeemResponseDto { Success = false, Message = "Invalid request" });

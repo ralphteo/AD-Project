@@ -31,6 +31,9 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<RegisterResponse>> Register([FromBody] RegisterRequest request)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         var email = request.Email.Trim().ToLowerInvariant();
         var emailExists = await _db.PublicUser.AnyAsync(u => u.Email == email);
         if (emailExists)
@@ -70,6 +73,9 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         var email = request.Email.Trim().ToLowerInvariant();
         var user = await _db.PublicUser.FirstOrDefaultAsync(u => u.Email == email);
         if (user == null)

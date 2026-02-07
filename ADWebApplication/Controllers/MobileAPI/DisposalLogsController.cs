@@ -20,6 +20,9 @@ namespace ADWebApplication.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateDisposalLogRequest request)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             using var tx = await _context.Database.BeginTransactionAsync();
 
             try
