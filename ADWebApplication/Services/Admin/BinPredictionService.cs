@@ -119,7 +119,7 @@ public class BinPredictionService : IBinPredictionService
         // Normal bins with prediction data
         var predictedGrowth = prediction!.PredictedAvgDailyGrowth;
         var daysElapsed = Math.Max((today - latestCollectedAt).TotalDays, 0);
-        var estimatedFillToday = Math.Clamp(latestCollection.BinFillLevel + (predictedGrowth * daysElapsed), 0, 100);
+        var estimatedFillToday = Math.Clamp(predictedGrowth * daysElapsed, 0, 100);
         var daysTo80 = CalculateDaysTo80Percent(estimatedFillToday, predictedGrowth);
         
         bool isScheduled = nextStop?.PlannedCollectionTime >= today && nextStop.PlannedCollectionTime > latestCollectedAt;
