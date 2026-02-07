@@ -86,14 +86,14 @@ namespace ADWebApplication.Tests
                     CollectionId = 2,
                     BinId = 1,
                     CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
-                    BinFillLevel = 20
+                    BinFillLevel = 0  // Empty after collection
                 }
             );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 1,
                 BinId = 1,
-                PredictedAvgDailyGrowth = 10.0,
+                PredictedAvgDailyGrowth = 10.0, // 0% + (5 * 10%) = 50%
                 PredictedDate = DateTime.UtcNow.AddDays(-4),
                 ModelVersion = "v1"
             });
@@ -137,14 +137,14 @@ namespace ADWebApplication.Tests
                     CollectionId = 2,
                     BinId = 1,
                     CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-7),
-                    BinFillLevel = 20
+                    BinFillLevel = 0  // Empty after collection
                 }
             );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 1,
                 BinId = 1,
-                PredictedAvgDailyGrowth = 8.5, // 20% + (7 * 8.5%) = 79.5%, days to 80% = 0.06
+                PredictedAvgDailyGrowth = 12.0, // 0% + (7 * 12%) = 84%, already over 80% = High risk
                 PredictedDate = DateTime.UtcNow.AddDays(-6),
                 ModelVersion = "v1"
             });
@@ -165,14 +165,14 @@ namespace ADWebApplication.Tests
                     CollectionId = 4,
                     BinId = 2,
                     CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-2),
-                    BinFillLevel = 20
+                    BinFillLevel = 0  // Empty after collection
                 }
             );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 2,
                 BinId = 2,
-                PredictedAvgDailyGrowth = 5.0, // Only 10% filled after 2 days
+                PredictedAvgDailyGrowth = 5.0, // 0% + (2 * 5%) = 10%, 14 days to 80% = Low risk
                 PredictedDate = DateTime.UtcNow.AddDays(-1),
                 ModelVersion = "v1"
             });
@@ -215,14 +215,14 @@ namespace ADWebApplication.Tests
                     CollectionId = 2,
                     BinId = 1,
                     CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
-                    BinFillLevel = 20
+                    BinFillLevel = 0  // Empty after collection
                 }
             );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 1,
                 BinId = 1,
-                PredictedAvgDailyGrowth = 11.0,
+                PredictedAvgDailyGrowth = 13.0, // 0% + (5 * 13%) = 65%, 15/13=1.15 days to 80% = within 3 days
                 PredictedDate = DateTime.UtcNow.AddDays(-4),
                 ModelVersion = "v1"
             });
@@ -243,14 +243,14 @@ namespace ADWebApplication.Tests
                     CollectionId = 4,
                     BinId = 2,
                     CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-2),
-                    BinFillLevel = 20
+                    BinFillLevel = 0  // Empty after collection
                 }
             );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 2,
                 BinId = 2,
-                PredictedAvgDailyGrowth = 5.0,
+                PredictedAvgDailyGrowth = 5.0, // 0% + (2 * 5%) = 10%, 70/5=14 days to 80% = NOT within 3 days
                 PredictedDate = DateTime.UtcNow.AddDays(-1),
                 ModelVersion = "v1"
             });
@@ -475,14 +475,14 @@ namespace ADWebApplication.Tests
                     CollectionId = 2,
                     BinId = 1,
                     CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-7),
-                    BinFillLevel = 20
+                    BinFillLevel = 0  // Empty after collection
                 }
             );
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 1,
                 BinId = 1,
-                PredictedAvgDailyGrowth = 8.5, // 20% + (7 * 8.5%) = 79.5%, High risk
+                PredictedAvgDailyGrowth = 12.0, // 0% + (7 * 12%) = 84%, already over 80% = High risk
                 PredictedDate = DateTime.UtcNow.AddDays(-6),
                 ModelVersion = "v1"
             });
@@ -994,13 +994,13 @@ namespace ADWebApplication.Tests
                 CollectionId = 1,
                 BinId = 1,
                 CurrentCollectionDateTime = DateTimeOffset.UtcNow.Date.AddDays(-5),
-                BinFillLevel = 20
+                BinFillLevel = 0  // Empty after collection
             });
             dbContext.FillLevelPredictions.Add(new FillLevelPrediction
             {
                 PredictionId = 1,
                 BinId = 1,
-                PredictedAvgDailyGrowth = 10.0, // 50% filled after 5 days, 3 more days to 80%
+                PredictedAvgDailyGrowth = 10.0, // 0% + (5 * 10%) = 50% filled after 5 days, 3 more days to 80%
                 PredictedDate = DateTime.UtcNow.AddDays(-4),
                 ModelVersion = "v1"
             });

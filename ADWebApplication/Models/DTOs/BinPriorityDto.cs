@@ -1,5 +1,7 @@
 using System.Security.Principal;
 
+namespace ADWebApplication.Models.DTOs;
+
 public class BinPriorityDto
 {
     public int BinId {get; set;}

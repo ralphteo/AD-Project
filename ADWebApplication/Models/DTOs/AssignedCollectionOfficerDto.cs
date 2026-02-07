@@ -1,3 +1,5 @@
+namespace ADWebApplication.Models.DTOs;
+
 public class AssignedCollectionOfficerDto
 {
     public required string Username { get; set; }

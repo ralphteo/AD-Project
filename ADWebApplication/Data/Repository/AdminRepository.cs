@@ -1,4 +1,5 @@
 using ADWebApplication.Models;
+using ADWebApplication.Models.DTOs;
 using ADWebApplication.ViewModels;
 using Microsoft.EntityFrameworkCore;
 

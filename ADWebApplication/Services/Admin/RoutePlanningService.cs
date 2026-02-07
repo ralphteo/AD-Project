@@ -129,23 +129,8 @@ namespace ADWebApplication.Services
                 binCountDimension.SetCumulVarSoftLowerBound(routing.End(i), averageBins, 100000);
             }
 
-        //implement hard constraints for high-priority bins
-        //long mandatoryPenalty = 10000000;
         long optionalPenalty = 2000;
-        
-        //loop through all locations; node 0 is starting bin
-        // for (int i = 1; i < locations.Count; i++)
-        //     {
-        //         long index = manager.NodeToIndex(i);
-        //         if (locations[i].IsHighPriority)
-        //         {
-        //             routing.AddDisjunction(new long[] {index}, mandatoryPenalty);
-        //         }
-        //         else
-        //         {
-        //             routing.AddDisjunction(new long[] {index}, optionalPenalty);
-        //         }
-        //     }
+    
         for (int i = 1; i < binsForPlanning.Count; i++)
             {
                 long index = manager.NodeToIndex(i);
@@ -242,11 +227,11 @@ namespace ADWebApplication.Services
             return R * c;
         }
 
-        private double ToRadians(double angle) => Math.PI * angle / 180.0;
+        private static double ToRadians(double angle) => Math.PI * angle / 180.0;
     
 
     //helper for getting optimized route
-    private List<RoutePlanDto> GetOptimizedRoute(
+    private static List<RoutePlanDto> GetOptimizedRoute(
         List<RoutePlanDto> locations,
         RoutingModel routing, 
         RoutingIndexManager manager, 

@@ -92,7 +92,7 @@ public class BinPredictionService : IBinPredictionService
         return (int)Math.Ceiling(remaining / dailyGrowth);
     }
 
-    private BinPredictionsTableViewModel CreateRowForBin(CollectionBin bin, CollectionDetails latestCollection, DateTimeOffset latestCollectedAt, 
+    private static BinPredictionsTableViewModel CreateRowForBin(CollectionBin bin, CollectionDetails latestCollection, DateTimeOffset latestCollectedAt, 
         FillLevelPrediction? prediction, RouteStop? nextStop, DateTimeOffset today, bool needsRefresh)
     {
         // If bin just got collected and needs ML refresh
@@ -154,19 +154,7 @@ public class BinPredictionService : IBinPredictionService
         }
 
         var latestCollection = history[0];
-        var olderCollection = history.Count > 1 ? history[1] : null;
         var latestCollectedAt = latestCollection.CurrentCollectionDateTime!.Value;
-
-        // Calculate cycle info if we have previous collection
-        int? cycleDurationDays = null;
-        int? cycleStartMonth = null;
-        if (olderCollection?.CurrentCollectionDateTime != null)
-        {
-            cycleDurationDays = (int)Math.Ceiling(
-                (latestCollectedAt - olderCollection.CurrentCollectionDateTime.Value).TotalDays
-            );
-            cycleStartMonth = latestCollectedAt.Month;
-        }
 
         latestPredictionByBin.TryGetValue(bin.BinId, out var latestPrediction);
         nextStopByBin.TryGetValue(bin.BinId, out var nextStop);
@@ -177,7 +165,7 @@ public class BinPredictionService : IBinPredictionService
             return CreateRowForBin(bin, latestCollection, latestCollectedAt, null, nextStop, today, true);
         }
 
-        if (!cycleDurationDays.HasValue || !cycleStartMonth.HasValue)
+        if (latestPrediction == null)
         {
             missingPredictionCount++;
             return null;

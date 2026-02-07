@@ -1,3 +1,5 @@
+namespace ADWebApplication.Models.DTOs;
+
 public class AdminAlertDto
 {
     public required string Type { get; set; }

@@ -7,6 +7,8 @@ using ADWebApplication.Services;
 using ADWebApplication.Models.DTOs;
 using ADWebApplication.Models.ViewModels;
 
+namespace ADWebApplication.Controllers.WebAdmin;
+
 [Authorize(Roles = "Admin")]
 [Route("Admin/RoutePlanning")]
 public class AdminRoutePlanningController : Controller
@@ -34,7 +36,7 @@ public class AdminRoutePlanningController : Controller
 
         List<UiRouteStopDto> uiStops;
 
-        if (saved.Any())
+        if (saved.Count > 0)
         {
             uiStops = saved.Select(s => new UiRouteStopDto
             {
@@ -97,6 +99,11 @@ public class AdminRoutePlanningController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AssignAllRoutes(AssignAllRoutesRequestDto req)
     {
+        if (!ModelState.IsValid)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
         var date = DateTime.Today;
         var admin = User.Identity?.Name ?? "Admin";
 
@@ -104,7 +111,7 @@ public class AdminRoutePlanningController : Controller
 
         List<UiRouteStopDto> uiStops;
 
-        if (savedStops.Any())
+        if (savedStops.Count > 0)
         {
             uiStops = savedStops.Select(s => new UiRouteStopDto
             {
@@ -132,8 +139,6 @@ public class AdminRoutePlanningController : Controller
                 AssignedOfficerName = s.AssignedOfficerName
             }).ToList();
         }
-
-        var totalRoutes = uiStops.Select(s => s.RouteKey).Distinct().Count();
 
         var assignments = req.Assignments
             .Where(a => !string.IsNullOrEmpty(a.OfficerUsername))
