@@ -22,6 +22,9 @@ namespace ADWebApplication.Controllers
 
     public async Task<IActionResult> Index()
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         ViewBag.GoogleMapsKey = _config["GOOGLE_MAPS_API_KEY"];
 
         var username = User.Identity?.Name;
@@ -34,6 +37,9 @@ namespace ADWebApplication.Controllers
         [HttpGet]
         public async Task<IActionResult> ConfirmCollection(int id)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var username = User.Identity?.Name;
             if (string.IsNullOrEmpty(username)) return Unauthorized();
 
@@ -85,12 +91,18 @@ namespace ADWebApplication.Controllers
 
         public IActionResult CollectionConfirmed(CollectionConfirmationVM model)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             return View(model);
         }
 
         [HttpGet]
         public async Task<IActionResult> ReportIssue(string? search, string? status, string? priority)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var username = User.Identity?.Name;
             if (string.IsNullOrEmpty(username)) return Unauthorized();
 
@@ -125,6 +137,9 @@ namespace ADWebApplication.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> StartIssueWork(int stopId)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var username = User.Identity?.Name;
             if (string.IsNullOrEmpty(username)) return Unauthorized();
 
@@ -151,6 +166,9 @@ namespace ADWebApplication.Controllers
         [HttpGet]
         public async Task<IActionResult> MyRouteAssignments(string? search, int? regionId, DateTime? date, string? status, int page = 1, int pageSize = 10)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var username = User.Identity?.Name;
             if (string.IsNullOrEmpty(username)) return Unauthorized();
 
@@ -161,6 +179,9 @@ namespace ADWebApplication.Controllers
         [HttpGet]
         public async Task<IActionResult> RouteAssignmentDetails(int id)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var username = User.Identity?.Name;
             if (string.IsNullOrEmpty(username)) return Unauthorized();
 
@@ -173,6 +194,9 @@ namespace ADWebApplication.Controllers
         [HttpGet]
         public async Task<IActionResult> GetNextStops(int? top = 10)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var username = User.Identity?.Name;
             if (string.IsNullOrEmpty(username)) return Unauthorized();
 

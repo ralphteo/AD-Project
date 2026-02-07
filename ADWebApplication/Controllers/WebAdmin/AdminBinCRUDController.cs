@@ -70,6 +70,11 @@ namespace ADWebApplication.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteBin(int binId)
         {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction("Bins");
+            }
+
             var bin = await _adminRepository.GetBinByIdAsync(binId);
             if (bin == null)
                 return NotFound();

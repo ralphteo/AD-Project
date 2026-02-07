@@ -74,9 +74,9 @@ namespace ADWebApplication.Controllers
                 .OrderByDescending(t => t.CreatedDateTime)
                 .Select(t => new
                 {
-                    t.TransactionId,
-                    t.Points,
-                    t.CreatedDateTime,
+                    TransactionId = t.TransactionId,
+                    Points = t.Points,
+                    CreatedAt = t.CreatedDateTime,
                     ItemName = (t.DisposalLog != null && t.DisposalLog.DisposalLogItem.ItemType != null)
                         ? t.DisposalLog.DisposalLogItem.ItemType.ItemName
                         : null,
@@ -90,7 +90,7 @@ namespace ADWebApplication.Controllers
                     Title = x.Points > 0 ? (x.ItemName ?? "E-Waste Disposal") : "Redeemed Rewards",
                     CategoryName = x.Category ?? "Other",
                     Points = x.Points,
-                    CreatedAt = x.CreatedDateTime
+                    CreatedAt = x.CreatedAt
                 })
                 .ToListAsync();
 

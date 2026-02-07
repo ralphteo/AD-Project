@@ -25,6 +25,9 @@ namespace ADWebApplication.Controllers
         [HttpGet("")]
         public async  Task<IActionResult> Index()
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var campaigns = await _campaignService.GetAllCampaignsAsync();
             return View(campaigns);
         }
@@ -32,6 +35,9 @@ namespace ADWebApplication.Controllers
         [HttpGet("Create")]
         public IActionResult Create()
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             return View(new Campaign
             {
                 StartDate = DateTime.UtcNow,
@@ -69,6 +75,9 @@ namespace ADWebApplication.Controllers
         [HttpGet("Edit/{id}")]
         public async Task<IActionResult> Edit(int id)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             //Validate Id parameter
             if (id <= 0)
             {
