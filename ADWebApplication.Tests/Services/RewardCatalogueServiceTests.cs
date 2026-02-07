@@ -49,6 +49,167 @@ namespace ADWebApplication.Tests.Services
             ok.Should().BeTrue();
         }
 
+        [Fact]
+        public async Task AddRewardAsync_WithNegativeStock_Throws()
+        {
+            var repo = new FakeRepo();
+            var svc = new RewardCatalogueService(repo, NullLogger<RewardCatalogueService>.Instance);
+            var reward = new RewardCatalogue { Points = 100, StockQuantity = -1 };
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => svc.AddRewardAsync(reward));
+        }
+
+        [Fact]
+        public async Task AddRewardAsync_WithValidReward_ReturnsId()
+        {
+            var repo = new FakeRepo();
+            var svc = new RewardCatalogueService(repo, NullLogger<RewardCatalogueService>.Instance);
+            var reward = new RewardCatalogue { Points = 100, StockQuantity = 10 };
+
+            var id = await svc.AddRewardAsync(reward);
+
+            id.Should().Be(7);
+            repo.LastSaved.Should().NotBeNull();
+        }
+
+        [Fact]
+        public async Task UpdateRewardAsync_WhenStockZeroAndAvailable_SetsAvailabilityFalse()
+        {
+            var repo = new FakeRepo();
+            var svc = new RewardCatalogueService(repo, NullLogger<RewardCatalogueService>.Instance);
+            var reward = new RewardCatalogue { RewardId = 1, StockQuantity = 0, Availability = true };
+
+            await svc.UpdateRewardAsync(reward);
+
+            reward.Availability.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task UpdateRewardAsync_ReturnsTrue()
+        {
+            var repo = new FakeRepo();
+            var svc = new RewardCatalogueService(repo, NullLogger<RewardCatalogueService>.Instance);
+            var reward = new RewardCatalogue { RewardId = 1, StockQuantity = 5, Availability = true };
+
+            var result = await svc.UpdateRewardAsync(reward);
+
+            result.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task DeleteRewardAsync_ReturnsTrue()
+        {
+            var repo = new FakeRepo();
+            var svc = new RewardCatalogueService(repo, NullLogger<RewardCatalogueService>.Instance);
+
+            var result = await svc.DeleteRewardAsync(1);
+
+            result.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GetAllRewardsAsync_ReturnsEmptyList()
+        {
+            var repo = new FakeRepo();
+            var svc = new RewardCatalogueService(repo, NullLogger<RewardCatalogueService>.Instance);
+
+            var result = await svc.GetAllRewardsAsync();
+
+            result.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GetRewardByIdAsync_ReturnsNull()
+        {
+            var repo = new FakeRepo();
+            var svc = new RewardCatalogueService(repo, NullLogger<RewardCatalogueService>.Instance);
+
+            var result = await svc.GetRewardByIdAsync(1);
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GetAvailableRewardsAsync_ReturnsEmptyList()
+        {
+            var repo = new FakeRepo();
+            var svc = new RewardCatalogueService(repo, NullLogger<RewardCatalogueService>.Instance);
+
+            var result = await svc.GetAvailableRewardsAsync();
+
+            result.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GetAllRewardCategoriesAsync_ReturnsEmptyList()
+        {
+            var repo = new FakeRepo();
+            var svc = new RewardCatalogueService(repo, NullLogger<RewardCatalogueService>.Instance);
+
+            var result = await svc.GetAllRewardCategoriesAsync();
+
+            result.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GetRewardsByCategoryAsync_ReturnsEmptyList()
+        {
+            var repo = new FakeRepo();
+            var svc = new RewardCatalogueService(repo, NullLogger<RewardCatalogueService>.Instance);
+
+            var result = await svc.GetRewardsByCategoryAsync("Electronics");
+
+            result.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task CheckRewardAvailabilityAsync_ReturnsFalseWhenNotFound()
+        {
+            var repo = new FakeRepo();
+            var svc = new RewardCatalogueService(repo, NullLogger<RewardCatalogueService>.Instance);
+
+            var result = await svc.CheckRewardAvailabilityAsync(999);
+
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task CheckRewardAvailabilityAsync_ReturnsFalseWhenUnavailable()
+        {
+            IRewardCatalogueRepository repo = new FakeRepoWithGet(new RewardCatalogue { RewardId = 1, Availability = false, StockQuantity = 5 });
+            var svc = new RewardCatalogueService(repo, NullLogger<RewardCatalogueService>.Instance);
+
+            var result = await svc.CheckRewardAvailabilityAsync(1);
+
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task CheckRewardAvailabilityAsync_ReturnsFalseWhenInsufficientStock()
+        {
+            IRewardCatalogueRepository repo = new FakeRepoWithGet(new RewardCatalogue { RewardId = 1, Availability = true, StockQuantity = 2 });
+            var svc = new RewardCatalogueService(repo, NullLogger<RewardCatalogueService>.Instance);
+
+            var result = await svc.CheckRewardAvailabilityAsync(1, 5);
+
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public void Constructor_ThrowsWhenRepositoryIsNull()
+        {
+            Assert.Throws<ArgumentNullException>(() => 
+                new RewardCatalogueService(null!, NullLogger<RewardCatalogueService>.Instance));
+        }
+
+        [Fact]
+        public void Constructor_ThrowsWhenLoggerIsNull()
+        {
+            var repo = new FakeRepo();
+            Assert.Throws<ArgumentNullException>(() => 
+                new RewardCatalogueService(repo, null!));
+        }
+
         private class FakeRepoWithGet : IRewardCatalogueRepository
         {
             private readonly RewardCatalogue _r;

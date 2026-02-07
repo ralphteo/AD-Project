@@ -251,5 +251,184 @@ namespace ADWebApplication.Tests.ViewModels
             Assert.Null(viewModel.BinId);
             Assert.Null(viewModel.Remarks);
         }
+
+        [Fact]
+        public void BinCondition_CanBeSetToDifferentValues()
+        {
+            // Arrange
+            var viewModel = new CollectionConfirmationVM();
+
+            // Act & Assert - Default
+            Assert.Equal("Good", viewModel.BinCondition);
+
+            // Set to different conditions
+            viewModel.BinCondition = "Damaged";
+            Assert.Equal("Damaged", viewModel.BinCondition);
+
+            viewModel.BinCondition = "Needs Repair";
+            Assert.Equal("Needs Repair", viewModel.BinCondition);
+
+            viewModel.BinCondition = "Excellent";
+            Assert.Equal("Excellent", viewModel.BinCondition);
+        }
+
+        [Fact]
+        public void Zone_CanBeSetToEmptyString()
+        {
+            // Arrange & Act
+            var viewModel = new CollectionConfirmationVM
+            {
+                Zone = ""
+            };
+
+            // Assert
+            Assert.Equal(string.Empty, viewModel.Zone);
+        }
+
+        [Fact]
+        public void LocationName_CanBeSetToEmptyString()
+        {
+            // Arrange & Act
+            var viewModel = new CollectionConfirmationVM
+            {
+                LocationName = ""
+            };
+
+            // Assert
+            Assert.Equal(string.Empty, viewModel.LocationName);
+        }
+
+        [Fact]
+        public void Address_CanBeSetToEmptyString()
+        {
+            // Arrange & Act
+            var viewModel = new CollectionConfirmationVM
+            {
+                Address = ""
+            };
+
+            // Assert
+            Assert.Equal(string.Empty, viewModel.Address);
+        }
+
+        [Fact]
+        public void StopId_CanBeSetToPositiveValue()
+        {
+            // Arrange & Act
+            var viewModel = new CollectionConfirmationVM
+            {
+                StopId = 999
+            };
+
+            // Assert
+            Assert.Equal(999, viewModel.StopId);
+        }
+
+        [Fact]
+        public void Remarks_CanContainLongText()
+        {
+            // Arrange
+            var longRemarks = new string('A', 1000);
+            var viewModel = new CollectionConfirmationVM
+            {
+                Remarks = longRemarks
+            };
+
+            // Act & Assert
+            Assert.Equal(longRemarks, viewModel.Remarks);
+            Assert.Equal(1000, viewModel.Remarks.Length);
+        }
+
+        [Fact]
+        public void NextFillLevel_CanBeSetToValidRange()
+        {
+            // Arrange & Act
+            var viewModel = new CollectionConfirmationVM
+            {
+                NextFillLevel = 85
+            };
+
+            // Assert
+            Assert.Equal(85, viewModel.NextFillLevel);
+        }
+
+        [Fact]
+        public void AllCategoryCheckboxes_CanBeSetIndependently()
+        {
+            // Arrange
+            var viewModel = new CollectionConfirmationVM();
+
+            // Act - Set only Electronics
+            viewModel.CollectedElectronics = true;
+
+            // Assert
+            Assert.True(viewModel.CollectedElectronics);
+            Assert.False(viewModel.CollectedBatteries);
+            Assert.False(viewModel.CollectedCables);
+            Assert.False(viewModel.CollectedAccessories);
+
+            // Act - Add Cables
+            viewModel.CollectedCables = true;
+
+            // Assert
+            Assert.True(viewModel.CollectedElectronics);
+            Assert.False(viewModel.CollectedBatteries);
+            Assert.True(viewModel.CollectedCables);
+            Assert.False(viewModel.CollectedAccessories);
+        }
+
+        [Fact]
+        public void CollectionTime_CanBeSetToSpecificDateTime()
+        {
+            // Arrange
+            var specificTime = new DateTime(2026, 12, 25, 14, 30, 0);
+            var viewModel = new CollectionConfirmationVM();
+
+            // Act
+            viewModel.CollectionTime = specificTime;
+
+            // Assert
+            Assert.Equal(specificTime, viewModel.CollectionTime);
+        }
+
+        [Fact]
+        public void NextPlannedTime_CanBeSetToFutureDate()
+        {
+            // Arrange
+            var futureTime = new DateTime(2027, 1, 1, 9, 0, 0);
+            var viewModel = new CollectionConfirmationVM();
+
+            // Act
+            viewModel.NextPlannedTime = futureTime;
+
+            // Assert
+            Assert.Equal(futureTime, viewModel.NextPlannedTime);
+        }
+
+        [Fact]
+        public void PointId_CanBeSetToAlphanumericValue()
+        {
+            // Arrange & Act
+            var viewModel = new CollectionConfirmationVM
+            {
+                PointId = "ABC-123-XYZ"
+            };
+
+            // Assert
+            Assert.Equal("ABC-123-XYZ", viewModel.PointId);
+        }
+
+        [Fact]
+        public void BinId_CanBeSetToAlphanumericValue()
+        {
+            // Arrange & Act
+            var viewModel = new CollectionConfirmationVM
+            {
+                BinId = "BIN-2026-001"
+            };
+
+            // Assert
+            Assert.Equal("BIN-2026-001", viewModel.BinId);
+        }
     }
 }

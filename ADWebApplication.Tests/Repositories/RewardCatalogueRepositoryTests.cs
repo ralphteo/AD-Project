@@ -164,7 +164,7 @@ namespace ADWebApplication.Tests.Repositories
             rewards[0].RewardName.Should().Be("New Reward");
             rewards[0].CreatedDate.Should().NotBe(default(DateTime));
             rewards[0].UpdatedDate.Should().NotBe(default(DateTime));
-            rewards[0].CreatedDate.Date.Should().Be(DateTime.Today);
+            rewards[0].CreatedDate.Date.Should().Be(DateTime.UtcNow.Date);
         }
 
         #endregion
@@ -219,7 +219,7 @@ namespace ADWebApplication.Tests.Repositories
             result.StockQuantity.Should().Be(5);
             result.Description.Should().Be("Updated Description");
             result.Availability.Should().BeFalse();
-            result.UpdatedDate.Date.Should().Be(DateTime.Today);
+            result.UpdatedDate.Date.Should().Be(DateTime.UtcNow.Date);
             result.CreatedDate.Should().Be(originalDate); // Should not change
         }
 
