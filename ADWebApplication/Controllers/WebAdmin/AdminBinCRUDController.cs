@@ -6,26 +6,28 @@ using ADWebApplication.Models;
 
 namespace ADWebApplication.Controllers
 {
-    [Authorize(Roles = "Admin")] //* Uncomment this line to restrict access to Admins only
-    public class AdminController : Controller
+    [Authorize(Roles = "Admin")] 
+    [Route("Admin")]
+    public class AdminBinCRUDController : Controller
     {
         private readonly IAdminRepository _adminRepository;
 
-        public AdminController(IAdminRepository adminRepository)
+        public AdminBinCRUDController(IAdminRepository adminRepository)
         {
             _adminRepository = adminRepository;
         }
 
         // ---------------------------------- Manage Collection Bins --------------------------------------------- //
+        [HttpGet("Bins")]
         public async Task<IActionResult> Bins()
         {
             var bins = await _adminRepository.GetAllBinsAsync();
             ViewBag.Regions = await _adminRepository.GetAllRegionsAsync();
-            return View(bins);
+            return View("~/Views/Admin/Bins.cshtml", bins);
         }
 
         // POST: /Admin/EditBin
-        [HttpPost]
+        [HttpPost("EditBin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditBin(CollectionBin editedBin)
         {
@@ -64,7 +66,7 @@ namespace ADWebApplication.Controllers
 
 
         // POST: /Admin/DeleteBin/{id}
-        [HttpPost]
+        [HttpPost("DeleteBin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteBin(int binId)
         {
@@ -80,13 +82,14 @@ namespace ADWebApplication.Controllers
             return RedirectToAction("BinDeleted");
         }
 
+        [HttpGet("BinDeleted")]
         public IActionResult BinDeleted()
         {
-            return View(); // Bin deletion confirmation view
+            return View("~/Views/Admin/BinDeleted.cshtml"); // Bin deletion confirmation view
         }
 
         // POST: /Admin/CreateBin
-        [HttpPost]
+        [HttpPost("CreateBin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateBin(CollectionBin newBin)
         {
@@ -112,6 +115,7 @@ namespace ADWebApplication.Controllers
             return View(officers);
         }*/
 
+        [HttpGet("CollectionOfficerSchedule")]
         public async Task<IActionResult> CollectionOfficerSchedule(string officerUsername)
         {
             // Get the current date minus one year
@@ -122,9 +126,10 @@ namespace ADWebApplication.Controllers
             var officer = await _adminRepository.GetEmployeeByUsernameAsync(officerUsername);
             ViewBag.OfficerFullName = officer?.FullName ?? officerUsername;
 
-            return View(routeAssignments);
+            return View("~/Views/Admin/CollectionOfficerSchedule.cshtml", routeAssignments);
         }
 
+        [HttpGet("CollectionOfficerRoster")]
         public async Task<IActionResult> CollectionOfficerRoster(DateTime? dateFrom, DateTime? dateTo)
         {
             if (dateFrom.HasValue && dateTo.HasValue)
@@ -132,22 +137,22 @@ namespace ADWebApplication.Controllers
                 var availableOfficers = await _adminRepository
                     .GetAvailableCollectionOfficersAsync(dateFrom.Value, dateTo.Value);
 
-                return View(availableOfficers);
+                return View("~/Views/Admin/CollectionOfficerRoster.cshtml", availableOfficers);
             }
 
             var officers = await _adminRepository.GetAllCollectionOfficersAsync();
-            return View(officers);
+            return View("~/Views/Admin/CollectionOfficerRoster.cshtml", officers);
         }
 
-
+        [HttpGet("CollectionCalendar")]
         public async Task<IActionResult> CollectionCalendar (string username)
         {
 
 
-            return View();
+            return View("~/Views/Admin/CollectionCalendar.cshtml");
         }
 
-        [HttpGet]
+        [HttpGet("GetOfficerAvailability")]
         public async Task<IActionResult> GetOfficerAvailability(DateTime from, DateTime to)
         {
             var available = await _adminRepository
