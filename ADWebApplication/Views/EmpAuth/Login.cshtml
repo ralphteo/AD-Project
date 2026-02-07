@@ -67,7 +67,25 @@
         </div>
     </div>
 
-    <script src="~/js/login.js"></script>
+    <script>
+        // Password toggle functionality
+        window.onload = function () {
+            var passwordInput = document.getElementById("passwordInput");
+            var toggleBtn = document.getElementById("togglePwd");
+
+            if (!passwordInput || !toggleBtn) {
+                return;
+            }
+
+            toggleBtn.onclick = function () {
+                if (passwordInput.type === "password") {
+                    passwordInput.type = "text";
+                } else {
+                    passwordInput.type = "password";
+                }
+            };
+        };
+    </script>
 </body>
 
 </html>
