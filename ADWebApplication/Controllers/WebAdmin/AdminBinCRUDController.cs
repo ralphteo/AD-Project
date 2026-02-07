@@ -135,8 +135,15 @@ namespace ADWebApplication.Controllers
         }
 
         [HttpGet("CollectionOfficerRoster")]
+       
         public async Task<IActionResult> CollectionOfficerRoster(DateTime? dateFrom, DateTime? dateTo)
         {
+            if (!ModelState.IsValid)
+            {
+                var allOfficers = await _adminRepository.GetAllCollectionOfficersAsync();
+                return View("~/Views/Admin/CollectionOfficerRoster.cshtml", allOfficers);
+            }
+
             if (dateFrom.HasValue && dateTo.HasValue)
             {
                 var availableOfficers = await _adminRepository
@@ -160,6 +167,11 @@ namespace ADWebApplication.Controllers
         [HttpGet("GetOfficerAvailability")]
         public async Task<IActionResult> GetOfficerAvailability(DateTime from, DateTime to)
         {
+            if (!ModelState.IsValid)
+            {
+                var allOfficers = await _adminRepository.GetAllCollectionOfficersAsync();
+                return View("~/Views/Admin/CollectionOfficerRoster.cshtml", allOfficers);
+            }
             var available = await _adminRepository
                 .GetAvailableCollectionOfficersCalendarAsync(from, to);
 

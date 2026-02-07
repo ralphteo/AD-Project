@@ -14,7 +14,7 @@
             <h3 class="fw-bold mb-1">
                 @Model.ActiveUsersWithDisposals.ToString("N0") / @Model.TotalUsers.ToString("N0")
             </h3>
-            <p class="text-muted small mb-0">Active Users Participation</p>
+            <p class="text-muted small mb-0">Active Users Participation for Last Month</p>
         </div>
     </div>
 </div>
@@ -31,7 +31,7 @@
                 </span>
             </div>
             <h3 class="fw-bold mb-1">@Model.TotalCollections.ToString("N0")</h3>
-            <p class="text-muted small mb-0">Collections This Month</p>
+            <p class="text-muted small mb-0">Collections Last Month</p>
         </div>
     </div>
 </div>
@@ -48,7 +48,7 @@
                 </span>
             </div>
             <h3 class="fw-bold mb-1">@Model.TotalWeightRecycled.ToString("N1") T</h3>
-            <p class="text-muted small mb-0">Total Weight Recycled</p>
+            <p class="text-muted small mb-0">Total Weight Recycled Last Month</p>
         </div>
     </div>
 </div>
@@ -65,7 +65,7 @@
                 </span>
             </div>
             <h3 class="fw-bold mb-1">@Model.AvgBinFillRate.ToString("N1")%</h3>
-            <p class="text-muted small mb-0">Average Bin Fill Rate</p>
+            <p class="text-muted small mb-0">Average Bin Fill Rate Last Collection</p>
         </div>
     </div>
 </div>
