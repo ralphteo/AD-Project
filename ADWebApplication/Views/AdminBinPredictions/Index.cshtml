@@ -198,11 +198,9 @@
     }
 
     @functions {
-        static string FillBarClass(double fill)
+        static string FillBarClass(string? riskLevel)
         {
-            if (fill >= 75) return "bg-danger";
-            if (fill >= 60) return "bg-warning";
-            return "bg-success";
+            return riskLevel == "High" ? "bg-danger" : "bg-success";
         }
     }
 
@@ -276,7 +274,7 @@
                                     </div>
 
                                     <div class="progress mt-2" style="height: 6px; background-color:#e9ecef;">
-                                        <div class="progress-bar @(row.IsActualFillLevel ? "bg-warning" : FillBarClass(row.EstimatedFillToday))"
+                                        <div class="progress-bar @(row.IsActualFillLevel ? "bg-warning" : FillBarClass(row.RiskLevel))"
                                             role="progressbar"
                                             style="width:@row.EstimatedFillToday%">
                                         </div>
@@ -293,7 +291,7 @@
                                     </div>
 
                                     <div class="progress mt-2" style="height: 6px; background-color:#e9ecef;">
-                                        <div class="progress-bar @FillBarClass(row.EstimatedFillToday)"
+                                        <div class="progress-bar @FillBarClass(row.RiskLevel)"
                                             role="progressbar"
                                             style="width:@row.EstimatedFillToday%">
                                         </div>
