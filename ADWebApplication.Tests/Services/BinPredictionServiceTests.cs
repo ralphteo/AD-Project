@@ -1321,54 +1321,74 @@ namespace ADWebApplication.Tests
             dbContext.Regions.Add(region);
 
             var bin1 = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
-            var bin2 = new CollectionBin { BinId = 2, BinStatus = "Active", RegionId = 1, Region = region };
-            dbContext.CollectionBins.AddRange(bin1, bin2);
-
+            dbContext.CollectionBins.Add(bin1);
             dbContext.CollectionDetails.AddRange(
                 new CollectionDetails
                 {
                     CollectionId = 1,
                     BinId = 1,
-                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
-                    BinFillLevel = 0
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-10),
+                    BinFillLevel = 80
                 },
                 new CollectionDetails
                 {
                     CollectionId = 2,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                }
+            );
+            dbContext.FillLevelPredictions.Add(new FillLevelPrediction
+            {
+                PredictionId = 1,
+                BinId = 1,
+                PredictedAvgDailyGrowth = 20.0, // High risk: 5 days * 20% = 100%, days to 80% = 0
+                PredictedDate = DateTime.UtcNow.AddDays(-4),
+                ModelVersion = "v1"
+            });
+
+            var bin2 = new CollectionBin { BinId = 2, BinStatus = "Active", RegionId = 1, Region = region };
+            dbContext.CollectionBins.Add(bin2);
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 3,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-10),
+                    BinFillLevel = 80
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 4,
                     BinId = 2,
                     CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
                     BinFillLevel = 0
                 }
             );
-
-            dbContext.FillLevelPredictions.AddRange(
-                new FillLevelPrediction
-                {
-                    PredictionId = 1,
-                    BinId = 1,
-                    PredictedAvgDailyGrowth = 25.0, // High risk: days to 80% <= 1
-                    PredictedDate = DateTime.UtcNow.AddDays(-4),
-                    ModelVersion = "v1"
-                },
-                new FillLevelPrediction
-                {
-                    PredictionId = 2,
-                    BinId = 2,
-                    PredictedAvgDailyGrowth = 11.4, // Medium risk: 5 days at 11.4% = 57% fill, days to 80% = 2.02
-                    PredictedDate = DateTime.UtcNow.AddDays(-4),
-                    ModelVersion = "v1"
-                }
-            );
+            dbContext.FillLevelPredictions.Add(new FillLevelPrediction
+            {
+                PredictionId = 2,
+                BinId = 2,
+                PredictedAvgDailyGrowth = 12.0, // Medium risk: 5 days * 12% = 60%, (80-60)/12 = 1.67 days
+                PredictedDate = DateTime.UtcNow.AddDays(-4),
+                ModelVersion = "v1"
+            });
 
             await dbContext.SaveChangesAsync();
 
             // Act
+            var resultAll = await service.BuildBinPredictionsPageAsync(1, "EstimatedFill", "desc", "All", "All");
+            
+            // Assert - check what risk levels we actually got
+            Assert.Equal(2, resultAll.Rows.Count);
+            var bin2Row = resultAll.Rows.FirstOrDefault(r => r.BinId == 2);
+            Assert.NotNull(bin2Row);
+            Assert.Equal("Medium", bin2Row.RiskLevel);
+            
+            // Now test the filter
             var result = await service.BuildBinPredictionsPageAsync(1, "EstimatedFill", "desc", "Medium", "All");
-
-            // Assert
             Assert.Single(result.Rows);
             Assert.Equal(2, result.Rows[0].BinId);
-            Assert.Equal("Medium", result.Rows[0].RiskLevel);
         }
 
         [Fact]

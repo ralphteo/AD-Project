@@ -583,6 +583,282 @@ namespace ADWebApplication.Tests.Controllers
             Assert.NotEmpty(httpPostAttribute);
         }
 
+        [Fact]
+        public async Task Login_ReturnsError_WhenUserIsLocked()
+        {
+            // Arrange
+            await SeedTestData();
+            var controller = CreateController();
+            
+            // Lock the user
+            var lockUntil = DateTime.UtcNow.AddMinutes(30);
+            controller.HttpContext.Session.SetString("OTPLockUntil:EMP001", lockUntil.ToString("O"));
+
+            var model = new LoginViewModel
+            {
+                EmployeeId = "EMP001",
+                Password = "Password123"
+            };
+
+            // Act
+            var result = await controller.Login(model);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.False(controller.ModelState.IsValid);
+            Assert.Contains("Account locked", 
+                controller.ModelState.SelectMany(x => x.Value!.Errors).Select(x => x.ErrorMessage).First());
+        }
+
+        [Fact]
+        public async Task VerifyOtp_RedirectsToLogin_WhenUserIsLocked()
+        {
+            // Arrange
+            await SeedTestData();
+            var controller = CreateController();
+            controller.HttpContext.Session.SetString("OTPUsername", "EMP001");
+            
+            // Lock the user
+            var lockUntil = DateTime.UtcNow.AddMinutes(30);
+            controller.HttpContext.Session.SetString("OTPLockUntil:EMP001", lockUntil.ToString("O"));
+
+            // Act
+            var result = controller.VerifyOtp();
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Login", redirectResult.ActionName);
+        }
+
+        [Fact]
+        public async Task VerifyOtpPost_ReturnsError_WhenUserIsLocked()
+        {
+            // Arrange
+            await SeedTestData();
+            var controller = CreateController();
+            controller.HttpContext.Session.SetString("OTPUsername", "EMP001");
+            controller.HttpContext.Session.SetString("OTP", "123456");
+            controller.HttpContext.Session.SetString("OTPExpiry", DateTime.UtcNow.AddMinutes(1).ToString("O"));
+            
+            // Lock the user
+            var lockUntil = DateTime.UtcNow.AddMinutes(30);
+            controller.HttpContext.Session.SetString("OTPLockUntil:EMP001", lockUntil.ToString("O"));
+
+            var model = new OtpVerificationViewModel { OtpCode = "123456" };
+
+            // Act
+            var result = await controller.VerifyOtp(model);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.False(controller.ModelState.IsValid);
+            Assert.Contains("Account locked", 
+                controller.ModelState.SelectMany(x => x.Value!.Errors).Select(x => x.ErrorMessage).First());
+        }
+
+        [Fact]
+        public async Task VerifyOtpPost_LocksUserAfterMaxAttempts()
+        {
+            // Arrange
+            await SeedTestData();
+            var controller = CreateController();
+            controller.HttpContext.Session.SetString("OTPUsername", "EMP001");
+            controller.HttpContext.Session.SetString("OTP", "123456");
+            controller.HttpContext.Session.SetString("OTPExpiry", DateTime.UtcNow.AddMinutes(1).ToString("O"));
+            controller.HttpContext.Session.SetInt32("OTPAttemptsLeft:EMP001", 1); // Last attempt
+
+            var model = new OtpVerificationViewModel { OtpCode = "999999" };
+
+            // Act
+            var result = await controller.VerifyOtp(model);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.False(controller.ModelState.IsValid);
+            Assert.Contains("Too many wrong OTP. Locked until", 
+                controller.ModelState.SelectMany(x => x.Value!.Errors).Select(x => x.ErrorMessage).First());
+            
+            // Verify user is locked
+            var lockKey = controller.HttpContext.Session.GetString("OTPLockUntil:EMP001");
+            Assert.NotNull(lockKey);
+        }
+
+        [Fact]
+        public async Task ResendOtp_ReturnsError_WhenUserIsLocked()
+        {
+            // Arrange
+            await SeedTestData();
+            var controller = CreateController();
+            controller.HttpContext.Session.SetString("OTPUsername", "EMP001");
+            
+            // Lock the user
+            var lockUntil = DateTime.UtcNow.AddMinutes(30);
+            controller.HttpContext.Session.SetString("OTPLockUntil:EMP001", lockUntil.ToString("O"));
+
+            // Act
+            var result = await controller.ResendOtp();
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            dynamic value = jsonResult.Value!;
+            Assert.False((bool)value.GetType().GetProperty("success")!.GetValue(value)!);
+            var message = (string)value.GetType().GetProperty("message")!.GetValue(value)!;
+            Assert.Contains("locked", message);
+        }
+
+        [Fact]
+        public async Task ResendOtp_ReturnsError_WhenUserNotFound()
+        {
+            // Arrange
+            await SeedTestData();
+            var controller = CreateController();
+            controller.HttpContext.Session.SetString("OTPUsername", "INVALID");
+
+            // Act
+            var result = await controller.ResendOtp();
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            dynamic value = jsonResult.Value!;
+            Assert.False((bool)value.GetType().GetProperty("success")!.GetValue(value)!);
+        }
+
+        [Fact]
+        public async Task VerifyOtpPost_ReturnsError_WhenInvalidExpiryFormat()
+        {
+            // Arrange
+            await SeedTestData();
+            var controller = CreateController();
+            controller.HttpContext.Session.SetString("OTPUsername", "EMP001");
+            controller.HttpContext.Session.SetString("OTP", "123456");
+            controller.HttpContext.Session.SetString("OTPExpiry", "invalid-date");
+
+            var model = new OtpVerificationViewModel { OtpCode = "123456" };
+
+            // Act
+            var result = await controller.VerifyOtp(model);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.False(controller.ModelState.IsValid);
+            Assert.Contains("Session invalid", 
+                controller.ModelState.SelectMany(x => x.Value!.Errors).Select(x => x.ErrorMessage).First());
+        }
+
+        [Fact]
+        public async Task VerifyOtpPost_ReturnsView_WhenModelInvalid()
+        {
+            // Arrange
+            await SeedTestData();
+            var controller = CreateController();
+            controller.HttpContext.Session.SetString("OTPUsername", "EMP001");
+            controller.HttpContext.Session.SetString("OTP", "123456");
+            controller.HttpContext.Session.SetString("OTPExpiry", DateTime.UtcNow.AddMinutes(1).ToString("O"));
+            controller.ModelState.AddModelError("OtpCode", "Required");
+
+            var model = new OtpVerificationViewModel();
+
+            // Act
+            var result = await controller.VerifyOtp(model);
+
+            // Assert
+            Assert.IsType<ViewResult>(result);
+        }
+
+        [Fact]
+        public async Task RouteAfterLogin_RedirectsToLogin_WhenUserRoleIsNull()
+        {
+            // Arrange
+            await SeedTestData();
+            var controller = CreateController();
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, "EMP001"),
+                new Claim(ClaimTypes.Name, "EMP001")
+            };
+            var identity = new ClaimsIdentity(claims, "TestAuthType");
+            controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(identity);
+
+            // Remove role from employee
+            using (var context = CreateContext())
+            {
+                var employee = await context.Employees.FirstAsync(e => e.Username == "EMP001");
+                employee.RoleId = 0;
+                await context.SaveChangesAsync();
+            }
+
+            // Act
+            var result = await controller.RouteAfterLogin();
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Login", redirectResult.ActionName);
+        }
+
+        [Fact]
+        public async Task RouteAfterLogin_RedirectsToLogin_WhenRoleUnknown()
+        {
+            // Arrange
+            await SeedTestData();
+            var controller = CreateController();
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, "EMP001"),
+                new Claim(ClaimTypes.Name, "EMP001"),
+                new Claim(ClaimTypes.Role, "Unknown")
+            };
+            var identity = new ClaimsIdentity(claims, "TestAuthType");
+            controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(identity);
+
+            // Update employee role to unknown
+            using (var context = CreateContext())
+            {
+                var employee = await context.Employees.FirstAsync(e => e.Username == "EMP001");
+                var role = await context.Roles.FirstAsync(r => r.RoleId == employee.RoleId);
+                role.Name = "Unknown";
+                await context.SaveChangesAsync();
+            }
+
+            // Act
+            var result = await controller.RouteAfterLogin();
+
+            // Assert
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Login", redirectResult.ActionName);
+        }
+
+        [Fact]
+        public async Task VerifyOtpPost_ReturnsError_WhenUserInactive()
+        {
+            // Arrange
+            await SeedTestData();
+            var controller = CreateController();
+            controller.HttpContext.Session.SetString("OTPUsername", "EMP001");
+            controller.HttpContext.Session.SetString("OTP", "123456");
+            controller.HttpContext.Session.SetString("OTPExpiry", DateTime.UtcNow.AddMinutes(1).ToString("O"));
+
+            // Set user to inactive
+            using (var context = CreateContext())
+            {
+                var employee = await context.Employees.FirstAsync(e => e.Username == "EMP001");
+                employee.IsActive = false;
+                await context.SaveChangesAsync();
+            }
+
+            var model = new OtpVerificationViewModel { OtpCode = "123456" };
+
+            // Act
+            var result = await controller.VerifyOtp(model);
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            Assert.False(controller.ModelState.IsValid);
+            Assert.Contains("User account not active", 
+                controller.ModelState.SelectMany(x => x.Value!.Errors).Select(x => x.ErrorMessage).First());
+        }
+
         #endregion
     }
 
