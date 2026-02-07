@@ -6,6 +6,8 @@ using ADWebApplication.Services;
 using ADWebApplication.Services.Collector;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using ADWebApplication.Data.Repository;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 
 var builder = WebApplication.CreateBuilder(args);
 var googleKey = builder.Configuration["GOOGLE_MAPS_API_KEY"];
@@ -24,15 +26,28 @@ builder.Services.AddScoped<ICollectorIssueService, CollectorIssueService>();
 builder.Services.AddScoped<IRouteAssignmentService, RouteAssignmentService>();
 builder.Services.AddScoped<IRoutePlanningService, RoutePlanningService>();
 
+// --- Azure Key Vault Secrects setup ---
+var keyVaultUrl = "https://in5nite-kv.vault.azure.net/";
+var client = new SecretClient(new Uri(keyVaultUrl), new DefaultAzureCredential());
 
+// Fetch the secret value
+string mysqlConn = client.GetSecret("MySqlConnectionString").Value.Value;
 
+// Use secret in DbContext
 builder.Services.AddDbContext<In5niteDbContext>(options =>
     options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
+        mysqlConn,
         new MySqlServerVersion(new Version(8, 0, 36))
     )
 );
 
+// Local use MySQL connection string
+/* builder.Services.AddDbContext<In5niteDbContext>(options =>
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        new MySqlServerVersion(new Version(8, 0, 36))
+    )
+); */
 
 
 // Admin Repisitory - Andrew
