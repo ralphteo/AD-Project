@@ -26,17 +26,20 @@ builder.Services.AddScoped<ICollectorIssueService, CollectorIssueService>();
 builder.Services.AddScoped<IRouteAssignmentService, RouteAssignmentService>();
 builder.Services.AddScoped<IRoutePlanningService, RoutePlanningService>();
 
-// --- Azure Key Vault Secrects setup ---
-var keyVaultUrl = "https://in5nite-kv.vault.azure.net/";
+// Azure Key Vault URL
+var keyVaultUrl = "https://in5nite-keyvault.vault.azure.net/";
+
+// Use DefaultAzureCredential locally — The cloud based App Service this will automatically use the managed identity instead
 var client = new SecretClient(new Uri(keyVaultUrl), new DefaultAzureCredential());
 
-// Fetch the secret value
-string mysqlConn = client.GetSecret("MySqlConnectionString").Value.Value;
+// Fetch secrets
+string sqlConn = client.GetSecret("MySqlConnectionString").Value.Value;
+string mySqlConn = client.GetSecret("SqlConnectionString").Value.Value;
 
-// Use secret in DbContext
+// Example: Register DbContext with the secret
 builder.Services.AddDbContext<In5niteDbContext>(options =>
     options.UseMySql(
-        mysqlConn,
+        mySqlConn,
         new MySqlServerVersion(new Version(8, 0, 36))
     )
 );
