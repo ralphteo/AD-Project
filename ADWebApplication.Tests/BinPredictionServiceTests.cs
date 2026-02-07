@@ -1055,6 +1055,627 @@ namespace ADWebApplication.Tests
         }
 
         #endregion
+
+        #region Additional Coverage Tests
+
+        [Fact]
+        public async Task BuildBinPredictionsPageAsync_SortsByAvgGrowth_Ascending()
+        {
+            // Arrange
+            var dbContext = CreateInMemoryDbContext();
+            var mockHandler = CreateMockHttpMessageHandler(HttpStatusCode.OK, new MLPredictionResponseDto());
+            var httpClient = CreateMockHttpClient(mockHandler);
+            var service = new BinPredictionService(httpClient, dbContext);
+
+            var region = new Region { RegionId = 1, RegionName = "Test" };
+            dbContext.Regions.Add(region);
+
+            var bin1 = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
+            var bin2 = new CollectionBin { BinId = 2, BinStatus = "Active", RegionId = 1, Region = region };
+            dbContext.CollectionBins.AddRange(bin1, bin2);
+
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                }
+            );
+
+            dbContext.FillLevelPredictions.AddRange(
+                new FillLevelPrediction
+                {
+                    PredictionId = 1,
+                    BinId = 1,
+                    PredictedAvgDailyGrowth = 15.0,
+                    PredictedDate = DateTime.UtcNow.AddDays(-4),
+                    ModelVersion = "v1"
+                },
+                new FillLevelPrediction
+                {
+                    PredictionId = 2,
+                    BinId = 2,
+                    PredictedAvgDailyGrowth = 5.0,
+                    PredictedDate = DateTime.UtcNow.AddDays(-4),
+                    ModelVersion = "v1"
+                }
+            );
+
+            await dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await service.BuildBinPredictionsPageAsync(1, "AvgGrowth", "asc", "All", "All");
+
+            // Assert
+            Assert.Equal(2, result.Rows.Count);
+            Assert.Equal(2, result.Rows[0].BinId); // Lower growth first
+            Assert.Equal(1, result.Rows[1].BinId);
+        }
+
+        [Fact]
+        public async Task BuildBinPredictionsPageAsync_SortsByAvgGrowth_Descending()
+        {
+            // Arrange
+            var dbContext = CreateInMemoryDbContext();
+            var mockHandler = CreateMockHttpMessageHandler(HttpStatusCode.OK, new MLPredictionResponseDto());
+            var httpClient = CreateMockHttpClient(mockHandler);
+            var service = new BinPredictionService(httpClient, dbContext);
+
+            var region = new Region { RegionId = 1, RegionName = "Test" };
+            dbContext.Regions.Add(region);
+
+            var bin1 = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
+            var bin2 = new CollectionBin { BinId = 2, BinStatus = "Active", RegionId = 1, Region = region };
+            dbContext.CollectionBins.AddRange(bin1, bin2);
+
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                }
+            );
+
+            dbContext.FillLevelPredictions.AddRange(
+                new FillLevelPrediction
+                {
+                    PredictionId = 1,
+                    BinId = 1,
+                    PredictedAvgDailyGrowth = 15.0,
+                    PredictedDate = DateTime.UtcNow.AddDays(-4),
+                    ModelVersion = "v1"
+                },
+                new FillLevelPrediction
+                {
+                    PredictionId = 2,
+                    BinId = 2,
+                    PredictedAvgDailyGrowth = 5.0,
+                    PredictedDate = DateTime.UtcNow.AddDays(-4),
+                    ModelVersion = "v1"
+                }
+            );
+
+            await dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await service.BuildBinPredictionsPageAsync(1, "AvgGrowth", "desc", "All", "All");
+
+            // Assert
+            Assert.Equal(2, result.Rows.Count);
+            Assert.Equal(1, result.Rows[0].BinId); // Higher growth first
+            Assert.Equal(2, result.Rows[1].BinId);
+        }
+
+        [Fact]
+        public async Task BuildBinPredictionsPageAsync_SortsByDaysToThreshold_Ascending()
+        {
+            // Arrange
+            var dbContext = CreateInMemoryDbContext();
+            var mockHandler = CreateMockHttpMessageHandler(HttpStatusCode.OK, new MLPredictionResponseDto());
+            var httpClient = CreateMockHttpClient(mockHandler);
+            var service = new BinPredictionService(httpClient, dbContext);
+
+            var region = new Region { RegionId = 1, RegionName = "Test" };
+            dbContext.Regions.Add(region);
+
+            var bin1 = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
+            var bin2 = new CollectionBin { BinId = 2, BinStatus = "Active", RegionId = 1, Region = region };
+            dbContext.CollectionBins.AddRange(bin1, bin2);
+
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                }
+            );
+
+            dbContext.FillLevelPredictions.AddRange(
+                new FillLevelPrediction
+                {
+                    PredictionId = 1,
+                    BinId = 1,
+                    PredictedAvgDailyGrowth = 5.0, // 75% fill, 1 day to 80%
+                    PredictedDate = DateTime.UtcNow.AddDays(-4),
+                    ModelVersion = "v1"
+                },
+                new FillLevelPrediction
+                {
+                    PredictionId = 2,
+                    BinId = 2,
+                    PredictedAvgDailyGrowth = 2.0, // 10% fill, 35 days to 80%
+                    PredictedDate = DateTime.UtcNow.AddDays(-4),
+                    ModelVersion = "v1"
+                }
+            );
+
+            await dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await service.BuildBinPredictionsPageAsync(1, "DaysToThreshold", "asc", "All", "All");
+
+            // Assert
+            Assert.Equal(2, result.Rows.Count);
+            Assert.Equal(1, result.Rows[0].BinId); // Fewer days first
+        }
+
+        [Fact]
+        public async Task BuildBinPredictionsPageAsync_SortsByDaysToThreshold_Descending()
+        {
+            // Arrange
+            var dbContext = CreateInMemoryDbContext();
+            var mockHandler = CreateMockHttpMessageHandler(HttpStatusCode.OK, new MLPredictionResponseDto());
+            var httpClient = CreateMockHttpClient(mockHandler);
+            var service = new BinPredictionService(httpClient, dbContext);
+
+            var region = new Region { RegionId = 1, RegionName = "Test" };
+            dbContext.Regions.Add(region);
+
+            var bin1 = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
+            var bin2 = new CollectionBin { BinId = 2, BinStatus = "Active", RegionId = 1, Region = region };
+            dbContext.CollectionBins.AddRange(bin1, bin2);
+
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                }
+            );
+
+            dbContext.FillLevelPredictions.AddRange(
+                new FillLevelPrediction
+                {
+                    PredictionId = 1,
+                    BinId = 1,
+                    PredictedAvgDailyGrowth = 5.0,
+                    PredictedDate = DateTime.UtcNow.AddDays(-4),
+                    ModelVersion = "v1"
+                },
+                new FillLevelPrediction
+                {
+                    PredictionId = 2,
+                    BinId = 2,
+                    PredictedAvgDailyGrowth = 2.0,
+                    PredictedDate = DateTime.UtcNow.AddDays(-4),
+                    ModelVersion = "v1"
+                }
+            );
+
+            await dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await service.BuildBinPredictionsPageAsync(1, "DaysToThreshold", "desc", "All", "All");
+
+            // Assert
+            Assert.Equal(2, result.Rows.Count);
+            Assert.Equal(2, result.Rows[0].BinId); // More days first
+        }
+
+        [Fact]
+        public async Task BuildBinPredictionsPageAsync_FiltersByMediumRisk()
+        {
+            // Arrange
+            var dbContext = CreateInMemoryDbContext();
+            var mockHandler = CreateMockHttpMessageHandler(HttpStatusCode.OK, new MLPredictionResponseDto());
+            var httpClient = CreateMockHttpClient(mockHandler);
+            var service = new BinPredictionService(httpClient, dbContext);
+
+            var region = new Region { RegionId = 1, RegionName = "Test" };
+            dbContext.Regions.Add(region);
+
+            var bin1 = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
+            var bin2 = new CollectionBin { BinId = 2, BinStatus = "Active", RegionId = 1, Region = region };
+            dbContext.CollectionBins.AddRange(bin1, bin2);
+
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                }
+            );
+
+            dbContext.FillLevelPredictions.AddRange(
+                new FillLevelPrediction
+                {
+                    PredictionId = 1,
+                    BinId = 1,
+                    PredictedAvgDailyGrowth = 25.0, // High risk: days to 80% <= 1
+                    PredictedDate = DateTime.UtcNow.AddDays(-4),
+                    ModelVersion = "v1"
+                },
+                new FillLevelPrediction
+                {
+                    PredictionId = 2,
+                    BinId = 2,
+                    PredictedAvgDailyGrowth = 11.4, // Medium risk: 5 days at 11.4% = 57% fill, days to 80% = 2.02
+                    PredictedDate = DateTime.UtcNow.AddDays(-4),
+                    ModelVersion = "v1"
+                }
+            );
+
+            await dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await service.BuildBinPredictionsPageAsync(1, "EstimatedFill", "desc", "Medium", "All");
+
+            // Assert
+            Assert.Single(result.Rows);
+            Assert.Equal(2, result.Rows[0].BinId);
+            Assert.Equal("Medium", result.Rows[0].RiskLevel);
+        }
+
+        [Fact]
+        public async Task BuildBinPredictionsPageAsync_FiltersByLowRisk()
+        {
+            // Arrange
+            var dbContext = CreateInMemoryDbContext();
+            var mockHandler = CreateMockHttpMessageHandler(HttpStatusCode.OK, new MLPredictionResponseDto());
+            var httpClient = CreateMockHttpClient(mockHandler);
+            var service = new BinPredictionService(httpClient, dbContext);
+
+            var region = new Region { RegionId = 1, RegionName = "Test" };
+            dbContext.Regions.Add(region);
+
+            var bin1 = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
+            var bin2 = new CollectionBin { BinId = 2, BinStatus = "Active", RegionId = 1, Region = region };
+            dbContext.CollectionBins.AddRange(bin1, bin2);
+
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                }
+            );
+
+            dbContext.FillLevelPredictions.AddRange(
+                new FillLevelPrediction
+                {
+                    PredictionId = 1,
+                    BinId = 1,
+                    PredictedAvgDailyGrowth = 25.0, // High risk
+                    PredictedDate = DateTime.UtcNow.AddDays(-4),
+                    ModelVersion = "v1"
+                },
+                new FillLevelPrediction
+                {
+                    PredictionId = 2,
+                    BinId = 2,
+                    PredictedAvgDailyGrowth = 2.0, // Low risk: days to 80% > 3
+                    PredictedDate = DateTime.UtcNow.AddDays(-4),
+                    ModelVersion = "v1"
+                }
+            );
+
+            await dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await service.BuildBinPredictionsPageAsync(1, "EstimatedFill", "desc", "Low", "All");
+
+            // Assert
+            Assert.Single(result.Rows);
+            Assert.Equal(2, result.Rows[0].BinId);
+            Assert.Equal("Low", result.Rows[0].RiskLevel);
+        }
+
+        [Fact]
+        public async Task BuildBinPredictionsPageAsync_FiltersBy7DayTimeframe()
+        {
+            // Arrange
+            var dbContext = CreateInMemoryDbContext();
+            var mockHandler = CreateMockHttpMessageHandler(HttpStatusCode.OK, new MLPredictionResponseDto());
+            var httpClient = CreateMockHttpClient(mockHandler);
+            var service = new BinPredictionService(httpClient, dbContext);
+
+            var region = new Region { RegionId = 1, RegionName = "Test" };
+            dbContext.Regions.Add(region);
+
+            var bin1 = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
+            var bin2 = new CollectionBin { BinId = 2, BinStatus = "Active", RegionId = 1, Region = region };
+            dbContext.CollectionBins.AddRange(bin1, bin2);
+
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 2,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                    BinFillLevel = 0
+                }
+            );
+
+            dbContext.FillLevelPredictions.AddRange(
+                new FillLevelPrediction
+                {
+                    PredictionId = 1,
+                    BinId = 1,
+                    PredictedAvgDailyGrowth = 11.0, // Days to 80% = 5
+                    PredictedDate = DateTime.UtcNow.AddDays(-4),
+                    ModelVersion = "v1"
+                },
+                new FillLevelPrediction
+                {
+                    PredictionId = 2,
+                    BinId = 2,
+                    PredictedAvgDailyGrowth = 2.0, // Days to 80% = 35
+                    PredictedDate = DateTime.UtcNow.AddDays(-4),
+                    ModelVersion = "v1"
+                }
+            );
+
+            await dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await service.BuildBinPredictionsPageAsync(1, "EstimatedFill", "desc", "All", "7");
+
+            // Assert
+            Assert.Single(result.Rows);
+            Assert.Equal(1, result.Rows[0].BinId);
+            Assert.True(result.Rows[0].EstimatedDaysToThreshold <= 7);
+        }
+
+        [Fact]
+        public async Task BuildBinPredictionsPageAsync_HandlesEmptyBinList()
+        {
+            // Arrange
+            var dbContext = CreateInMemoryDbContext();
+            var mockHandler = CreateMockHttpMessageHandler(HttpStatusCode.OK, new MLPredictionResponseDto());
+            var httpClient = CreateMockHttpClient(mockHandler);
+            var service = new BinPredictionService(httpClient, dbContext);
+
+            // Act
+            var result = await service.BuildBinPredictionsPageAsync(1, "EstimatedFill", "desc", "All", "All");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result.Rows);
+            Assert.Equal(0, result.TotalBins);
+            Assert.Equal(1, result.CurrentPage);
+        }
+
+        [Fact]
+        public async Task BuildBinPredictionsPageAsync_ClampsPageToValidRange()
+        {
+            // Arrange
+            var dbContext = CreateInMemoryDbContext();
+            var mockHandler = CreateMockHttpMessageHandler(HttpStatusCode.OK, new MLPredictionResponseDto());
+            var httpClient = CreateMockHttpClient(mockHandler);
+            var service = new BinPredictionService(httpClient, dbContext);
+
+            var region = new Region { RegionId = 1, RegionName = "Test" };
+            dbContext.Regions.Add(region);
+            var bin = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
+            dbContext.CollectionBins.Add(bin);
+            dbContext.CollectionDetails.Add(new CollectionDetails
+            {
+                CollectionId = 1,
+                BinId = 1,
+                CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-5),
+                BinFillLevel = 0
+            });
+            dbContext.FillLevelPredictions.Add(new FillLevelPrediction
+            {
+                PredictionId = 1,
+                BinId = 1,
+                PredictedAvgDailyGrowth = 10.0,
+                PredictedDate = DateTime.UtcNow.AddDays(-4),
+                ModelVersion = "v1"
+            });
+            await dbContext.SaveChangesAsync();
+
+            // Act - request page 100 when only 1 page exists
+            var result = await service.BuildBinPredictionsPageAsync(100, "EstimatedFill", "desc", "All", "All");
+
+            // Assert
+            Assert.Equal(1, result.CurrentPage); // Clamped to 1
+            Assert.Equal(1, result.TotalPages);
+        }
+
+        [Fact]
+        public async Task RefreshPredictionsForNewCyclesAsync_SkipsBins_WithNullCollectionDates()
+        {
+            // Arrange
+            var dbContext = CreateInMemoryDbContext();
+            var mockHandler = CreateMockHttpMessageHandler(HttpStatusCode.OK, new MLPredictionResponseDto
+            {
+                predicted_next_avg_daily_growth = 10.0
+            });
+            var httpClient = CreateMockHttpClient(mockHandler);
+            var service = new BinPredictionService(httpClient, dbContext);
+
+            dbContext.CollectionDetails.AddRange(
+                new CollectionDetails
+                {
+                    CollectionId = 1,
+                    BinId = 1,
+                    CurrentCollectionDateTime = null, // Null date
+                    BinFillLevel = 50
+                },
+                new CollectionDetails
+                {
+                    CollectionId = 2,
+                    BinId = 1,
+                    CurrentCollectionDateTime = DateTimeOffset.UtcNow.AddDays(-10),
+                    BinFillLevel = 80
+                }
+            );
+            await dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await service.RefreshPredictionsForNewCyclesAsync();
+
+            // Assert
+            Assert.Equal(0, result);
+        }
+
+        [Fact]
+        public async Task GetBinPrioritiesAsync_SkipsBins_WithNoCollections()
+        {
+            // Arrange
+            var dbContext = CreateInMemoryDbContext();
+            var mockHandler = CreateMockHttpMessageHandler(HttpStatusCode.OK, new MLPredictionResponseDto());
+            var httpClient = CreateMockHttpClient(mockHandler);
+            var service = new BinPredictionService(httpClient, dbContext);
+
+            dbContext.FillLevelPredictions.Add(new FillLevelPrediction
+            {
+                PredictionId = 1,
+                BinId = 999, // No collection for this bin
+                PredictedAvgDailyGrowth = 10.0,
+                PredictedDate = DateTime.UtcNow.AddDays(-4),
+                ModelVersion = "v1"
+            });
+            await dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await service.GetBinPrioritiesAsync();
+
+            // Assert
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetBinPrioritiesAsync_SkipsBins_WithNullCollectionDateTime()
+        {
+            // Arrange
+            var dbContext = CreateInMemoryDbContext();
+            var mockHandler = CreateMockHttpMessageHandler(HttpStatusCode.OK, new MLPredictionResponseDto());
+            var httpClient = CreateMockHttpClient(mockHandler);
+            var service = new BinPredictionService(httpClient, dbContext);
+
+            dbContext.CollectionDetails.Add(new CollectionDetails
+            {
+                CollectionId = 1,
+                BinId = 1,
+                CurrentCollectionDateTime = null, // Null date
+                BinFillLevel = 50
+            });
+
+            dbContext.FillLevelPredictions.Add(new FillLevelPrediction
+            {
+                PredictionId = 1,
+                BinId = 1,
+                PredictedAvgDailyGrowth = 10.0,
+                PredictedDate = DateTime.UtcNow.AddDays(-4),
+                ModelVersion = "v1"
+            });
+            await dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await service.GetBinPrioritiesAsync();
+
+            // Assert
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task BuildBinPredictionsPageAsync_SkipsBins_WithNoCollectionHistory()
+        {
+            // Arrange
+            var dbContext = CreateInMemoryDbContext();
+            var mockHandler = CreateMockHttpMessageHandler(HttpStatusCode.OK, new MLPredictionResponseDto());
+            var httpClient = CreateMockHttpClient(mockHandler);
+            var service = new BinPredictionService(httpClient, dbContext);
+
+            var region = new Region { RegionId = 1, RegionName = "Test" };
+            dbContext.Regions.Add(region);
+            var bin = new CollectionBin { BinId = 1, BinStatus = "Active", RegionId = 1, Region = region };
+            dbContext.CollectionBins.Add(bin);
+            // No collection details added
+            await dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await service.BuildBinPredictionsPageAsync(1, "EstimatedFill", "desc", "All", "All");
+
+            // Assert
+            Assert.Empty(result.Rows);
+            Assert.Equal(0, result.MissingPredictionCount); // Bins with no collections are skipped entirely
+        }
+
+        #endregion
     }
 }
 

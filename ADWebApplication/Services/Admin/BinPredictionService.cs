@@ -145,7 +145,7 @@ public class BinPredictionService : IBinPredictionService
         };
     }
 
-    private BinPredictionsTableViewModel? ProcessSingleBin(CollectionBin bin, Dictionary<int, List<CollectionDetails>> collectionHistoryByBin, Dictionary<int, FillLevelPrediction> latestPredictionByBin,
+    private static BinPredictionsTableViewModel? ProcessSingleBin(CollectionBin bin, Dictionary<int, List<CollectionDetails>> collectionHistoryByBin, Dictionary<int, FillLevelPrediction> latestPredictionByBin,
         Dictionary<int, RouteStop> nextStopByBin, DateTimeOffset today, ref int newCycleDetectedCount, ref int missingPredictionCount)
     {
         if (!collectionHistoryByBin.TryGetValue(bin.BinId, out var history) || history.Count == 0)
