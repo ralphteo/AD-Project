@@ -1,12 +1,15 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using ADWebApplication.Data;
+using Azure.Security.KeyVault.Secrets;
+using Azure;
+using Azure.Identity;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Azure.Security.KeyVault.Secrets;
-using Azure.Identity;
 
 namespace ADWebApplication.Tests.Integration
 {
@@ -18,7 +21,7 @@ namespace ADWebApplication.Tests.Integration
         {
             builder.ConfigureServices(services =>
             {
-                // --- Existing DB replacement ---
+                // --- Replace DB with in-memory SQLite ---
                 ReplaceDbContext<In5niteDbContext>(services);
 
                 // --- Key Vault mocking for CI ---
@@ -26,13 +29,15 @@ namespace ADWebApplication.Tests.Integration
 
                 if (skipKeyVault)
                 {
-                    // Replace SecretClient with a fake
-                    services.AddSingleton<SecretClient>(provider => new FakeSecretClient());
+                    // Inject fake Key Vault client
+                    services.AddSingleton<ISecretClient, FakeSecretClient>();
                 }
                 else
                 {
+                    // Use real Key Vault client
                     var keyVaultUrl = "https://in5nite-keyvault.vault.azure.net/";
-                    services.AddSingleton(new SecretClient(new Uri(keyVaultUrl), new DefaultAzureCredential()));
+                    var realClient = new SecretClient(new Uri(keyVaultUrl), new DefaultAzureCredential());
+                    services.AddSingleton<ISecretClient>(new RealSecretClientWrapper(realClient));
                 }
 
                 // --- Ensure DB is created ---
@@ -48,9 +53,7 @@ namespace ADWebApplication.Tests.Integration
                 d => d.ServiceType == typeof(DbContextOptions<TContext>));
 
             if (descriptor != null)
-            {
                 services.Remove(descriptor);
-            }
 
             var connection = new SqliteConnection("DataSource=:memory:");
             connection.Open();
@@ -68,21 +71,35 @@ namespace ADWebApplication.Tests.Integration
             if (disposing)
             {
                 foreach (var connection in _connections)
-                {
                     connection.Dispose();
-                }
             }
         }
     }
 
-    // --- Fake KeyVault client for CI ---
-    public class FakeSecretClient : SecretClient
+    // --- Step 1: Define interface ---
+    public interface ISecretClient
     {
-        public FakeSecretClient() : base(new Uri("https://fake/"), new DefaultAzureCredential()) { }
+        Response<KeyVaultSecret> GetSecret(string name);
+    }
 
-        public override Azure.Response<KeyVaultSecret> GetSecret(string name, string version = null, System.Threading.CancellationToken cancellationToken = default)
+    // --- Step 2: Fake for CI ---
+    public class FakeSecretClient : ISecretClient
+    {
+        public Response<KeyVaultSecret> GetSecret(string name)
         {
-            return Azure.Response.FromValue(new KeyVaultSecret(name, "FAKE_SECRET"), null);
+            return Response.FromValue(new KeyVaultSecret(name, "FAKE_SECRET"), null);
+        }
+    }
+
+    // --- Step 3: Wrapper for real SecretClient ---
+    public class RealSecretClientWrapper : ISecretClient
+    {
+        private readonly SecretClient _client;
+        public RealSecretClientWrapper(SecretClient client) => _client = client;
+
+        public Response<KeyVaultSecret> GetSecret(string name)
+        {
+            return _client.GetSecret(name);
         }
     }
 }
