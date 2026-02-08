@@ -40,7 +40,7 @@
 
                     <!-- Collection Details -->
                     <div class="form-group">
-                        <label asp-for="CollectionDetails.CurrentCollectionDateTime"></label>
+                        <label asp-for="CollectionDetails.CurrentCollectionDateTime" class="form-label fw-semibold"></label>
                         <input asp-for="CollectionDetails.CurrentCollectionDateTime" type="datetime-local"
                             class="form-control" required />
                         <span asp-validation-for="CollectionDetails.CurrentCollectionDateTime"
@@ -48,7 +48,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label asp-for="CollectionDetails.BinFillLevel">Bin Fill Level (%)</label>
+                        <label asp-for="CollectionDetails.BinFillLevel" class="form-label fw-semibold">Bin Fill Level (%)</label>
                         <input asp-for="CollectionDetails.BinFillLevel" type="number" class="form-control" min="0"
                             max="100" required />
                         <span asp-validation-for="CollectionDetails.BinFillLevel" class="text-danger"></span>

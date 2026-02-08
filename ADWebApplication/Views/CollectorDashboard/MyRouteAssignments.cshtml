@@ -13,29 +13,31 @@
     <div class="filter-card mb-4">
         <form method="get" asp-action="MyRouteAssignments" class="filter-grid">
             <div class="filter-field">
-                <label class="form-label">Search</label>
+                <label for="search" class="form-label">Search</label>
                 <div class="input-with-icon">
                     <i class="bi bi-search"></i>
                     <input type="text"
                            name="search"
+                           id="search"
                            class="form-control"
                            placeholder="Search routes..."
                            value="@Model.SearchTerm">
                 </div>
             </div>
             <div class="filter-field">
-                <label class="form-label">Date</label>
+                <label for="date" class="form-label">Date</label>
                 <div class="input-with-icon">
                     <i class="bi bi-calendar3"></i>
                     <input type="date"
                            name="date"
+                           id="date"
                            class="form-control"
                            value="@Model.SelectedDate?.ToString("yyyy-MM-dd")">
                 </div>
             </div>
             <div class="filter-field">
-                <label class="form-label">Region</label>
-                <select asp-for="SelectedRegionId" name="regionId" class="form-select">
+                <label for="regionId" class="form-label">Region</label>
+                <select asp-for="SelectedRegionId" name="regionId" id="regionId" class="form-select">
                     <option value="">All Regions</option>
                     @foreach (var region in Model.AvailableRegions)
                     {
@@ -44,8 +46,8 @@
                 </select>
             </div>
             <div class="filter-field">
-                <label class="form-label">Status</label>
-                <select asp-for="SelectedStatus" name="status" class="form-select">
+                <label for="status" class="form-label">Status</label>
+                <select asp-for="SelectedStatus" name="status" id="status" class="form-select">
                     <option value="">All Statuses</option>
                     @foreach (var status in Model.AvailableStatuses)
                     {

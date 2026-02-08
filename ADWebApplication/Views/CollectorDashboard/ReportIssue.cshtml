@@ -50,15 +50,15 @@
     <div class="filter-card mb-4">
         <form method="get" asp-action="ReportIssue" class="filter-grid">
             <div class="filter-field">
-                <label class="form-label">Search</label>
+                <label for="issueSearch" class="form-label">Search</label>
                 <div class="input-with-icon">
                     <i class="bi bi-search"></i>
-                    <input type="text" name="search" class="form-control" placeholder="Search issues..." value="@Model.Search">
+                    <input type="text" name="search" id="issueSearch" class="form-control" placeholder="Search issues..." value="@Model.Search">
                 </div>
             </div>
             <div class="filter-field">
-                <label class="form-label">Status</label>
-                <select asp-for="StatusFilter" name="status" class="form-select">
+                <label for="issueStatus" class="form-label">Status</label>
+                <select asp-for="StatusFilter" name="status" id="issueStatus" class="form-select">
                     <option value="">All Statuses</option>
                     <option value="Open">Open</option>
                     <option value="In Progress">In Progress</option>
@@ -66,8 +66,8 @@
                 </select>
             </div>
             <div class="filter-field">
-                <label class="form-label">Priority</label>
-                <select asp-for="PriorityFilter" name="priority" class="form-select">
+                <label for="issuePriority" class="form-label">Priority</label>
+                <select asp-for="PriorityFilter" name="priority" id="issuePriority" class="form-select">
                     <option value="">All Priorities</option>
                     <option value="High">High</option>
                     <option value="Medium">Medium</option>

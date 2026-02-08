@@ -1,11 +1,11 @@
 using System.ComponentModel.DataAnnotations;
-using JasonRequired = Newtonsoft.Json.JsonPropertyAttribute;
+using System.Text.Json.Serialization;
 
 namespace ADWebApplication.Models
 {
     public class CollectionConfirmationVM
     {
-        [JasonRequired]
+        [JsonRequired]
         public int StopId { get; set; }
         public string? PointId { get; set; }
         public string LocationName { get; set; } = string.Empty;
@@ -21,13 +21,13 @@ namespace ADWebApplication.Models
         public string BinCondition { get; set; } = "Good";
 
         // Category Checkboxes
-        [JasonRequired]
+        [JsonRequired]
         public bool CollectedElectronics { get; set; }
-        [JasonRequired]
+        [JsonRequired]
         public bool CollectedBatteries { get; set; }
-        [JasonRequired]
+        [JsonRequired]
         public bool CollectedCables { get; set; }
-        [JasonRequired]
+        [JsonRequired]
         public bool CollectedAccessories { get; set; }
 
         public string? Remarks { get; set; }

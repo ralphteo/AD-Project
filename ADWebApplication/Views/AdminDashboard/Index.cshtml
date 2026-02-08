@@ -114,10 +114,28 @@
                                 <tbody>
                                     @foreach (var metric in Model.PerformanceMetrics)
                                     {
-                                        var performanceClass = metric.Participation >= 50 ? "success" : 
-                                                            metric.Participation >= 30 ? "warning" : "danger";
-                                        var performanceIcon = metric.Participation >= 50 ? "bi-arrow-up-circle-fill" : 
-                                                            metric.Participation >= 30 ? "bi-dash-circle-fill" : "bi-arrow-down-circle-fill";
+                                        string performanceClass;
+                                        string performanceIcon;
+                                        string performanceText;
+                                        
+                                        if (metric.Participation >= 50)
+                                        {
+                                            performanceClass = "success";
+                                            performanceIcon = "bi-arrow-up-circle-fill";
+                                            performanceText = "Good";
+                                        }
+                                        else if (metric.Participation >= 30)
+                                        {
+                                            performanceClass = "warning";
+                                            performanceIcon = "bi-dash-circle-fill";
+                                            performanceText = "Fair";
+                                        }
+                                        else
+                                        {
+                                            performanceClass = "danger";
+                                            performanceIcon = "bi-arrow-down-circle-fill";
+                                            performanceText = "Low";
+                                        }
 
                                         <tr>
                                             <td>
@@ -132,8 +150,7 @@
                                             <td class="text-end">
                                                 <i class="bi @performanceIcon text-@performanceClass"></i>
                                                 <span class="text-@performanceClass ms-1">
-                                                    @(metric.Participation >= 50 ? "Good" : 
-                                                    metric.Participation >= 30 ? "Fair" : "Low")
+                                                    @performanceText
                                                 </span>
                                             </td>
                                         </tr>
