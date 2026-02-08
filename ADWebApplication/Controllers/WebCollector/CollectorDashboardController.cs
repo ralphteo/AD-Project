@@ -138,7 +138,7 @@ namespace ADWebApplication.Controllers
                 TempData["ErrorMessage"] = "Could not find an active route stop for this bin today.";
             }
             
-            return RedirectToAction("Index");
+            return RedirectToAction("ReportIssue");
         }
 
         [HttpPost]
