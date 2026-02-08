@@ -22,7 +22,7 @@ namespace ADWebApplication.Services.Collector
                 .Include(ra => ra.RoutePlans)
                     .ThenInclude(rp => rp.RouteStops)
                         .ThenInclude(rs => rs.CollectionBin)
-                            .ThenInclude(cb => cb!.Region)
+                            .ThenInclude(cb => cb.Region)
                 .Include(ra => ra.RoutePlans)
                     .ThenInclude(rp => rp.RouteStops)
                         .ThenInclude(rs => rs.CollectionDetails)
@@ -117,10 +117,10 @@ namespace ADWebApplication.Services.Collector
             var normalizedUsername = username.Trim().ToUpper();
             var stop = await _db.RouteStops
                 .Include(rs => rs.CollectionBin)
-                    .ThenInclude(cb => cb!.Region)
+                    .ThenInclude(cb => cb.Region)
                 .Include(rs => rs.CollectionDetails)
                 .Include(rs => rs.RoutePlan)
-                    .ThenInclude(rp => rp!.RouteAssignment)
+                    .ThenInclude(rp => rp.RouteAssignment)
                 .Where(rs => rs.StopId == stopId && rs.RoutePlan != null && rs.RoutePlan.RouteAssignment != null)
                 .Where(rs => rs.RoutePlan!.RouteAssignment!.AssignedTo.Trim().ToUpper() == normalizedUsername)
                 .FirstOrDefaultAsync();
@@ -147,27 +147,18 @@ namespace ADWebApplication.Services.Collector
             };
         }
 
+        // =========================
+        // Refactored (same logic)
+        // =========================
         public async Task<bool> ConfirmCollectionAsync(CollectionConfirmationVM model, string username)
         {
             var normalizedUsername = username.Trim().ToUpper();
             var today = DateTime.Today;
-            var stop = await _db.RouteStops
-                .Include(rs => rs.CollectionDetails)
-                .Include(rs => rs.RoutePlan)
-                    .ThenInclude(rp => rp!.RouteAssignment)
-                .Where(rs => rs.StopId == model.StopId 
-                          && rs.RoutePlan != null 
-                          && rs.RoutePlan.RouteAssignment != null
-                          && rs.RoutePlan.RouteAssignment.AssignedTo.Trim().ToUpper() == normalizedUsername
-                          && rs.RoutePlan.PlannedDate.HasValue
-                          && rs.RoutePlan.PlannedDate!.Value.Date == today)
-                .FirstOrDefaultAsync();
 
+            var stop = await FindStopForConfirmationAsync(model.StopId, normalizedUsername, today);
             if (stop == null) return false;
 
-            var latestCollection = stop.CollectionDetails
-                .OrderByDescending(cd => cd.CurrentCollectionDateTime)
-                .FirstOrDefault();
+            var latestCollection = GetLatestCollection(stop);
 
             var newDetail = new CollectionDetails
             {
@@ -183,57 +174,112 @@ namespace ADWebApplication.Services.Collector
             _db.CollectionDetails.Add(newDetail);
             model.CollectionTime = newDetail.CurrentCollectionDateTime.Value.DateTime;
 
-            // Update Route Status
+            // Update Route Status + Predict next stop (same intended logic)
             if (stop.RoutePlan != null)
             {
-                if (stop.RoutePlan.RouteStatus == "Pending")
-                {
-                    stop.RoutePlan.RouteStatus = "In Progress";
-                }
-
-                // Check if all stops in this route are now collected
-                var allStops = await _db.RouteStops
-                    .Where(rs => rs.RouteId == stop.RouteId)
-                    .Include(rs => rs.CollectionDetails)
-                    .ToListAsync();
-
-                var completedCount = allStops.Count(rs =>
-                    rs.StopId == stop.StopId ||
-                    rs.CollectionDetails.Any(cd => cd.CollectionStatus == "Collected")
-                );
-
-                if (completedCount == allStops.Count)
-                {
-                    stop.RoutePlan.RouteStatus = "Completed";
-                }
-
-                // Predict next stop for the view model
-                var orderedStops = allStops
-                    .OrderBy(rs => rs.StopSequence)
-                    .ToList();
-
-                var currentIndex = orderedStops.FindIndex(rs => rs.StopId == model.StopId);
-                if (currentIndex >= 0)
-                {
-                    for (var i = currentIndex + 1; i < orderedStops.Count; i++)
-                    {
-                        var nextStop = orderedStops[i];
-                        var hasCollected = nextStop.CollectionDetails.Any(cd => cd.CollectionStatus == "Collected");
-
-                        if (!hasCollected)
-                        {
-                            model.NextPointId = nextStop.StopId.ToString();
-                            model.NextLocationName = nextStop.CollectionBin?.LocationName;
-                            model.NextAddress = nextStop.CollectionBin?.LocationAddress;
-                            model.NextPlannedTime = nextStop.PlannedCollectionTime.DateTime;
-                            break;
-                        }
-                    }
-                }
+                await UpdateRouteStatusAndNextStopAsync(stop, model);
             }
 
             await _db.SaveChangesAsync();
             return true;
+        }
+
+        // ===== Helpers (to reduce Sonar cognitive complexity) =====
+
+        private Task<RouteStop?> FindStopForConfirmationAsync(int stopId, string normalizedUsername, DateTime today)
+        {
+            return _db.RouteStops
+                .Include(rs => rs.CollectionDetails)
+                .Include(rs => rs.RoutePlan)
+                    .ThenInclude(rp => rp.RouteAssignment)
+                .Where(rs => rs.StopId == stopId
+                          && rs.RoutePlan != null
+                          && rs.RoutePlan.RouteAssignment != null
+                          && rs.RoutePlan.RouteAssignment.AssignedTo.Trim().ToUpper() == normalizedUsername
+                          && rs.RoutePlan.PlannedDate.HasValue
+                          && rs.RoutePlan.PlannedDate.Value.Date == today)
+                .FirstOrDefaultAsync();
+        }
+
+        private static CollectionDetails? GetLatestCollection(RouteStop stop)
+        {
+            return stop.CollectionDetails
+                .OrderByDescending(cd => cd.CurrentCollectionDateTime)
+                .FirstOrDefault();
+        }
+
+        private async Task UpdateRouteStatusAndNextStopAsync(RouteStop stop, CollectionConfirmationVM model)
+        {
+            // 1) Pending -> In Progress
+            if (stop.RoutePlan!.RouteStatus == "Pending")
+            {
+                stop.RoutePlan.RouteStatus = "In Progress";
+            }
+
+            // 2) Load all stops (Include CollectionBin because we read NextLocationName/NextAddress)
+            var allStops = await LoadAllStopsForRouteAsync(stop.RouteId);
+
+            // 3) Completed logic (treat current stop as collected)
+            if (IsRouteCompleted(allStops, stop.StopId))
+            {
+                stop.RoutePlan.RouteStatus = "Completed";
+            }
+
+            // 4) Predict next uncollected stop (same approach as your for-loop)
+            var nextStop = FindNextUncollectedStop(allStops, model.StopId);
+            ApplyNextStopToModel(model, nextStop);
+        }
+
+        private Task<List<RouteStop>> LoadAllStopsForRouteAsync(int? routeId)
+        {
+            return _db.RouteStops
+                .Where(rs => rs.RouteId == routeId)
+                .Include(rs => rs.CollectionDetails)
+                .Include(rs => rs.CollectionBin)
+                .ToListAsync();
+        }
+
+        private static bool IsRouteCompleted(List<RouteStop> allStops, int currentStopId)
+        {
+            var completedCount = allStops.Count(rs =>
+                rs.StopId == currentStopId ||
+                rs.CollectionDetails.Any(cd => cd.CollectionStatus == "Collected")
+            );
+
+            return completedCount == allStops.Count;
+        }
+
+        private static RouteStop? FindNextUncollectedStop(List<RouteStop> allStops, int currentStopId)
+        {
+            var orderedStops = allStops
+                .OrderBy(rs => rs.StopSequence)
+                .ToList();
+
+            var currentIndex = orderedStops.FindIndex(rs => rs.StopId == currentStopId);
+            if (currentIndex < 0) return null;
+
+            for (var i = currentIndex + 1; i < orderedStops.Count; i++)
+            {
+                var nextStop = orderedStops[i];
+                var hasCollected = nextStop.CollectionDetails.Any(cd => cd.CollectionStatus == "Collected");
+
+                if (!hasCollected)
+                {
+                    return nextStop;
+                }
+            }
+
+            return null;
+        }
+
+        private static void ApplyNextStopToModel(CollectionConfirmationVM model, RouteStop? nextStop)
+        {
+            if (nextStop == null) return;
+
+            model.NextPointId = nextStop.StopId.ToString();
+            model.NextLocationName = nextStop.CollectionBin?.LocationName;
+            model.NextAddress = nextStop.CollectionBin?.LocationAddress;
+            model.NextPlannedTime = nextStop.PlannedCollectionTime.DateTime;
         }
     }
 }
