@@ -114,12 +114,6 @@ namespace ADWebApplication.Controllers
 
         // ---------------------------------- Manage Collection Officers --------------------------------------------- //
 
-        /*public async Task<IActionResult> CollectionOfficerRoster()
-        {
-            var officers = await _adminRepository.GetAllCollectionOfficersAsync();
-            return View(officers);
-        }*/
-
         [HttpGet("CollectionOfficerSchedule")]
         public async Task<IActionResult> CollectionOfficerSchedule(string officerUsername)
         {

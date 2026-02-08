@@ -48,14 +48,6 @@ builder.Services.AddDbContext<In5niteDbContext>(options =>
     )
 );
 
-// Local use MySQL connection string
-/* builder.Services.AddDbContext<In5niteDbContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        new MySqlServerVersion(new Version(8, 0, 36))
-    )
-); */
-
 
 // Admin Repisitory - Andrew
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();

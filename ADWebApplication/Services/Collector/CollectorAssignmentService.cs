@@ -1,4 +1,5 @@
 using ADWebApplication.Data;
+using ADWebApplication.Models;
 using ADWebApplication.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,14 +32,7 @@ namespace ADWebApplication.Services.Collector
             // 1. Search Filter (ID or Location)
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(rp =>
-                    rp.RouteId.ToString().Contains(search) ||
-                    rp.RouteStops.Any(rs =>
-                        rs.CollectionBin != null &&
-                        rs.CollectionBin.LocationName != null &&
-                        rs.CollectionBin.LocationName.Contains(search)
-                    )
-                );
+                query = ApplySearchFilter(query, search);
             }
 
             // 2. Region Filter
@@ -210,6 +204,18 @@ namespace ADWebApplication.Services.Collector
                 NextStops = nextStops,
                 TotalPendingStops = totalPending
             };
+        }
+
+        private static IQueryable<RoutePlan> ApplySearchFilter(IQueryable<RoutePlan> query, string search)
+        {
+            return query.Where(rp =>
+                rp.RouteId.ToString().Contains(search) ||
+                rp.RouteStops.Any(rs =>
+                    rs.CollectionBin != null &&
+                    rs.CollectionBin.LocationName != null &&
+                    rs.CollectionBin.LocationName.Contains(search)
+                )
+            );
         }
     }
 }

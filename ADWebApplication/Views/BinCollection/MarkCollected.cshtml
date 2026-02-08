@@ -11,7 +11,7 @@
 
                 <!-- Route Plan -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Route Plan</label>
+                    <label asp-for="SelectedRoutePlanId" class="form-label fw-semibold">Route Plan</label>
                     <select asp-for="SelectedRoutePlanId" class="form-select" id="routePlanSelect">
                         <option value="">-- Select Route --</option>
                         @foreach (var rp in Model.RoutePlans)
@@ -28,7 +28,7 @@
 
                     <!-- Route Stop -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Route Stop</label>
+                        <label asp-for="SelectedRouteStopId" class="form-label fw-semibold">Route Stop</label>
                         <select asp-for="SelectedRouteStopId" class="form-select" id="routeStopSelect">
                             <option value="">-- Select Stop --</option>
                         </select>
@@ -54,7 +54,7 @@
                         <span asp-validation-for="CollectionDetails.BinFillLevel" class="text-danger"></span>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Issues</label>
+                        <label asp-for="CollectionDetails.IssueLog" class="form-label fw-semibold">Issues</label>
                         <textarea asp-for="CollectionDetails.IssueLog" class="form-control" rows="3"></textarea>
                     </div>
 
