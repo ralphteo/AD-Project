@@ -24,7 +24,7 @@ namespace ADWebApplication.Data.Repository
 
         public async Task<DashboardKPIs> GetAdminDashboardAsync(DateTime? forMonth = null)
         {
-            var targetMonth = forMonth ?? DateTime.Now.AddMonths(-1);
+            var targetMonth = forMonth ?? DateTime.SpecifyKind(DateTime.Now.AddMonths(-1), DateTimeKind.Utc);
             var previousMonth = targetMonth.AddMonths(-1);
             //  DEBUG OUTPUT
             Console.WriteLine("=== USER COUNT DEBUG ===");
@@ -117,7 +117,7 @@ namespace ADWebApplication.Data.Repository
         }
         private async Task<decimal> GetAverageBinFillRateAsync(DateTime month)
         {
-            var nextMonthStart = new DateTime(month.Year, month.Month, 1).AddMonths(1);
+            var nextMonthStart = DateTime.SpecifyKind(new DateTime(month.Year, month.Month, 1).AddMonths(1), DateTimeKind.Utc);
             var latestCollectionPerBin = await _db.CollectionDetails
                 .Where(cd => cd.CurrentCollectionDateTime != null 
                         && cd.CurrentCollectionDateTime < nextMonthStart
@@ -146,7 +146,7 @@ namespace ADWebApplication.Data.Repository
                 
             }
             Console.WriteLine($"Fill Rates Count for {month:yyyy-MM}: {fillRates.Count}");
-            return fillRates.Any() ? fillRates.Average() : 0m;
+            return fillRates.Count > 0 ? fillRates.Average() : 0m;
         }
         public async Task<List<CollectionTrend>> GetCollectionTrendsAsync(int monthsBack = 6)
         {

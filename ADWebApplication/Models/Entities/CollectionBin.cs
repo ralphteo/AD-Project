@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace ADWebApplication.Models;
 
@@ -9,6 +10,7 @@ public class CollectionBin
     [Key]
     [Column("binId")]
     [Required]
+    [JsonRequired]
     public int BinId { get; set; }
 
     [Column("regionId")]
@@ -22,6 +24,7 @@ public class CollectionBin
 
     [Column("binCapacity")]
     [Required]
+    [JsonRequired]
     public int BinCapacity { get; set; }
 
     [Column("binStatus")]
