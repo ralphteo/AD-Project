@@ -36,13 +36,13 @@ jobs:
           SONAR_ORG: ${{ secrets.SONAR_ORG }}
         run: ./scripts/sast-sonar.sh
       
-      #- name: Check SonarCloud Quality Gate
-      #  uses: sonarsource/sonarcloud-github-action@master
-      #  with:
-      #    args: >
-      #      /d:sonar.login='$'{{ secrets.SONAR_TOKEN }}
-      #  env:
-      #    SONAR_TOKEN: '$'{{ secrets.SONAR_TOKEN }}
+      - name: Check SonarCloud Quality Gate
+        uses: sonarsource/sonarcloud-github-action@master
+        with:
+          args: >
+            /d:sonar.login='$'{{ secrets.SONAR_TOKEN }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       
       - name: Upload Sonar Artifacts
         if: always()
@@ -52,7 +52,7 @@ jobs:
           path: .sonarqube/out
           if-no-files-found: warn
 
-      #- name: Install OWASP Dependency-Check
+      #- name: Install OWASP Dependency-Check (This uses sca-dependency-check.sh instead of using the Owasp GitHub Action directly)
       #  run: |
       #    VERSION=${DEPENDENCY_CHECK_VERSION}
       #    wget https://github.com/jeremylong/DependencyCheck/releases/download/${VERSION}/dependency-check-${VERSION#v}-release.zip
