@@ -50,6 +50,9 @@ jobs:
         with:
           name: sonar-report
           path: .sonarqube/out
+                TestResults/**/coverage.opencover.xml
+                TestResults/**/*.trx
+                ADWebApplication.Tests/JavaScript/coverage/
           if-no-files-found: warn
           
       - name: SonarCloud Quality Gate
