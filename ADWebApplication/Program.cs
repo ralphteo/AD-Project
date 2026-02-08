@@ -6,6 +6,7 @@ using ADWebApplication.Services;
 using ADWebApplication.Services.Collector;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using ADWebApplication.Data.Repository;
+using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 var googleKey = builder.Configuration["GOOGLE_MAPS_API_KEY"];
@@ -22,16 +23,38 @@ builder.Services.AddScoped<ICollectorDashboardService, CollectorDashboardService
 builder.Services.AddScoped<ICollectorAssignmentService, CollectorAssignmentService>();
 builder.Services.AddScoped<ICollectorIssueService, CollectorIssueService>();
 builder.Services.AddScoped<IRouteAssignmentService, RouteAssignmentService>();
+builder.Services.AddScoped<IRoutePlanningService, RoutePlanningService>();
 
+// Azure Key Vault integration
+builder.Configuration.AddEnvironmentVariables();
+
+// 2. Add Key Vault only in cloud version
+if (!builder.Environment.IsDevelopment())
+{
+    var keyVaultUrl = new Uri("https://in5nite-kv.vault.azure.net/");
+    builder.Configuration.AddAzureKeyVault(
+        keyVaultUrl,
+        new DefaultAzureCredential()
+    );
+}
+
+var mySqlConn = builder.Configuration.GetConnectionString("DefaultConnection");
 
 
 builder.Services.AddDbContext<In5niteDbContext>(options =>
     options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
+        mySqlConn,
         new MySqlServerVersion(new Version(8, 0, 36))
     )
 );
 
+// Local use MySQL connection string
+/* builder.Services.AddDbContext<In5niteDbContext>(options =>
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        new MySqlServerVersion(new Version(8, 0, 36))
+    )
+); */
 
 
 // Admin Repisitory - Andrew
@@ -76,6 +99,7 @@ builder.Services.AddScoped<IRewardCatalogueRepository, RewardCatalogueRepository
 
 builder.Services.AddAuthorization();
 
+// CORS policy for Android mobile app - requires AllowAnyOrigin for mobile connectivity
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAndroid", policy =>
@@ -122,15 +146,15 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<In5niteDbContext>();
 
-    if (!db.Roles.Any(r => r.Name == "HR"))
+    if (!await db.Roles.AnyAsync(r => r.Name == "HR"))
     {
         db.Roles.Add(new Role { Name = "HR" });
-        db.SaveChanges();
+        await db.SaveChangesAsync();
     }
 
-    var hrRoleId = db.Roles.First(r => r.Name == "HR").RoleId;
+    var hrRoleId = (await db.Roles.FirstAsync(r => r.Name == "HR")).RoleId;
 
-    var hr = db.Employees.FirstOrDefault(e => e.Username == "HR-001");
+    var hr = await db.Employees.FirstOrDefaultAsync(e => e.Username == "HR-001");
     if (hr == null)
     {
         hr = new Employee
@@ -151,7 +175,7 @@ using (var scope = app.Services.CreateScope())
         hr.PasswordHash = BCrypt.Net.BCrypt.HashPassword("Hr@12345");
     }
 
-    db.SaveChanges();
+    await db.SaveChangesAsync();
 }
 app.UseStaticFiles();
 app.UseRouting();

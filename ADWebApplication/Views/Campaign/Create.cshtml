@@ -29,7 +29,7 @@
 
                     <!-- Campaign Name -->
                     <div class="mb-3">
-                        <label asp-for="CampaignName" class="form-label"></label>
+                        <label asp-for="CampaignName" class="form-label">Campaign Name</label>
                         <input asp-for="CampaignName" 
                                class="form-control" 
                                placeholder="e.g., Summer Double Points"
@@ -39,7 +39,7 @@
 
                     <!-- Description -->
                     <div class="mb-3">
-                        <label asp-for="Description" class="form-label"></label>
+                        <label asp-for="Description" class="form-label">Description</label>
                         <textarea asp-for="Description" 
                                   class="form-control" 
                                   rows="3" 
@@ -50,14 +50,14 @@
                     <!-- Date Range -->
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label asp-for="StartDate" class="form-label"></label>
+                            <label asp-for="StartDate" class="form-label">Start Date</label>
                             <input asp-for="StartDate" 
                                    type="datetime-local" 
                                    class="form-control" />
                             <span asp-validation-for="StartDate" class="text-danger small"></span>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label asp-for="EndDate" class="form-label"></label>
+                            <label asp-for="EndDate" class="form-label">End Date</label>
                             <input asp-for="EndDate" 
                                    type="datetime-local" 
                                    class="form-control" />
@@ -68,7 +68,7 @@
                     <!-- Incentive Configuration -->
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label asp-for="IncentiveType" class="form-label"></label>
+                            <label asp-for="IncentiveType" class="form-label">Incentive Type</label>
                             <select asp-for="IncentiveType" class="form-select" id="incentiveTypeSelect">
                                 <option value="Multiplier">Points Multiplier</option>
                                 <option value="Bonus">Bonus Points</option>
@@ -76,7 +76,7 @@
                             <span asp-validation-for="IncentiveType" class="text-danger small"></span>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label asp-for="IncentiveValue" class="form-label"></label>
+                            <label asp-for="IncentiveValue" class="form-label">Incentive Value</label>
                             <input asp-for="IncentiveValue" 
                                    type="number" 
                                    step="0.1" 
@@ -92,7 +92,7 @@
 
                     <!-- Status -->
                     <div class="mb-3">
-                        <label asp-for="Status" class="form-label"></label>
+                        <label asp-for="Status" class="form-label">Status</label>
                         <select asp-for="Status" class="form-select">
                             <option value="INACTIVE">Inactive (Create but don't activate)</option>
                             <option value="SCHEDULED">Scheduled (Auto-activate on start date)</option>

@@ -1,8 +1,10 @@
+namespace ADWebApplication.Models.DTOs;
+
 public class AdminAlertDto
 {
-    public string Type { get; set; }
-    public string Title { get; set; }
-    public string Message { get; set; }
-    public string LinkText { get; set; }
-    public string LinkUrl { get; set; }
+    public required string Type { get; set; }
+    public required string Title { get; set; }
+    public required string Message { get; set; }
+    public required string LinkText { get; set; }
+    public required string LinkUrl { get; set; }
 }

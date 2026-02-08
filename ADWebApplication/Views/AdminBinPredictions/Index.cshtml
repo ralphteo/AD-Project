@@ -162,12 +162,6 @@
 
         </div>
 
-        <!-- Generate routes -->
-        <button id="generateRoutesBtn" class="btn btn-primary ms-auto">
-            <i class="bi bi-diagram-3 me-1"></i>
-            Generate Routes for Selected Bins
-        </button>
-
     </form>
 </div>
 
@@ -188,7 +182,7 @@
                 </div>
             </div>
 
-            <a href="#" class="btn btn-danger">
+            <a class="btn btn-danger" asp-controller="AdminRoutePlanning" asp-action="Index">
                 <i class="bi bi-lightning-fill me-1"></i>
                 View in Route Planning
             </a>
@@ -204,11 +198,9 @@
     }
 
     @functions {
-        string FillBarClass(double fill)
+        static string FillBarClass(string? riskLevel)
         {
-            if (fill >= 75) return "bg-danger";
-            if (fill >= 60) return "bg-warning";
-            return "bg-success";
+            return riskLevel == "High" ? "bg-danger" : "bg-success";
         }
     }
 
@@ -218,10 +210,6 @@
             <table class="table table-hover mb-0 align-middle">
                 <thead class="table-light border-bottom">
                     <tr class="align-middle">
-                        <th style="width:36px;">
-                            <input type="checkbox" id="selectAllBins" />
-                        </th>
-
                         <th class="th-tight">Bin ID</th>
                         <th class="th-tight">Region</th>
 
@@ -252,7 +240,7 @@
                 @if (!Model.Rows.Any())
                 {
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-4">
+                        <td colspan="7" class="text-center text-muted py-4">
                             No bins found for the selected filters.
                         </td>
                     </tr>
@@ -261,18 +249,8 @@
                 {
                     @foreach (var row in Model.Rows)
                     {
-                        <tr class="@(row.AutoSelected
-                            ? "row-high-risk"
-                            : row.NeedsPredictionRefresh
-                                ? "row-refresh-needed"
-                                : "")">
-
-                            <td style="width:32px;">
-                                <input type="checkbox"
-                                    class="bin-checkbox"
-                                    value="@row.BinId" />
-                            </td>
-                            
+                        var rowClass = row.AutoSelected ? "row-high-risk" : (row.NeedsPredictionRefresh ? "row-refresh-needed" : "");
+                        <tr class="@rowClass">
                             <td class="fw-semibold text-center">
                                 @row.BinId
                             </td>
@@ -284,10 +262,19 @@
                             <td>
                                 @if (row.NeedsPredictionRefresh)
                                 {
-                                    <div class="fw-bold fs-5">0%</div>
+                                    <div class="fw-bold fs-5">
+                                        @if (row.IsActualFillLevel)
+                                        {
+                                            <span class="text-info">Actual collected fill: @row.EstimatedFillToday.ToString("0")%</span>
+                                        }
+                                        else
+                                        {
+                                            <span>0%</span>
+                                        }
+                                    </div>
 
                                     <div class="progress mt-2" style="height: 6px; background-color:#e9ecef;">
-                                        <div class="progress-bar @FillBarClass(0)"
+                                        <div class="progress-bar @(row.IsActualFillLevel ? "bg-warning" : FillBarClass(row.RiskLevel))"
                                             role="progressbar"
                                             style="width:@row.EstimatedFillToday%">
                                         </div>
@@ -304,7 +291,7 @@
                                     </div>
 
                                     <div class="progress mt-2" style="height: 6px; background-color:#e9ecef;">
-                                        <div class="progress-bar @FillBarClass(row.EstimatedFillToday)"
+                                        <div class="progress-bar @FillBarClass(row.RiskLevel)"
                                             role="progressbar"
                                             style="width:@row.EstimatedFillToday%">
                                         </div>
@@ -343,15 +330,7 @@
                                         @row.EstimatedDaysToThreshold
                                         day@(row.EstimatedDaysToThreshold == 1 ? "" : "s")
                                     </div>
-
-                                    @if (row.EstimatedDaysToThreshold <= 3)
-                                    {
-                                        <div class="text-muted small">ML predicted</div>
-                                    }
-                                    else
-                                    {
-                                        <div class="text-muted small">ML predicted</div>
-                                    }
+                                    <div class="text-muted small">ML predicted</div>
                                 }
                             </td>
 
@@ -495,27 +474,6 @@
     document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll('[data-bs-toggle="tooltip"]')
             .forEach(el => new bootstrap.Tooltip(el));
-    });
-
-    // Select all bins
-    document.getElementById("selectAllBins")?.addEventListener("change", function () {
-        const checked = this.checked;
-        document.querySelectorAll(".bin-checkbox")
-            .forEach(cb => cb.checked = checked);
-    });
-
-    // Generate routes
-    document.getElementById("generateRoutesBtn")?.addEventListener("click", function () {
-        const selected = [...document.querySelectorAll(".bin-checkbox:checked")]
-            .map(cb => cb.value);
-
-        if (selected.length === 0) {
-            alert("Please select at least one bin.");
-            return;
-        }
-
-        console.log("Selected bin IDs:", selected);
-        // WIP: POST route assignment
     });
 
     // Sort direction toggle

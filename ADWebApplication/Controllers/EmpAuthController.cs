@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Security.Claims;
 
 namespace ADWebApplication.Controllers;
@@ -40,7 +41,7 @@ public class EmpAuthController : Controller
         var lockStr = HttpContext.Session.GetString(LockUntilKey(username));
         if (string.IsNullOrEmpty(lockStr)) return false;
 
-        if (!DateTime.TryParse(lockStr, null, System.Globalization.DateTimeStyles.RoundtripKind, out lockUntilUtc))
+        if (!DateTime.TryParseExact(lockStr, "O", CultureInfo.InvariantCulture,DateTimeStyles.RoundtripKind, out lockUntilUtc))
         {
             HttpContext.Session.Remove(LockUntilKey(username));
             return false;
@@ -87,7 +88,7 @@ public class EmpAuthController : Controller
     {
         HttpContext.Session.SetString(KEY_USER, username);
         HttpContext.Session.SetString(KEY_OTP, otp);
-        HttpContext.Session.SetString(KEY_EXP, DateTime.UtcNow.AddMinutes(1).ToString("O"));
+        HttpContext.Session.SetString(KEY_EXP, DateTime.UtcNow.AddMinutes(1).ToString("O",CultureInfo.InvariantCulture));
 
         ResetAttempts(username);
     }
@@ -179,6 +180,10 @@ public class EmpAuthController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> VerifyOtp(OtpVerificationViewModel model)
     {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
         var username = HttpContext.Session.GetString(KEY_USER);
 
         if (string.IsNullOrEmpty(username))
@@ -201,7 +206,7 @@ public class EmpAuthController : Controller
             return View(model);
         }
 
-        if (!DateTime.TryParse(expiryStr, null, System.Globalization.DateTimeStyles.RoundtripKind, out var expiryUtc))
+        if (!DateTime.TryParseExact(expiryStr, "O", CultureInfo.InvariantCulture,DateTimeStyles.RoundtripKind, out var expiryUtc))
         {
             ClearOtpSessionOnly();
             ModelState.AddModelError("", "Session invalid. Please login again.");

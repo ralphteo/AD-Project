@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ADWebApplication.Services;
 
+namespace ADWebApplication.Controllers.WebAdmin;
+
 [Authorize(Roles = "Admin")]
 [Route("Admin/BinPredictions")]
 public class AdminBinPredictionsController : Controller
@@ -16,6 +18,11 @@ public class AdminBinPredictionsController : Controller
     [HttpGet("")]
     public async Task<IActionResult> Index(int page = 1, string sort = "EstimatedFill", string sortDir = "desc", string risk = "All", string timeframe = "All")
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var viewModel = await _binPredictionService
             .BuildBinPredictionsPageAsync(page, sort, sortDir, risk, timeframe);
 
@@ -26,6 +33,11 @@ public class AdminBinPredictionsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Refresh()
     {
+        if (!ModelState.IsValid)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
         int refreshed = await _binPredictionService.RefreshPredictionsForNewCyclesAsync();
 
         TempData["PredictionRefreshSuccess"] = $"{refreshed} bin prediction(s) refreshed successfully.";

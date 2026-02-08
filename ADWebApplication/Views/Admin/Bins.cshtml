@@ -40,19 +40,37 @@
 <table id="binsTable" class="table table-striped table-bordered align-middle">
     <thead class="table-primary">
         <tr>
-            <th class="text-nowrap" style="max-width: 80px;" onclick="sortTable(0)">Bin ID <i
-                    class="bi bi-arrow-down-up"></i></th>
-            <th class="text-nowrap" style="max-width: 120px;" onclick="sortTable(1)">Region <i
-                    class="bi bi-arrow-down-up"></i></th>
-            <th class="text-nowrap" style="max-width: 150px;" onclick="sortTable(2)">Location Name <i
-                    class="bi bi-arrow-down-up"></i></th>
-            <th class="text-nowrap" style="max-width: 200px;" onclick="sortTable(3)">Address <i
-                    class="bi bi-arrow-down-up"></i></th>
+            <th class="text-nowrap" style="max-width: 80px;"> 
+                <button type="button" class="btn btn-link p-0" onclick="sortTable(0)">
+                    Bin ID <i class="bi bi-arrow-down-up"></i>
+                </button>
+            </th>
+            <th class="text-nowrap" style="max-width: 120px;"> 
+                <button type="button" class="btn btn-link p-0" onclick="sortTable(1)">
+                    Region <i class="bi bi-arrow-down-up"></i>
+                </button>
+            </th>
+            <th class="text-nowrap" style="max-width: 150px;"> 
+                <button type="button" class="btn btn-link p-0" onclick="sortTable(2)">
+                    Location Name <i class="bi bi-arrow-down-up"></i>
+                </button>
+            </th>
+            <th class="text-nowrap" style="max-width: 200px;"> 
+                <button type="button" class="btn btn-link p-0" onclick="sortTable(3)">
+                    Address <i class="bi bi-arrow-down-up"></i>
+                </button>
+            </th>
             <th class="text-nowrap text-center" onclick="sortTable(4)">Capacity <i class="bi bi-arrow-down-up"></i></th>
-            <th class="text-nowrap" style="max-width: 100px;" onclick="sortTable(5)">Status <i
-                    class="bi bi-arrow-down-up"></i></th>
-            <th class="text-nowrap" style="max-width: 150px;" onclick="sortTable(6)">Coordinates <i
-                    class="bi bi-arrow-down-up"></i></th>
+            <th class="text-nowrap" style="max-width: 100px;"> 
+                <button type="button" class="btn btn-link p-0" onclick="sortTable(5)">
+                    Status <i class="bi bi-arrow-down-up"></i>
+                </button>
+            </th>
+            <th class="text-nowrap" style="max-width: 150px;"> 
+                <button type="button" class="btn btn-link p-0" onclick="sortTable(6)">
+                    Coordinates <i class="bi bi-arrow-down-up"></i>
+                </button>
+            </th>
             <th class="text-nowrap" style="max-width: 100px;">Actions</th>
         </tr>
     </thead>
@@ -128,7 +146,7 @@
                         <label for="editRegionId" class="form-label">Region</label>
                         <select id="editRegionId" name="RegionId" class="form-select" required>
                             <option value="">Select Region</option>
-                            @foreach (var region in ViewBag.Regions as List<ADWebApplication.Models.Region>)
+                            @foreach (var region in (ViewBag.Regions as List<ADWebApplication.Models.Region>)!)
                             {
                                 <option value="@region.RegionId">@region.RegionName</option>
                             }
@@ -260,7 +278,7 @@
                         <label for="createRegionId" class="form-label">Region</label>
                         <select id="createRegionId" name="RegionId" class="form-select" required>
                             <option value="">Select Region</option>
-                            @foreach (var region in ViewBag.Regions as List<ADWebApplication.Models.Region>)
+                            @foreach (var region in (ViewBag.Regions as List<ADWebApplication.Models.Region>)!)
                             {
                                 <option value="@region.RegionId">@region.RegionName</option>
                             }

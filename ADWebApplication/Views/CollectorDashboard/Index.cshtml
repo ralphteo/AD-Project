@@ -298,7 +298,7 @@
 
 @section Scripts {
     <script>
-        const googleMapsKey = @Html.Raw(JsonSerializer.Serialize(Configuration["GoogleMaps:ApiKey"] ?? ""));
+        const googleMapsKey = @Html.Raw(JsonSerializer.Serialize(ViewBag.GoogleMapsKey ?? ""));
         const rawStops = @Html.Raw(JsonSerializer.Serialize(
             Model.CollectionPoints.Select((p, index) => new {
                 id = p.StopId == 0 ? (index + 1) : p.StopId,
@@ -316,6 +316,6 @@
         const stops = useDemoStops && (!rawStops || rawStops.length === 0) ? demoStops : rawStops;
         const nextAddress = @Html.Raw(JsonSerializer.Serialize(nextPoint?.Address ?? ""));
     </script>
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=@(Configuration["GoogleMaps:ApiKey"])&callback=initRouteMap"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=@ViewBag.GoogleMapsKey&callback=initRouteMap"async defer></script>
     <script src="~/js/collector-dashboard.js" asp-append-version="true"></script>
 }

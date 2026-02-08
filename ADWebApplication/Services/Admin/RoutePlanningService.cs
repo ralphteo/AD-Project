@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ADWebApplication.Services
 {
-    public class RoutePlanningService
+    public class RoutePlanningService : IRoutePlanningService
     {
         private readonly In5niteDbContext _db;
         private readonly IBinPredictionService _binPredictionService;
@@ -129,23 +129,8 @@ namespace ADWebApplication.Services
                 binCountDimension.SetCumulVarSoftLowerBound(routing.End(i), averageBins, 100000);
             }
 
-        //implement hard constraints for high-priority bins
-        //long mandatoryPenalty = 10000000;
         long optionalPenalty = 2000;
-        
-        //loop through all locations; node 0 is starting bin
-        // for (int i = 1; i < locations.Count; i++)
-        //     {
-        //         long index = manager.NodeToIndex(i);
-        //         if (locations[i].IsHighPriority)
-        //         {
-        //             routing.AddDisjunction(new long[] {index}, mandatoryPenalty);
-        //         }
-        //         else
-        //         {
-        //             routing.AddDisjunction(new long[] {index}, optionalPenalty);
-        //         }
-        //     }
+    
         for (int i = 1; i < binsForPlanning.Count; i++)
             {
                 long index = manager.NodeToIndex(i);
@@ -191,17 +176,17 @@ namespace ADWebApplication.Services
             {
                 RouteKey = r.RouteId,
                 BinId = rs.BinId,
-                Latitude = rs.CollectionBin!.Latitude.Value,
-                Longitude = rs.CollectionBin!.Longitude.Value,
+                Latitude = rs.CollectionBin!.Latitude!.Value,
+                Longitude = rs.CollectionBin!.Longitude!.Value,
                 StopNumber = rs.StopSequence,
-                AssignedOfficerName = r.RouteAssignment != null ? r.RouteAssignment.AssignedTo : null
+                AssignedOfficerName = r.RouteAssignment != null ? (r.RouteAssignment!.AssignedTo ?? "") : ""
             }))
             .ToListAsync();
     }
 
 
         //helpers to calculate distance matrix
-    private long[,] CreateDistanceMatrix(List<RoutePlanDto> locations)
+    private static long[,] CreateDistanceMatrix(List<RoutePlanDto> locations)
     {
         int count = locations.Count;
         long[,] distanceMatrix = new long[count, count];
@@ -228,7 +213,7 @@ namespace ADWebApplication.Services
             return distanceMatrix;
         }
 
-        public double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+        public static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
         {
             var R = 6371; // Earth's radius in kilometers
             var dLat = ToRadians(lat2 - lat1);
@@ -242,11 +227,11 @@ namespace ADWebApplication.Services
             return R * c;
         }
 
-        private double ToRadians(double angle) => Math.PI * angle / 180.0;
+        private static double ToRadians(double angle) => Math.PI * angle / 180.0;
     
 
     //helper for getting optimized route
-    private List<RoutePlanDto> GetOptimizedRoute(
+    private static List<RoutePlanDto> GetOptimizedRoute(
         List<RoutePlanDto> locations,
         RoutingModel routing, 
         RoutingIndexManager manager, 
@@ -254,7 +239,7 @@ namespace ADWebApplication.Services
         {
             var optimizedRoute = new List<RoutePlanDto>();
 
-            //loop through 7 routes (routing.Vehicles() method from OR-tools)
+            //loop through 3 routes (routing.Vehicles() method from OR-tools)
             for (int i = 0; i < routing.Vehicles(); ++i)
             {
 

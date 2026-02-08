@@ -15,6 +15,7 @@ public class BinPredictionsTableViewModel
     public bool IsNewCycleDetected { get; set; }
     public bool NeedsPredictionRefresh { get; set; }
     public bool CollectionDone { get; set; }
+    public bool IsActualFillLevel { get; set; }
     public string CycleStartDisplay =>
         $"Cycle started: {LastCollectionDateTime:dd MMM yyyy}";
 }

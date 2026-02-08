@@ -1,3 +1,4 @@
+using ADWebApplication.Models.DTOs;
 using ADWebApplication.Models.ViewModels.BinPredictions;
 
 namespace ADWebApplication.Services

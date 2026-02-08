@@ -24,7 +24,7 @@ namespace ADWebApplication.Services
             .Where(r => r.PlannedDate == date)
             .ToListAsync();
 
-        if (!existingPlans.Any())
+        if (existingPlans.Count == 0)
         {
             var grouped = allStops.GroupBy(s => s.RouteKey);
 

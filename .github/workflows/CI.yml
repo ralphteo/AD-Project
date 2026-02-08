@@ -9,6 +9,7 @@ on:
 env:
   DEPENDENCY_CHECK_VERSION: v9.0.7
   NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+  SKIP_KEYVAULT_IN_TESTS: "true"
 
 jobs:
   build-and-scan:

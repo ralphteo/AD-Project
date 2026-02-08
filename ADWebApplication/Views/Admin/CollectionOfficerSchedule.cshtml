@@ -64,7 +64,7 @@
                     <td>
                         @if (assignment.RoutePlans?.FirstOrDefault()?.RouteId != null)
                         {
-                            @assignment.RoutePlans.FirstOrDefault().RouteId
+                            @assignment.RoutePlans!.FirstOrDefault()!.RouteId
                         }
                         else
                         {

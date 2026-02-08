@@ -1,6 +1,7 @@
 @model IEnumerable<Campaign>
 @{
     ViewData["Title"] = "Campaign Management";
+    Layout = "_DashboardLayout"; 
 }
 
 @* <!-- PAGE HEADER -->
@@ -23,15 +24,10 @@
 <!-- PAGE HEADER WITH BACK TO HOME -->
 <div class="dash-header mb-4">
     <div class="d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-3">
-            <a asp-controller="AdminDashboard" asp-action="Index" class="btn btn-outline-secondary" title="Back to Dashboard">
-                <i class="bi bi-house-door"></i>
-            </a>
             <div>
                 <h2 class="mb-1">Campaign Management</h2>
                 <p class="text-muted mb-0">Manage incentive campaigns for e-waste disposal</p>
             </div>
-        </div>
         <a asp-action="Create" class="btn btn-primary">
             <i class="bi bi-plus-circle me-2"></i>New Campaign
         </a>

@@ -1,5 +1,4 @@
 using ADWebApplication.Data;
-using ADWebApplication.Data;
 using ADWebApplication.Models;
 using ADWebApplication.ViewModels;
 using Microsoft.AspNetCore.Authorization;

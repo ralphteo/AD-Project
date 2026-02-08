@@ -26,8 +26,7 @@ namespace ADWebApplication.Data.Repository
         {
             var targetMonth = forMonth ?? DateTime.Now.AddMonths(-1);
             var previousMonth = targetMonth.AddMonths(-1);
-            //var totalUsers = await _db.Users.CountAsync(u => u.IsActive);
-            // 🔍 DEBUG: Multiple approaches
+            //  DEBUG OUTPUT
             Console.WriteLine("=== USER COUNT DEBUG ===");
 
             var allUsers = await _db.PublicUser.CountAsync();
@@ -35,12 +34,6 @@ namespace ADWebApplication.Data.Repository
 
             var activeUsers1 = await _db.PublicUser.CountAsync(u => u.IsActive);
             Console.WriteLine($"Active (u.IsActive): {activeUsers1}");
-/* 
-            var activeUsers2 = await _db.Users.CountAsync(u => u.IsActive == true);
-            Console.WriteLine($"Active (u.IsActive == true): {activeUsers2}");
-
-            var activeUsers3 = await _db.Users.Where(u => u.IsActive).CountAsync();
-            Console.WriteLine($"Active (Where clause): {activeUsers3}"); */
 
             // Check actual values
             var sampleUsers = await _db.PublicUser.Take(5).Select(u => new { u.Id, u.IsActive }).ToListAsync();
@@ -50,7 +43,7 @@ namespace ADWebApplication.Data.Repository
 
             var totalUsers = activeUsers1;
 
-            // 🔍 DEBUG OUTPUT
+            // DEBUG OUTPUT
             Console.WriteLine($"Target Month: {targetMonth:yyyy-MM}");
             Console.WriteLine($"Previous Month: {previousMonth:yyyy-MM}");
 
@@ -59,7 +52,7 @@ namespace ADWebApplication.Data.Repository
             var prevCollections = await _db.DisposalLogs.CountAsync(l =>
                 l.DisposalTimeStamp.Year == previousMonth.Year && l.DisposalTimeStamp.Month == previousMonth.Month);
 
-            // 🔍 DEBUG OUTPUT
+            // DEBUG OUTPUT
             Console.WriteLine($"Current Collections (Feb 2026): {currentCollections}");
             Console.WriteLine($"Prev Collections (Jan 2026): {prevCollections}");
 
@@ -72,7 +65,10 @@ namespace ADWebApplication.Data.Repository
                 .Where(l => l.DisposalTimeStamp.Year == previousMonth.Year
                             && l.DisposalTimeStamp.Month == previousMonth.Month)
                 .SumAsync(l => (decimal?)l.EstimatedTotalWeight) ?? 0;
-            //User Growth calculation
+
+            var (currentUsers, prevUsers, userGrowthPercent) = 
+                await GetUserGrowthAsync(targetMonth, previousMonth);
+          /*   //User Growth calculation
             var currentActiveUsersWithDisposals = await (
                 from user in _db.PublicUser
                 join log in _db.DisposalLogs on user.Id equals log.UserId
@@ -96,22 +92,143 @@ namespace ADWebApplication.Data.Repository
                 : 0;
             Console.WriteLine($"Current Active Users with Disposals (Jan 2026): {currentActiveUsersWithDisposals}");
             Console.WriteLine($"Prev Active Users with Disposals (Dec 2025): {prevActiveUsersWithDisposals}");
-            Console.WriteLine($"User Growth Percent: {userGrowthPercent:F2}%");
+            Console.WriteLine($"User Growth Percent: {userGrowthPercent:F2}%"); */
             
+
+            //binFillRate
+
+            var currentBinFillRate = await GetAverageBinFillRateAsync(targetMonth);
+            var previousBinFillRate = await GetAverageBinFillRateAsync(previousMonth);
+
+            var binFillRateChange = CalculateGrowthPercent(currentBinFillRate, previousBinFillRate);
+
+            /* 
+            var latestCollectionPerBin = await _db.CollectionDetails
+                                            .Where(cd => cd.CurrentCollectionDateTime != null)
+                                            .GroupBy(cd => cd.BinId)
+                                            .Select(binGroup => new
+                                            {
+                                                BinId = binGroup.Key,
+                                                LatestDate = binGroup.Max(x => x.CurrentCollectionDateTime)
+                                            })
+                                            .ToListAsync();
+            var currentBinFillRates = new List<decimal>();
+            foreach (var binData in latestCollectionPerBin)
+            {
+                var record = await _db.CollectionDetails
+                    .Where(cd => cd.BinId == binData.BinId && cd.CurrentCollectionDateTime == binData.LatestDate
+                            && cd.AvgDailyFillGrowth.HasValue)
+                    .Select(cd => (decimal)cd.AvgDailyFillGrowth!.Value)
+                    .FirstOrDefaultAsync();
+                if (record > 0)
+                {
+                    currentBinFillRates.Add(record);
+                }
+            }
+            var currentBinFillRate = currentBinFillRates.Any() ? currentBinFillRates.Average() : 0;
+            Console.WriteLine("Current Bin Fill Rate Calculation");
+
+            //Calculate previous bin fill rates
+            var previousBinCollectionPerBin = await _db.CollectionDetails
+                                            .Where(cd => cd.CurrentCollectionDateTime != null && cd.CurrentCollectionDateTime < targetMonth)
+                                            .GroupBy(cd => cd.BinId)
+                                            .Select(binGroup => new
+                                            {
+                                                BinId = binGroup.Key,
+                                                LatestDate = binGroup.Max(x => x.CurrentCollectionDateTime)
+                                            })
+                                            .ToListAsync();
+            Console.WriteLine("previous collections");
+            var previousBinFillRates = new List<decimal>();
+            foreach (var binData in previousBinCollectionPerBin)
+            {
+                var record = await _db.CollectionDetails
+                    .Where(cd => cd.BinId == binData.BinId && cd.CurrentCollectionDateTime == binData.LatestDate
+                            && cd.AvgDailyFillGrowth.HasValue)
+                    .Select(cd => (decimal)cd.AvgDailyFillGrowth!.Value)
+                    .FirstOrDefaultAsync();
+                if (record > 0)
+                {
+                    previousBinFillRates.Add(record);
+                }
+            }
+            var previousBinFillRate = previousBinFillRates.Any() ? previousBinFillRates.Average() : 0m;
+            Console.WriteLine("Previous Bin Fill Rate Calculation");
+            var binFillRateChange = previousBinFillRate > 0
+                ? ((currentBinFillRate - previousBinFillRate) * 100.0m / previousBinFillRate)
+                : 0;
+            Console.WriteLine("Bin Fill Rate Change record"); */
+                                            
             return new DashboardKPIs
             {
                 TotalUsers = totalUsers,
-                ActiveUsersWithDisposals = currentActiveUsersWithDisposals,
+                ActiveUsersWithDisposals = currentUsers,
                 UserGrowthPercent = userGrowthPercent,
                 TotalCollections = currentCollections,
                 CollectionGrowthPercent = prevCollections > 0 ? ((currentCollections - prevCollections) * 100.0m / prevCollections) : 0,
                 TotalWeightRecycled = currentWeight,
                 WeightGrowthPercent = prevWeight > 0 ? ((currentWeight - prevWeight) * 100.0m / prevWeight) : 0,
-                AvgBinFillRate = 23.5m, // Placeholder value
-                BinFillRateChange = 3.4m  // Placeholder value
+                AvgBinFillRate = currentBinFillRate,
+                BinFillRateChange = binFillRateChange
             };
         }
 
+        private static decimal CalculateGrowthPercent(decimal current, decimal previous)
+        {
+            return previous > 0
+                ? ((current - previous) * 100.0m / previous)
+                : 0;
+        }
+        private async Task<(int current, int previous, decimal growthPercent)> GetUserGrowthAsync(DateTime targetMonth, DateTime previousMonth)
+        {
+            var current = await GetActiveUsersWithDisposalsAsync(targetMonth);
+            var previous = await GetActiveUsersWithDisposalsAsync(previousMonth);
+            return (current, previous, CalculateGrowthPercent(current, previous));
+
+        }
+        private async Task<int> GetActiveUsersWithDisposalsAsync(DateTime month)
+        {
+            return await (
+                from user in _db.PublicUser
+                join log in _db.DisposalLogs on user.Id equals log.UserId
+                where user.IsActive &&
+                      log.DisposalTimeStamp.Year == month.Year &&
+                      log.DisposalTimeStamp.Month == month.Month
+                select user.Id).Distinct().CountAsync();
+        }
+        private async Task<decimal> GetAverageBinFillRateAsync(DateTime month)
+        {
+            var nextMonthStart = new DateTime(month.Year, month.Month, 1).AddMonths(1);
+            var latestCollectionPerBin = await _db.CollectionDetails
+                .Where(cd => cd.CurrentCollectionDateTime != null 
+                        && cd.CurrentCollectionDateTime < nextMonthStart
+                        && cd.AvgDailyFillGrowth.HasValue)
+                .GroupBy(cd => cd.BinId)
+                .Select(binGroup => new
+                {
+                    BinId = binGroup.Key,
+                    LatestDate = binGroup.Max(x => x.CurrentCollectionDateTime)
+                })
+                .ToListAsync();
+            Console.WriteLine($"Latest Collection Per Bin Count for {month:yyyy-MM}: {latestCollectionPerBin.Count}");
+            var fillRates = new List<decimal>();
+            foreach (var binData in latestCollectionPerBin)
+            {
+                var fillRate = await _db.CollectionDetails
+                    .Where(cd => cd.BinId == binData.BinId 
+                            && cd.CurrentCollectionDateTime == binData.LatestDate
+                            && cd.AvgDailyFillGrowth.HasValue)
+                    .Select(cd => (decimal)cd.AvgDailyFillGrowth!.Value)
+                    .FirstOrDefaultAsync();
+                if (fillRate > 0)
+                {
+                    fillRates.Add(fillRate);
+                }
+                
+            }
+            Console.WriteLine($"Fill Rates Count for {month:yyyy-MM}: {fillRates.Count}");
+            return fillRates.Any() ? fillRates.Average() : 0m;
+        }
         public async Task<List<CollectionTrend>> GetCollectionTrendsAsync(int monthsBack = 6)
         {
             var cutoff = DateTime.UtcNow.AddMonths(-monthsBack);
@@ -181,18 +298,19 @@ namespace ADWebApplication.Data.Repository
 
             var areaStats = await (from log in _db.DisposalLogs
                                    join bin in _db.CollectionBins on log.BinId equals bin.BinId into binJoin
-                                   from bin in binJoin.DefaultIfEmpty()
-                                   join region in _db.Regions on bin.RegionId equals region.RegionId into regionJoin
-                                   from region in regionJoin.DefaultIfEmpty()
-                                   where log.DisposalTimeStamp >= cutoff
-                                   group new { log, bin, region } by new { bin.RegionId, region.RegionName } into g
-                                   select new
-                                   {
-                                       RegionId = g.Key.RegionId,
-                                       RegionName = g.Key.RegionName,
-                                       Collections = g.Count(),
-                                       UniqueUsers = g.Select(x => x.log.UserId).Distinct().Count()
-                                   })
+                                from bin in binJoin.DefaultIfEmpty()
+                                join region in _db.Regions on bin.RegionId equals region.RegionId into regionJoin
+                                from region in regionJoin.DefaultIfEmpty()
+                                where log.DisposalTimeStamp >= cutoff
+                                        && bin.RegionId != null  // ✅ ADD THIS - Filter out unassigned regions
+                                group new { log, bin, region } by new { bin.RegionId, region.RegionName } into g
+                                select new
+                                {
+                                    RegionId = g.Key.RegionId,
+                                    RegionName = g.Key.RegionName,
+                                    Collections = g.Count(),
+                                    UniqueUsers = g.Select(x => x.log.UserId).Distinct().Count()
+                                })
                 .OrderByDescending(g => g.Collections)
                 .ToListAsync();
 
@@ -208,6 +326,7 @@ namespace ADWebApplication.Data.Repository
                 .ToDictionaryAsync(x => x.RegionId!.Value, x => x.TotalUsers);
 
             return areaStats
+            .Where(a => a.RegionId.HasValue) // Ensure we only process areas with a RegionId
                 .Select(a =>
                 {
                     var totalUsers = 0;
@@ -223,7 +342,7 @@ namespace ADWebApplication.Data.Repository
                     return new AvgPerformance
                     {
                         Area = string.IsNullOrWhiteSpace(a.RegionName)
-                            ? (a.RegionId.HasValue ? $"Region {a.RegionId}" : "Unassigned")
+                            ?$"Region {a.RegionId}"
                             : a.RegionName,
                         Collections = a.Collections,
                         Participation = Math.Round(participation, 2)

@@ -115,17 +115,17 @@ namespace ADWebApplication.Services.Collector
             var assignment = await _db.RouteAssignments
                 .Include(ra => ra.RoutePlans)
                     .ThenInclude(rp => rp.RouteStops)
-                        .ThenInclude(rs => rs.CollectionBin)
-                            .ThenInclude(cb => cb.Region)
+                        .ThenInclude(rs => rs!.CollectionBin)
+                            .ThenInclude(cb => cb!.Region)
                 .Include(ra => ra.RoutePlans)
                     .ThenInclude(rp => rp.RouteStops)
-                        .ThenInclude(rs => rs.CollectionDetails)
+                        .ThenInclude(rs => rs!.CollectionDetails)
                 .Where(ra => ra.AssignmentId == assignmentId && ra.AssignedTo == username)
                 .FirstOrDefaultAsync();
 
             if (assignment == null) return null;
 
-            var route = assignment.RoutePlans.FirstOrDefault();
+            var route = assignment.RoutePlans!.FirstOrDefault();
             if (route == null) return null;
 
             var stops = route.RouteStops
