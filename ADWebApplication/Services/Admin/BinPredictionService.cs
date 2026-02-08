@@ -155,7 +155,7 @@ public class BinPredictionService : IBinPredictionService
         }
 
         var latestCollection = history[0];
-        var latestCollectedAt = latestCollection.CurrentCollectionDateTime.Value;
+        var latestCollectedAt = latestCollection.CurrentCollectionDateTime!.Value;
 
         latestPredictionByBin.TryGetValue(bin.BinId, out var latestPrediction);
         nextStopByBin.TryGetValue(bin.BinId, out var nextStop);
@@ -266,13 +266,14 @@ public class BinPredictionService : IBinPredictionService
         // Fetch next scheduled route stop for each bin (from today onwards)
         var nextRouteStop = await db.RouteStops
             .Where(rs => rs.PlannedCollectionTime >= today && rs.BinId.HasValue)
-            .GroupBy(rs => rs.BinId.Value)
+            .GroupBy(rs => rs.BinId!.Value)
             .Select(g => g.OrderBy(x => x.PlannedCollectionTime).FirstOrDefault())
             .ToListAsync();
 
         var nextStopByBin = nextRouteStop
-            .Where(x => x != null && x.BinId.HasValue)
-            .ToDictionary(x => x.BinId!.Value, x => x!);
+            .OfType<RouteStop>()
+            .Where(x => x.BinId.HasValue)
+            .ToDictionary(x => x.BinId!.Value, x => x);
 
         var rows = new List<BinPredictionsTableViewModel>();
 
@@ -300,7 +301,7 @@ public class BinPredictionService : IBinPredictionService
         // calculate avg fill growth rate
         var avgGrowth = rows
             .Where(r => r.PredictedNextAvgDailyGrowth.HasValue)
-            .Select(r => r.PredictedNextAvgDailyGrowth.Value)
+            .Select(r => r.PredictedNextAvgDailyGrowth!.Value)
             .DefaultIfEmpty(0)
             .Average();
 

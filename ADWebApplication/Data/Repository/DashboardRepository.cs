@@ -137,7 +137,7 @@ namespace ADWebApplication.Data.Repository
                     .Where(cd => cd.BinId == binData.BinId 
                             && cd.CurrentCollectionDateTime == binData.LatestDate
                             && cd.AvgDailyFillGrowth.HasValue)
-                    .Select(cd => (decimal)cd.AvgDailyFillGrowth.Value)
+                    .Select(cd => (decimal)cd.AvgDailyFillGrowth!.Value)
                     .FirstOrDefaultAsync();
                 if (fillRate > 0)
                 {
@@ -242,7 +242,7 @@ namespace ADWebApplication.Data.Repository
                     TotalUsers = g.Count()
                 })
                 .Where(x => x.RegionId.HasValue)
-                .ToDictionaryAsync(x => x.RegionId.Value, x => x.TotalUsers);
+                .ToDictionaryAsync(x => x.RegionId!.Value, x => x.TotalUsers);
 
             return areaStats
             .Where(a => a.RegionId.HasValue) // Ensure we only process areas with a RegionId

@@ -249,7 +249,20 @@
                 {
                     @foreach (var row in Model.Rows)
                     {
-                        var rowClass = row.AutoSelected ? "row-high-risk" : (row.NeedsPredictionRefresh ? "row-refresh-needed" : "");
+                        string rowClass;
+                        if (row.AutoSelected)
+                        {
+                            rowClass = "row-high-risk";
+                        }
+                        else if (row.NeedsPredictionRefresh)
+                        {
+                            rowClass = "row-refresh-needed";
+                        }
+                        else
+                        {
+                            rowClass = "";
+                        }
+                        
                         <tr class="@rowClass">
                             <td class="fw-semibold text-center">
                                 @row.BinId
@@ -275,7 +288,6 @@
 
                                     <div class="progress mt-2" style="height: 6px; background-color:#e9ecef;">
                                         <div class="progress-bar @(row.IsActualFillLevel ? "bg-warning" : FillBarClass(row.RiskLevel))"
-                                            role="progressbar"
                                             style="width:@row.EstimatedFillToday%">
                                         </div>
                                     </div>
@@ -292,7 +304,6 @@
 
                                     <div class="progress mt-2" style="height: 6px; background-color:#e9ecef;">
                                         <div class="progress-bar @FillBarClass(row.RiskLevel)"
-                                            role="progressbar"
                                             style="width:@row.EstimatedFillToday%">
                                         </div>
                                     </div>

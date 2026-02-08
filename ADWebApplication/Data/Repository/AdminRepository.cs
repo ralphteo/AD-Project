@@ -187,7 +187,7 @@ namespace ADWebApplication.Data.Repository
                 .Select(rp => new
                 {
                     Username = rp.RouteAssignment!.AssignedTo,
-                    PlannedDate = rp.PlannedDate.Value
+                    PlannedDate = rp.PlannedDate!.Value
                 })
                 .ToListAsync();
 
@@ -237,7 +237,7 @@ namespace ADWebApplication.Data.Repository
         .Select(rp => new
         {
             Username = rp.RouteAssignment!.AssignedTo.Trim().ToUpper(),
-            PlannedDate = rp.PlannedDate.Value.Date,
+            PlannedDate = rp.PlannedDate!.Value.Date,
             RouteId = rp.RouteId
         })
         .ToListAsync();
