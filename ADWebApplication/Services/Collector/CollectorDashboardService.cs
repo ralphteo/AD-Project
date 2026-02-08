@@ -120,7 +120,7 @@ namespace ADWebApplication.Services.Collector
                     .ThenInclude(cb => cb.Region)
                 .Include(rs => rs.CollectionDetails)
                 .Include(rs => rs.RoutePlan)
-                    .ThenInclude(rp => rp.RouteAssignment)
+                    .ThenInclude(rp => rp!.RouteAssignment)
                 .Where(rs => rs.StopId == stopId && rs.RoutePlan != null && rs.RoutePlan.RouteAssignment != null)
                 .Where(rs => rs.RoutePlan!.RouteAssignment!.AssignedTo.Trim().ToUpper() == normalizedUsername)
                 .FirstOrDefaultAsync();
@@ -191,7 +191,7 @@ namespace ADWebApplication.Services.Collector
             return _db.RouteStops
                 .Include(rs => rs.CollectionDetails)
                 .Include(rs => rs.RoutePlan)
-                    .ThenInclude(rp => rp.RouteAssignment)
+                    .ThenInclude(rp => rp!.RouteAssignment)
                 .Where(rs => rs.StopId == stopId
                           && rs.RoutePlan != null
                           && rs.RoutePlan.RouteAssignment != null
