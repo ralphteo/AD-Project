@@ -10,19 +10,23 @@ using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
 builder.Services.AddControllersWithViews();
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
-builder.Services.AddScoped<RoutePlanningService>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<ICollectorService, CollectorService>();
 builder.Services.AddScoped<ICollectorDashboardService, CollectorDashboardService>();
 builder.Services.AddScoped<ICollectorAssignmentService, CollectorAssignmentService>();
 builder.Services.AddScoped<ICollectorIssueService, CollectorIssueService>();
 builder.Services.AddScoped<IRouteAssignmentService, RouteAssignmentService>();
 builder.Services.AddScoped<IRoutePlanningService, RoutePlanningService>();
+builder.Services.AddScoped<ICampaignService, CampaignService>();
+builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
+builder.Services.AddScoped<IRewardCatalogueService, RewardCatalogueService>();
+builder.Services.AddScoped<IRewardCatalogueRepository, RewardCatalogueRepository>();
 
 // Azure Key Vault integration
 builder.Configuration.AddEnvironmentVariables();
@@ -46,10 +50,6 @@ builder.Services.AddDbContext<In5niteDbContext>(options =>
         new MySqlServerVersion(new Version(8, 0, 36))
     )
 );
-
-
-// Admin Repisitory - Andrew
-builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 
 // Session (needed for OTP)
 builder.Services.AddSession(opt =>
@@ -80,23 +80,15 @@ builder.Services.AddHttpClient<IBinPredictionService, BinPredictionService>(clie
 });
 
 
-//Campaign Service
-builder.Services.AddScoped<ICampaignService, CampaignService>();
-builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
-
-//Reward Catalogue Service
-builder.Services.AddScoped<IRewardCatalogueService, RewardCatalogueService>();
-builder.Services.AddScoped<IRewardCatalogueRepository, RewardCatalogueRepository>();
-
 builder.Services.AddAuthorization();
 
-// CORS policy for Android mobile app - requires AllowAnyOrigin for mobile connectivity
+// CORS policy for Android mobile app
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAndroid", policy =>
     {
         policy
-            .AllowAnyOrigin()
+            .WithOrigins("http://10.0.2.2")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -121,6 +113,7 @@ app.MapGet("/health", async (In5niteDbContext db) =>
         });
     }
 });
+
 app.MapGet("/emp-test", async (In5niteDbContext db) =>
 {
     var count = await db.Employees.CountAsync();
@@ -131,43 +124,10 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
-    app.UseHttpsRedirection();
 }
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<In5niteDbContext>();
 
-    if (!await db.Roles.AnyAsync(r => r.Name == "HR"))
-    {
-        db.Roles.Add(new Role { Name = "HR" });
-        await db.SaveChangesAsync();
-    }
+app.UseHttpsRedirection();
 
-    var hrRoleId = (await db.Roles.FirstAsync(r => r.Name == "HR")).RoleId;
-
-    var hr = await db.Employees.FirstOrDefaultAsync(e => e.Username == "HR-001");
-    if (hr == null)
-    {
-        hr = new Employee
-        {
-            Username = "HR-001",
-            FullName = "Team5 HR",
-            Email = "nyetsinhtut28596@gmail.com",
-            IsActive = true,
-            RoleId = hrRoleId,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Hr@12345")
-        };
-        db.Employees.Add(hr);
-    }
-    else
-    {
-        hr.IsActive = true;
-        hr.RoleId = hrRoleId;
-        hr.PasswordHash = BCrypt.Net.BCrypt.HashPassword("Hr@12345");
-    }
-
-    await db.SaveChangesAsync();
-}
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAndroid");
@@ -186,6 +146,7 @@ app.MapControllerRoute(
 app.Run();
 #pragma warning restore S6966
 
+// Expose Program for integration tests (e.g., WebApplicationFactory<Program>).
 namespace ADWebApplication
 {
     public partial class Program { }
