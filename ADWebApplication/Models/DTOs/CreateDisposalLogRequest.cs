@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 namespace ADWebApplication.Models.DTOs
 {
     public class CreateDisposalLogRequest

@@ -104,11 +104,14 @@ namespace ADWebApplication.Controllers
             DateTime? from = null;
             var now = DateTime.UtcNow;
 
-            range = (range ?? "all").ToLowerInvariant();
             if (range == "month")
-                from = new DateTime(now.Year, now.Month, 1,DateTimeKind.Utc);
+            {
+                from = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            }
             else if (range == "last 3")
+            {
                 from = now.AddMonths(-3);
+            }
 
             var q = _context.DisposalLogs
             .AsNoTracking()
