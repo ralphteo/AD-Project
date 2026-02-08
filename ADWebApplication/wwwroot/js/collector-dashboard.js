@@ -32,6 +32,7 @@ function initRouteMap() {
     let directionsRenderer = null;
     let routeDirectionsService = null;
     let routeDirectionsRenderer = null;
+    let simplePolyline = null;
     let currentLocation = null;
     let hasGpsOptimized = false;
 
@@ -79,13 +80,15 @@ function initRouteMap() {
 
     const drawSimplePolyline = () => {
         if (routePath.length === 0) return;
-        new google.maps.Polyline({
-            path: routePath,
-            strokeColor: '#93c5fd',
-            strokeOpacity: 1,
-            strokeWeight: 4,
-            map
-        });
+        if (!simplePolyline) {
+            simplePolyline = new google.maps.Polyline({
+                strokeColor: '#93c5fd',
+                strokeOpacity: 1,
+                strokeWeight: 4
+            });
+            simplePolyline.setMap(map);
+        }
+        simplePolyline.setPath(routePath);
         map.fitBounds(bounds, 40);
     };
 
