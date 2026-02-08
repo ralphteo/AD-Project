@@ -9,7 +9,7 @@ dotnet build ./ADWebApplication/ADWebApplication.csproj --no-restore
 if command -v node &> /dev/null; then
   echo "Running JavaScript tests..."
   cd ADWebApplication.Tests/JavaScript
-  if [ ! -d "node_modules" ]; then
+  if [[ ! -d "node_modules" ]]; then
     npm install
   fi
   npm test -- --coverage

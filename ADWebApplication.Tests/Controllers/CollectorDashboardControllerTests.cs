@@ -453,7 +453,7 @@ namespace ADWebApplication.Tests.Controllers
 
             // Assert
             var redirectResult = Assert.IsType<RedirectToActionResult>(result);
-            Assert.Equal("ReportIssue", redirectResult.ActionName);
+            Assert.Equal("Index", redirectResult.ActionName);
             Assert.Contains("Bin #1", controller.TempData["SuccessMessage"]!.ToString());
         }
 

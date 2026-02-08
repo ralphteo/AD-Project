@@ -59,11 +59,12 @@ public class BinPredictionService : IBinPredictionService
     private async Task<Dictionary<int, List<CollectionDetails>>> GetCollectionHistoryAsync()
     {
         var records = await db.CollectionDetails
-            .Where(cd => cd.BinId != null && cd.CurrentCollectionDateTime != null)
+            .Where(cd => cd.BinId.HasValue && cd.CurrentCollectionDateTime != null)
             .ToListAsync();
 
         return records
-            .GroupBy(cd => cd.BinId.Value)
+            .Where(cd => cd.BinId.HasValue)
+            .GroupBy(cd => cd.BinId!.Value)
             .ToDictionary(
                 g => g.Key,
                 g => g.OrderByDescending(x => x.CurrentCollectionDateTime).Take(2).ToList()
@@ -117,7 +118,7 @@ public class BinPredictionService : IBinPredictionService
         }
 
         // Normal bins with prediction data
-        var predictedGrowth = prediction!.PredictedAvgDailyGrowth;
+        var predictedGrowth = prediction?.PredictedAvgDailyGrowth ?? 0;
         var daysElapsed = Math.Max((today - latestCollectedAt).TotalDays, 0);
         var estimatedFillToday = Math.Clamp(predictedGrowth * daysElapsed, 0, 100);
         var daysTo80 = CalculateDaysTo80Percent(estimatedFillToday, predictedGrowth);
@@ -271,7 +272,7 @@ public class BinPredictionService : IBinPredictionService
 
         var nextStopByBin = nextRouteStop
             .Where(x => x != null && x.BinId.HasValue)
-            .ToDictionary(x => x.BinId.Value, x => x);
+            .ToDictionary(x => x.BinId!.Value, x => x!);
 
         var rows = new List<BinPredictionsTableViewModel>();
 
