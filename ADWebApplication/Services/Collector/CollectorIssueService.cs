@@ -19,9 +19,10 @@ namespace ADWebApplication.Services.Collector
 
         public async Task<ReportIssueVM> GetReportIssueViewModelAsync(string username, string? search, string? status, string? priority)
         {
+            var normalizedUsername = username.Trim().ToUpper();
             var today = DateTime.Today;
             var todaysBins = await _db.RouteAssignments
-                .Where(ra => ra.AssignedTo == username)
+                .Where(ra => ra.AssignedTo.Trim().ToUpper() == normalizedUsername)
                 .SelectMany(ra => ra.RoutePlans)
                 .Where(rp => rp.PlannedDate.HasValue && rp.PlannedDate.Value.Date == today)
                 .SelectMany(rp => rp.RouteStops)
@@ -100,6 +101,7 @@ namespace ADWebApplication.Services.Collector
 
         public async Task<bool> SubmitIssueAsync(ReportIssueVM model, string username)
         {
+            var normalizedUsername = username.Trim().ToUpper();
             var today = DateTime.Today;
             var stop = await _db.RouteStops
                 .Include(rs => rs.RoutePlan)
@@ -107,7 +109,7 @@ namespace ADWebApplication.Services.Collector
                 .Where(rs => rs.BinId == model.BinId
                           && rs.RoutePlan != null
                           && rs.RoutePlan.RouteAssignment != null
-                          && rs.RoutePlan.RouteAssignment.AssignedTo == username
+                          && rs.RoutePlan.RouteAssignment.AssignedTo.Trim().ToUpper() == normalizedUsername
                           && rs.RoutePlan.PlannedDate.HasValue
                           && rs.RoutePlan.PlannedDate.Value.Date == today)
                 .FirstOrDefaultAsync();
@@ -127,6 +129,7 @@ namespace ADWebApplication.Services.Collector
 
         public async Task<string> StartIssueWorkAsync(int stopId, string username)
         {
+            var normalizedUsername = username.Trim().ToUpper();
             var stop = await _db.RouteStops
                 .Include(rs => rs.CollectionDetails)
                 .Include(rs => rs.RoutePlan)
@@ -134,7 +137,7 @@ namespace ADWebApplication.Services.Collector
                 .Where(rs => rs.StopId == stopId
                           && rs.RoutePlan != null
                           && rs.RoutePlan.RouteAssignment != null
-                          && rs.RoutePlan.RouteAssignment.AssignedTo == username)
+                          && rs.RoutePlan.RouteAssignment.AssignedTo.Trim().ToUpper() == normalizedUsername)
                 .FirstOrDefaultAsync();
 
             if (stop == null) return "Issue not found for this route.";

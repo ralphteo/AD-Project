@@ -19,6 +19,6 @@ namespace ADWebApplication.Services
         Task<Campaign?> GetCurrentCampaignAsync();
         Task<bool> ActivateCampaignAsync(int campaignId);
         Task<bool> DeactivateCampaignAsync(int campaignId);
-        Task<decimal> CalculateTotalIncentivesAsync(int campaignId);
+        Task<decimal> CalculateTotalIncentivesAsync(int basePoints, int? campaignId = null);
        }
 }

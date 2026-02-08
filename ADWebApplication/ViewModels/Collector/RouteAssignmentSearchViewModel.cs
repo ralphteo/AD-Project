@@ -24,7 +24,7 @@ public class RouteAssignmentSearchViewModel
 
     // Dropdown options
     public List<Region> AvailableRegions { get; set; } = new();
-    public string[] AvailableStatuses { get; set; } = new[] { "Pending", "Active", "Completed" };
+    public string[] AvailableStatuses { get; set; } = new[] { "Pending", "Scheduled", "Active" };
 
     // Helper properties
     public bool HasPreviousPage => CurrentPage > 1;

@@ -73,7 +73,8 @@ namespace ADWebApplication.Controllers
             }
 
             // validate role
-            var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleId == vm.RoleId && r.Name != "HR");
+            var roleId = vm.RoleId!.Value;
+            var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleId == roleId && r.Name != "HR");
             if (role == null)
             {
                 ModelState.AddModelError(nameof(vm.RoleId), "Invalid role");
@@ -142,7 +143,8 @@ namespace ADWebApplication.Controllers
             if (emp == null) return NotFound();
 
             // validate role
-            var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleId == vm.RoleId && r.Name != "HR");
+            var roleId = vm.RoleId!.Value;
+            var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleId == roleId && r.Name != "HR");
             if (role == null)
             {
                 ModelState.AddModelError(nameof(vm.RoleId), "Invalid role");
@@ -151,8 +153,8 @@ namespace ADWebApplication.Controllers
 
             emp.FullName = vm.FullName.Trim();
             emp.Email = vm.Email.Trim();
-            emp.RoleId = vm.RoleId;
-            emp.IsActive = vm.IsActive;
+            emp.RoleId = vm.RoleId!.Value;
+            emp.IsActive = vm.IsActive!.Value;
 
             // optional password reset
             if (!string.IsNullOrWhiteSpace(vm.NewPassword))

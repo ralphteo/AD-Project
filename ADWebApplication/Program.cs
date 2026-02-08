@@ -7,7 +7,6 @@ using ADWebApplication.Services.Collector;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using ADWebApplication.Data.Repository;
 using Azure.Identity;
-using Azure.Security.KeyVault.Secrets;
 
 var builder = WebApplication.CreateBuilder(args);
 var googleKey = builder.Configuration["GOOGLE_MAPS_API_KEY"];
@@ -26,34 +25,21 @@ builder.Services.AddScoped<ICollectorIssueService, CollectorIssueService>();
 builder.Services.AddScoped<IRouteAssignmentService, RouteAssignmentService>();
 builder.Services.AddScoped<IRoutePlanningService, RoutePlanningService>();
 
-// Azure Key Vault URL
-var keyVaultUrl = "https://in5nite-kv.vault.azure.net/";
+// Azure Key Vault integration
+builder.Configuration.AddEnvironmentVariables();
 
-// Check whether to skip Key Vault (for tests/CI/local dev)
-var skipKeyVault = Environment.GetEnvironmentVariable("SKIP_KEYVAULT_IN_TESTS") == "true"
-                || Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true"
-                || builder.Environment.IsDevelopment();
-
-string mySqlConn;
-
-if (skipKeyVault)
+// 2. Add Key Vault only in cloud version
+if (!builder.Environment.IsDevelopment())
 {
-    // For local dev and tests: use User Secrets or appsettings
-    mySqlConn = builder.Configuration.GetConnectionString("DefaultConnection");
-    
-    if (string.IsNullOrEmpty(mySqlConn))
-    {
-        // Fallback for tests - will be replaced by test factory anyway
-        mySqlConn = "Server=localhost;Database=test;";
-    }
+    var keyVaultUrl = new Uri("https://in5nite-kv.vault.azure.net/");
+    builder.Configuration.AddAzureKeyVault(
+        keyVaultUrl,
+        new DefaultAzureCredential()
+    );
 }
-else
-{
-    // Production: use Key Vault
-    builder.Services.AddSingleton<ISecretProvider>(new KeyVaultSecretProvider(keyVaultUrl));
-    var secretProvider = builder.Services.BuildServiceProvider().GetRequiredService<ISecretProvider>();
-    mySqlConn = secretProvider.GetSecret("SqlConnectionString");
-}
+
+var mySqlConn = builder.Configuration.GetConnectionString("DefaultConnection");
+
 
 builder.Services.AddDbContext<In5niteDbContext>(options =>
     options.UseMySql(

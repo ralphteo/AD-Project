@@ -1,11 +1,15 @@
 using System.ComponentModel.DataAnnotations;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
+
+
 
 namespace ADWebApplication.Models
 {
     public class ReportIssueVM
     {
         [Required(ErrorMessage = "Please select a bin")]
+        [JsonRequired]
         public int BinId { get; set; }
         
         // Auto-populated from selected bin
@@ -27,9 +31,13 @@ namespace ADWebApplication.Models
 
         // Issue log list
         public List<IssueLogItem> Issues { get; set; } = new();
+        [JsonRequired]
         public int TotalIssues { get; set; }
+        [JsonRequired]
         public int OpenIssues { get; set; }
+        [JsonRequired]
         public int InProgressIssues { get; set; }
+        [JsonRequired]
         public int ResolvedIssues { get; set; }
 
         // Filters

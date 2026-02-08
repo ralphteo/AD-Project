@@ -178,8 +178,13 @@ namespace ADWebApplication.Services
             {
                 RouteKey = r.RouteId,
                 BinId = rs.BinId,
+<<<<<<< HEAD
                 Latitude = rs.CollectionBin.Latitude.Value,
                 Longitude = rs.CollectionBin.Longitude.Value,
+=======
+                Latitude = rs.CollectionBin!.Latitude.Value,
+                Longitude = rs.CollectionBin!.Longitude.Value,
+>>>>>>> origin/main
                 StopNumber = rs.StopSequence,
                 AssignedOfficerName = r.RouteAssignment != null ? (r.RouteAssignment!.AssignedTo ?? "") : ""
             }))
@@ -188,7 +193,7 @@ namespace ADWebApplication.Services
 
 
         //helpers to calculate distance matrix
-    private long[,] CreateDistanceMatrix(List<RoutePlanDto> locations)
+    private static long[,] CreateDistanceMatrix(List<RoutePlanDto> locations)
     {
         int count = locations.Count;
         long[,] distanceMatrix = new long[count, count];

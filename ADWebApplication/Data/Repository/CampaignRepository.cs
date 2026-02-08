@@ -59,22 +59,23 @@ namespace ADWebApplication.Data.Repository
         {
             var now = DateTime.UtcNow;
             return await _context.Campaigns
-            .Where(c => c.StartDate <= now && c.EndDate >= now && c.Status == "Active")
+            .Where(c => c.StartDate <= now && c.EndDate >= now && ((c.Status ?? "").ToLower() == "active"))
             .ToListAsync();
         }
         public async Task<IEnumerable<Campaign>> GetScheduledCampaignsAsync()
         {
             var now = DateTime.UtcNow;
             return await _context.Campaigns
-            .Where(c => c.StartDate > now && c.Status == "Planned")
+            .Where(c => c.StartDate > now && ((c.Status ?? "").ToLower() == "planned"))
             .OrderBy(c => c.StartDate)
             .ToListAsync();
         }
         
         public async Task<IEnumerable<Campaign>> GetByStatusAsync(string status)
         {
+            var normalized = (status ?? "").ToLower();
             return await _context.Campaigns
-            .Where(c => c.Status == status)
+            .Where(c => ((c.Status ?? "").ToLower() == normalized))
             .OrderByDescending(c => c.StartDate)
             .ToListAsync();
         }
@@ -82,7 +83,7 @@ namespace ADWebApplication.Data.Repository
         {
             var now = DateTime.UtcNow;
             return await _context.Campaigns
-            .Where(c => c.StartDate <= now && c.EndDate >= now && c.Status == "Active")
+            .Where(c => c.StartDate <= now && c.EndDate >= now && ((c.Status ?? "").ToLower() == "active"))
             .OrderBy(c => c.StartDate)
             .FirstOrDefaultAsync();
         }

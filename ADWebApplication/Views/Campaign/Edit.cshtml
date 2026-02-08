@@ -29,21 +29,23 @@
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                     <!-- Campaign Name -->
+                   
                     <div class="mb-3">
                         <label asp-for="CampaignName" class="form-label">Campaign Name</label>
                         <input asp-for="CampaignName" 
-                               class="form-control" 
-                               placeholder="e.g., Summer Double Points" />
+                            id="CampaignName"
+                            class="form-control" 
+                            placeholder="e.g., Summer Double Points" />
                         <span asp-validation-for="CampaignName" class="text-danger small"></span>
                     </div>
 
                     <!-- Description -->
                     <div class="mb-3">
                         <label asp-for="Description" class="form-label">Description</label>
-                        <textarea asp-for="Description" 
-                                  class="form-control" 
-                                  rows="3" 
-                                  placeholder="Describe the campaign purpose and benefits"></textarea>
+                        <input asp-for="Description" 
+                            id="Description"
+                            class="form-control" 
+                            placeholder="Describe the campaign purpose and benefits" />
                         <span asp-validation-for="Description" class="text-danger small"></span>
                     </div>
 

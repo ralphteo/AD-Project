@@ -1,4 +1,3 @@
-
 function initRouteMap() {
     const mapElement = document.getElementById('routeMap');
     if (!mapElement) return;
@@ -183,51 +182,50 @@ function initRouteMap() {
         }
     };
 
+    const getMarkerIcon = (color, scale = 14) => ({
+        path: google.maps.SymbolPath.CIRCLE,
+        scale,
+        fillColor: color,
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 4
+    });
+
+    const updateMarkerIcon = (marker, stop, isActive) => {
+        if (!marker) return;
+        const color = isActive ? activeColor : (stop.status === 'completed' ? doneColor : pendingColor);
+        const scale = isActive ? 16 : 14;
+        marker.setIcon(getMarkerIcon(color, scale));
+    };
+
     const setActiveStop = (stopId) => {
         const stop = stopsById.get(String(stopId));
         if (!stop) return;
 
         document.querySelectorAll('.stop-card').forEach(card => card.classList.remove('is-active'));
         const card = document.querySelector(`.stop-card[data-stop-id="${stopId}"]`);
-        if (card) {
-            card.classList.add('is-active');
-        }
+        if (card) card.classList.add('is-active');
 
         if (nextEl) {
             nextEl.textContent = `Selected: ${stop.address || stop.location}`;
         }
 
         const marker = markersById.get(String(stopId));
-        const info = infoById.get(String(stopId));
         if (marker) {
-            marker.setIcon({
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 16,
-                fillColor: activeColor,
-                fillOpacity: 1,
-                strokeColor: '#ffffff',
-                strokeWeight: 4
-            });
+            updateMarkerIcon(marker, stop, true);
             if (activeMarkerId && activeMarkerId !== String(stopId)) {
                 const prevStop = stopsById.get(activeMarkerId);
                 const prevMarker = markersById.get(activeMarkerId);
                 if (prevMarker && prevStop) {
-                    prevMarker.setIcon({
-                        path: google.maps.SymbolPath.CIRCLE,
-                        scale: 14,
-                        fillColor: prevStop.status === 'completed' ? doneColor : pendingColor,
-                        fillOpacity: 1,
-                        strokeColor: '#ffffff',
-                        strokeWeight: 4
-                    });
+                    updateMarkerIcon(prevMarker, prevStop, false);
                 }
             }
             activeMarkerId = String(stopId);
             map.panTo(marker.getPosition());
             map.setZoom(Math.max(map.getZoom(), 14));
-            if (info) {
-                info.open({ anchor: marker, map });
-            }
+
+            const info = infoById.get(String(stopId));
+            if (info) info.open({ anchor: marker, map });
         }
     };
 
@@ -444,18 +442,87 @@ if (collectCancel) {
     collectCancel.addEventListener('click', closeCollectModal);
 }
 
+const updateStatusCounts = () => {
+    const pendingCards = document.querySelectorAll('.stop-card.pending');
+    const completeCards = document.querySelectorAll('.stop-card.complete');
+    const totalCards = pendingCards.length + completeCards.length;
+    const percent = totalCards > 0 ? Math.round((completeCards.length / totalCards) * 100) : 0;
+
+    const pendingStatus = document.querySelector('.details-status.pending');
+    const completeStatus = document.querySelector('.details-status.complete');
+    const updateCount = (element, count) => {
+        if (element) {
+            element.textContent = element.textContent.replace(/\(\d+\)/, `(${count})`);
+        }
+    };
+
+    updateCount(pendingStatus, pendingCards.length);
+    updateCount(completeStatus, completeCards.length);
+
+    const progressValue = document.getElementById('collectionProgressValue');
+    if (progressValue) progressValue.textContent = `${completeCards.length}/${totalCards}`;
+
+    const progressPending = document.getElementById('collectionProgressPending');
+    if (progressPending) progressPending.textContent = `Pending: ${pendingCards.length}`;
+
+    const progressPercent = document.getElementById('progressPercent');
+    if (progressPercent) progressPercent.textContent = `${percent}% Complete`;
+
+    const progressFill = document.getElementById('progressFill');
+    if (progressFill) progressFill.style.width = `${percent}%`;
+};
+
+const handleCollectionUIUpdate = (result) => {
+    const stopId = String(result.stopId || '');
+    const completedTime = result.collectedAt || '';
+    const card = document.querySelector(`.stop-card[data-stop-id="${stopId}"]`);
+
+    if (card) {
+        card.classList.remove('pending');
+        card.classList.add('complete');
+
+        const badge = card.querySelector('.stop-badge');
+        if (badge) {
+            badge.classList.remove('pending');
+            badge.classList.add('complete');
+        }
+
+        const meta = card.querySelector('.stop-meta');
+        if (meta) meta.textContent = `Completed: ${completedTime || '-'}`;
+
+        const actions = card.querySelector('.stop-actions');
+        if (actions) actions.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
+
+        const completeStatus = document.querySelector('.details-status.complete');
+        const completeSection = completeStatus ? completeStatus.closest('.details-section') : null;
+        if (completeSection) completeSection.appendChild(card);
+    }
+    updateStatusCounts();
+};
+
+const parseErrorResponse = async (response) => {
+    let message = 'Unable to complete collection.';
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+        const payload = await response.json();
+        if (payload && payload.errors) {
+            const firstKey = Object.keys(payload.errors)[0];
+            const firstError = firstKey ? payload.errors[firstKey][0] : '';
+            if (firstError) message = firstError;
+        }
+    }
+    return message;
+};
+
 if (collectForm) {
     collectForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const formData = new FormData(collectForm);
-        if (collectFeedback) {
-            collectFeedback.textContent = '';
-        }
+        if (collectFeedback) collectFeedback.textContent = '';
 
         try {
             const response = await fetch(collectForm.action, {
                 method: 'POST',
-                body: formData,
+                body: new FormData(collectForm),
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
@@ -464,111 +531,26 @@ if (collectForm) {
             });
 
             if (!response.ok) {
-                let message = 'Unable to complete collection.';
-                const contentType = response.headers.get('content-type') || '';
-                if (contentType.includes('application/json')) {
-                    const payload = await response.json();
-                    if (payload && payload.errors) {
-                        const firstKey = Object.keys(payload.errors)[0];
-                        const firstError = firstKey ? payload.errors[firstKey][0] : '';
-                        if (firstError) {
-                            message = firstError;
-                        }
-                    }
-                }
-                if (collectFeedback) {
-                    collectFeedback.textContent = message;
-                }
+                const message = await parseErrorResponse(response);
+                if (collectFeedback) collectFeedback.textContent = message;
                 return;
             }
 
             const contentType = response.headers.get('content-type') || '';
             if (!contentType.includes('application/json')) {
-                if (collectFeedback) {
-                    collectFeedback.textContent = 'Session expired. Please refresh and try again.';
-                }
+                if (collectFeedback) collectFeedback.textContent = 'Session expired. Please refresh and try again.';
                 return;
             }
 
             const result = await response.json();
-            if (!result || !result.success) {
-                if (collectFeedback) {
-                    collectFeedback.textContent = 'Unable to complete collection.';
-                }
-                return;
+            if (result && result.success) {
+                handleCollectionUIUpdate(result);
+                closeCollectModal();
+            } else if (collectFeedback) {
+                collectFeedback.textContent = 'Unable to complete collection.';
             }
-
-            const stopId = String(result.stopId || '');
-            const completedTime = result.collectedAt || '';
-            const card = document.querySelector(`.stop-card[data-stop-id="${stopId}"]`);
-
-            if (card) {
-                card.classList.remove('pending');
-                card.classList.add('complete');
-
-                const badge = card.querySelector('.stop-badge');
-                if (badge) {
-                    badge.classList.remove('pending');
-                    badge.classList.add('complete');
-                }
-
-                const meta = card.querySelector('.stop-meta');
-                if (meta) {
-                    meta.textContent = `Completed: ${completedTime || '-'}`;
-                }
-
-                const actions = card.querySelector('.stop-actions');
-                if (actions) {
-                    actions.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
-                }
-
-                const completeStatus = document.querySelector('.details-status.complete');
-                const completeSection = completeStatus ? completeStatus.closest('.details-section') : null;
-                if (completeSection) {
-                    completeSection.appendChild(card);
-                }
-            }
-
-            const pendingCards = document.querySelectorAll('.stop-card.pending');
-            const completeCards = document.querySelectorAll('.stop-card.complete');
-            const totalCards = pendingCards.length + completeCards.length;
-            const percent = totalCards > 0 ? Math.round((completeCards.length / totalCards) * 100) : 0;
-
-            const pendingStatus = document.querySelector('.details-status.pending');
-            const completeStatus = document.querySelector('.details-status.complete');
-            const updateStatusCount = (element, count) => {
-                if (!element) return;
-                element.textContent = element.textContent.replace(/\(\d+\)/, `(${count})`);
-            };
-
-            updateStatusCount(pendingStatus, pendingCards.length);
-            updateStatusCount(completeStatus, completeCards.length);
-
-            const progressValue = document.getElementById('collectionProgressValue');
-            if (progressValue) {
-                progressValue.textContent = `${completeCards.length}/${totalCards}`;
-            }
-
-            const progressPending = document.getElementById('collectionProgressPending');
-            if (progressPending) {
-                progressPending.textContent = `Pending: ${pendingCards.length}`;
-            }
-
-            const progressPercent = document.getElementById('progressPercent');
-            if (progressPercent) {
-                progressPercent.textContent = `${percent}% Complete`;
-            }
-
-            const progressFill = document.getElementById('progressFill');
-            if (progressFill) {
-                progressFill.style.width = `${percent}%`;
-            }
-            closeCollectModal();
         } catch (error) {
-            if (collectFeedback) {
-                collectFeedback.textContent = 'Network error. Please try again.';
-            }
-            return;
+            if (collectFeedback) collectFeedback.textContent = 'Network error. Please try again.';
         }
     });
 }
@@ -581,14 +563,14 @@ if (binSelect) {
         const locationDetails = document.getElementById('locationDetails');
 
         if (this.value) {
-            const location = selectedOption.getAttribute('data-location');
-            const region = selectedOption.getAttribute('data-region');
+            const location = selectedOption.dataset.location;
+            const region = selectedOption.dataset.region;
 
             const displayLocation = document.getElementById('displayLocation');
             const displayRegion = document.getElementById('displayRegion');
 
-            if (displayLocation) displayLocation.textContent = location;
-            if (displayRegion) displayRegion.textContent = region;
+            if (displayLocation) displayLocation.textContent = location || '';
+            if (displayRegion) displayRegion.textContent = region || '';
             if (locationDetails) locationDetails.style.display = 'block';
         } else {
             if (locationDetails) locationDetails.style.display = 'none';

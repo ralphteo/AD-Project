@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace ADWebApplication.ViewModels
 {
@@ -13,6 +14,6 @@ namespace ADWebApplication.ViewModels
         [Display(Name = "Password")]
         public string Password { get; set; } = "";
 
-        public bool RememberMe { get; set; }
+        public bool? RememberMe { get; set; }
     }
 }

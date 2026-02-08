@@ -26,6 +26,9 @@ namespace ADWebApplication.Controllers
         [HttpGet("")]
         public async  Task<IActionResult> Index()
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var campaigns = await _campaignService.GetAllCampaignsAsync();
             return View(campaigns);
         }
@@ -33,6 +36,9 @@ namespace ADWebApplication.Controllers
         [HttpGet("Create")]
         public IActionResult Create()
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             return View(new Campaign
             {
                 StartDate = DateTime.UtcNow,
@@ -70,6 +76,9 @@ namespace ADWebApplication.Controllers
         [HttpGet("Edit/{id}")]
         public async Task<IActionResult> Edit(int id)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             //Validate Id parameter
             if (id <= 0)
             {
@@ -99,9 +108,9 @@ namespace ADWebApplication.Controllers
                 TempData[SuccessMessageKey] = "Campaign updated successfully.";
                 return RedirectToAction(IndexAction);
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
-                ModelState.AddModelError(string.Empty, $"Error updating campaign: {ex.Message}");
+                ModelState.AddModelError(string.Empty, "Error updating campaign.");
                 return View(campaign);
             }
         }
@@ -124,9 +133,9 @@ namespace ADWebApplication.Controllers
                 await _campaignService.DeleteCampaignAsync(id);
                 TempData[SuccessMessageKey] = "Campaign deleted successfully.";
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
-                TempData[ErrorMessageKey] = $"Error deleting campaign: {ex.Message}";
+                TempData[ErrorMessageKey] = "Error deleting campaign.";
             }
             return RedirectToAction(IndexAction);
         }
@@ -150,9 +159,9 @@ namespace ADWebApplication.Controllers
             await _campaignService.ActivateCampaignAsync(id);
             TempData[SuccessMessageKey] = "Campaign activated successfully.";
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
-            TempData[ErrorMessageKey] = $"Error activating campaign: {ex.Message}";
+            TempData[ErrorMessageKey] = "Error activating campaign.";
         }
         return RedirectToAction(IndexAction);
     }
@@ -175,9 +184,9 @@ namespace ADWebApplication.Controllers
             await _campaignService.DeactivateCampaignAsync(id);
             TempData[SuccessMessageKey] = "Campaign deactivated successfully.";
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
-            TempData[ErrorMessageKey] = $"Error deactivating campaign: {ex.Message}";
+            TempData[ErrorMessageKey] = "Error deactivating campaign.";
         }
         return RedirectToAction(IndexAction);
     }
