@@ -22,13 +22,13 @@ namespace ADWebApplication.Services.Collector
                 .Include(ra => ra.RoutePlans)
                     .ThenInclude(rp => rp.RouteStops)
                         .ThenInclude(rs => rs.CollectionBin)
-                            .ThenInclude(cb => cb.Region)
+                            .ThenInclude(cb => cb!.Region)
                 .Include(ra => ra.RoutePlans)
                     .ThenInclude(rp => rp.RouteStops)
                         .ThenInclude(rs => rs.CollectionDetails)
                 .AsSplitQuery()
                 .Where(ra => ra.AssignedTo.Trim().ToUpper() == normalizedUsername
-                          && ra.RoutePlans.Any(rp => rp.PlannedDate.HasValue && rp.PlannedDate.Value.Date == today))
+                          && ra.RoutePlans!.Any(rp => rp.PlannedDate.HasValue && rp.PlannedDate.Value.Date == today))
                 .FirstOrDefaultAsync();
 
             if (assignment == null)
@@ -117,7 +117,7 @@ namespace ADWebApplication.Services.Collector
             var normalizedUsername = username.Trim().ToUpper();
             var stop = await _db.RouteStops
                 .Include(rs => rs.CollectionBin)
-                    .ThenInclude(cb => cb.Region)
+                    .ThenInclude(cb => cb!.Region)
                 .Include(rs => rs.CollectionDetails)
                 .Include(rs => rs.RoutePlan)
                     .ThenInclude(rp => rp!.RouteAssignment)
@@ -127,7 +127,7 @@ namespace ADWebApplication.Services.Collector
 
             if (stop == null) return null;
 
-            var latestCollection = stop.CollectionDetails
+            var latestCollection = stop.CollectionDetails!
                 .OrderByDescending(cd => cd.CurrentCollectionDateTime)
                 .FirstOrDefault();
 

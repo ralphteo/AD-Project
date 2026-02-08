@@ -68,7 +68,7 @@ namespace ADWebApplication.Services
         }
     }
 
-    private void UpdateExistingRouteAssignments(List<RoutePlan> existingPlans, Dictionary<int, string> routeAssignments, string adminUsername)
+    private static void UpdateExistingRouteAssignments(List<RoutePlan> existingPlans, Dictionary<int, string> routeAssignments, string adminUsername)
     {
         foreach (var plan in existingPlans)
         {

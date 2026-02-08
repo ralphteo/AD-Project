@@ -14,11 +14,11 @@ using Xunit;
 
 namespace ADWebApplication.Tests
 {
-    public class AdminBinCRUDControllerTests
+    public class AdminBinCrudControllerTests
     {
-        private static AdminBinCRUDController CreateController(Mock<IAdminRepository> mockRepository)
+        private static AdminBinCrudController CreateController(Mock<IAdminRepository> mockRepository)
         {
-            var controller = new AdminBinCRUDController(mockRepository.Object)
+            var controller = new AdminBinCrudController(mockRepository.Object)
             {
                 ControllerContext = new ControllerContext
                 {

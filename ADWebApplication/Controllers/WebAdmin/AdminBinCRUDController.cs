@@ -8,11 +8,11 @@ namespace ADWebApplication.Controllers
 {
     [Authorize(Roles = "Admin")] 
     [Route("Admin")]
-    public class AdminBinCRUDController : Controller
+    public class AdminBinCrudController : Controller
     {
         private readonly IAdminRepository _adminRepository;
 
-        public AdminBinCRUDController(IAdminRepository adminRepository)
+        public AdminBinCrudController(IAdminRepository adminRepository)
         {
             _adminRepository = adminRepository;
         }

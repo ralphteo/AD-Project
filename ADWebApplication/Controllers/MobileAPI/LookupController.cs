@@ -31,12 +31,12 @@ namespace ADWebApplication.Controllers
 
             var latestCollections = await _context.CollectionDetails
                 .AsNoTracking()
-                .Where(cd => cd.CurrentCollectionDateTime != null)
+                .Where(cd => cd.CurrentCollectionDateTime != null && cd.BinId.HasValue)
                 .OrderByDescending(cd => cd.CurrentCollectionDateTime)
                 .ToListAsync();
 
             var latestCollectionByBin = latestCollections
-                .GroupBy(cd => cd.BinId.Value)
+                .GroupBy(cd => cd.BinId!.Value)
                 .ToDictionary(g => g.Key, g => g.First());
 
             var bins = await _context.CollectionBins
@@ -52,13 +52,24 @@ namespace ADWebApplication.Controllers
                 if (latestByBin.TryGetValue(bin.BinId, out var prediction) &&
                     latestCollectionByBin.TryGetValue(bin.BinId, out var lastCollection))
                 {
-                    var daysElapsed = Math.Max((today - lastCollection.CurrentCollectionDateTime.Value).TotalDays, 0);
+                    var daysElapsed = Math.Max((today - lastCollection.CurrentCollectionDateTime!.Value).TotalDays, 0);
                     estimatedFillLevel = Math.Clamp(prediction.PredictedAvgDailyGrowth * daysElapsed, 0, 100);
 
                     var remaining = 80 - estimatedFillLevel.Value;
                     daysToThreshold = estimatedFillLevel >= 80 ? 0 : (int)Math.Ceiling(remaining / prediction.PredictedAvgDailyGrowth);
 
-                    riskLevel = daysToThreshold <= 3 ? "High" : daysToThreshold <= 7 ? "Medium" : "Low";
+                    if (daysToThreshold <= 3)
+                    {
+                        riskLevel = "High";
+                    }
+                    else if (daysToThreshold <= 7)
+                    {
+                        riskLevel = "Medium";
+                    }
+                    else
+                    {
+                        riskLevel = "Low";
+                    }
                 }
 
                 return new

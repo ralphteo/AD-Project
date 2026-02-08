@@ -23,7 +23,7 @@ namespace ADWebApplication.Services.Collector
                 .Include(rp => rp.RouteAssignment)
                 .Include(rp => rp.RouteStops)
                     .ThenInclude(rs => rs.CollectionBin)
-                        .ThenInclude(cb => cb.Region)
+                        .ThenInclude(cb => cb!.Region)
                 .Where(rp => rp.RouteAssignment != null && 
                            rp.RouteAssignment.AssignedTo.Trim().ToUpper() == normalizedUsername &&
                            rp.PlannedDate.HasValue);
@@ -44,14 +44,14 @@ namespace ADWebApplication.Services.Collector
             // 2. Region Filter
             if (regionId.HasValue)
             {
-                query = query.Where(rp => rp.RouteStops.Any(rs => rs.CollectionBin.RegionId == regionId));
+                query = query.Where(rp => rp.RouteStops.Any(rs => rs.CollectionBin != null && rs.CollectionBin.RegionId == regionId));
             }
 
             // 3. Date Filter
             if (date.HasValue)
             {
                 var targetDate = date.Value.Date;
-                query = query.Where(rp => rp.PlannedDate.Value.Date == targetDate);
+                query = query.Where(rp => rp.PlannedDate!.Value.Date == targetDate);
             }
 
             // 4. Status Filter (including our Pending/Scheduled fix)
@@ -76,8 +76,8 @@ namespace ADWebApplication.Services.Collector
                 .Select(rp => new RouteAssignmentDisplayItem
                 {
                     AssignmentId = rp.AssignmentId,
-                    AssignedBy = rp.RouteAssignment.AssignedBy,
-                    AssignedTo = rp.RouteAssignment.AssignedTo,
+                    AssignedBy = rp.RouteAssignment!.AssignedBy,
+                    AssignedTo = rp.RouteAssignment!.AssignedTo,
                     Status = rp.RouteStatus ?? "Pending",
                     RouteId = rp.RouteId,
                     PlannedDate = rp.PlannedDate ?? DateTime.Today,
