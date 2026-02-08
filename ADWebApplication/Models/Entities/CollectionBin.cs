@@ -8,6 +8,7 @@ public class CollectionBin
 {
     [Key]
     [Column("binId")]
+    [Required]
     public int BinId { get; set; }
 
     [Column("regionId")]
@@ -20,6 +21,7 @@ public class CollectionBin
     public string? LocationAddress { get; set; }
 
     [Column("binCapacity")]
+    [Required]
     public int BinCapacity { get; set; }
 
     [Column("binStatus")]

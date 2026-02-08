@@ -172,12 +172,14 @@ namespace ADWebApplication.Services
             .Include(r => r.RouteAssignment)
             .Include(r => r.RouteStops)
                 .ThenInclude(rs => rs.CollectionBin)
-            .SelectMany(r => r.RouteStops.Select(rs => new SavedRouteStopDto
+            .SelectMany(r => r.RouteStops
+                .Where(rs => rs.CollectionBin != null && rs.CollectionBin.Latitude.HasValue && rs.CollectionBin.Longitude.HasValue)
+                .Select(rs => new SavedRouteStopDto
             {
                 RouteKey = r.RouteId,
                 BinId = rs.BinId,
-                Latitude = rs.CollectionBin!.Latitude!.Value,
-                Longitude = rs.CollectionBin!.Longitude!.Value,
+                Latitude = rs.CollectionBin.Latitude.Value,
+                Longitude = rs.CollectionBin.Longitude.Value,
                 StopNumber = rs.StopSequence,
                 AssignedOfficerName = r.RouteAssignment != null ? (r.RouteAssignment!.AssignedTo ?? "") : ""
             }))

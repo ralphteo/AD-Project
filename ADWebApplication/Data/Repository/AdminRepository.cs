@@ -192,7 +192,7 @@ namespace ADWebApplication.Data.Repository
                     rp.PlannedDate.HasValue &&
                     rp.RouteAssignment != null &&
                     rp.PlannedDate!.Value.Date >= fromDate &&
-                    rp.PlannedDate.Value.Date <= toDate)
+                    rp.PlannedDate!.Value.Date <= toDate)
                 .Select(rp => new
                 {
                     Username = rp.RouteAssignment!.AssignedTo,
@@ -242,7 +242,7 @@ namespace ADWebApplication.Data.Repository
             rp.PlannedDate.HasValue &&
             rp.RouteAssignment != null &&
             rp.PlannedDate!.Value.Date >= fromDate &&
-            rp.PlannedDate.Value.Date <= toDate)
+            rp.PlannedDate!.Value.Date <= toDate)
         .Select(rp => new
         {
             Username = rp.RouteAssignment!.AssignedTo.Trim().ToUpper(),
