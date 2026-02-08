@@ -15,12 +15,10 @@ public class EditEmployeeViewModel
     public string Email { get; set; } = "";
 
     [Required]
-    [JsonRequired]
-    public bool IsActive { get; set; }
+    public bool? IsActive { get; set; }
 
     [Required]
-    [JsonRequired]
-    public int RoleId { get; set; }   // ✅ add this
+    public int? RoleId { get; set; }  
 
     // optional reset password
     [StringLength(100, MinimumLength = 6)]

@@ -3,6 +3,7 @@ using ADWebApplication.Models.DTOs;
 using ADWebApplication.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 
 namespace ADWebApplication.Controllers
 {
@@ -105,7 +106,7 @@ namespace ADWebApplication.Controllers
 
             range = (range ?? "all").ToLowerInvariant();
             if (range == "month")
-                from = new DateTime(now.Year, now.Month, 1);
+                from = new DateTime(now.Year, now.Month, 1,DateTimeKind.Utc);
             else if (range == "last 3")
                 from = now.AddMonths(-3);
 

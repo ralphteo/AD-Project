@@ -14,7 +14,6 @@ namespace ADWebApplication.ViewModels
         [Display(Name = "Password")]
         public string Password { get; set; } = "";
 
-        [JsonRequired]
-        public bool RememberMe { get; set; }
+        public bool? RememberMe { get; set; }
     }
 }

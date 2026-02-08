@@ -15,8 +15,7 @@ public class CreateEmployeeViewModel
     public string Email { get; set; } = "";
 
     [Required]
-    [JsonRequired]
-    public int RoleId { get; set; }
+    public int? RoleId { get; set; }
 
     [Required, MinLength(6)]
     public string Password { get; set; } = "";
