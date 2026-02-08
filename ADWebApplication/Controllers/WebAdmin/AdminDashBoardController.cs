@@ -128,10 +128,7 @@ namespace ADWebApplication.Controllers
             }
             catch (Exception ex)
             {
-                if ( _logger.IsEnabled(LogLevel.Error))
-                {
-                    _logger.LogError(ex, "Error retrieving admin dashboard data.");
-                }
+                _logger.LogError(ex, "Error retrieving admin dashboard data.");
                 return View(new AdminDashboardViewModel
                 {
                     KPIs = new DashboardKPIs(),
@@ -155,10 +152,7 @@ namespace ADWebApplication.Controllers
             }
             catch (Exception ex)
             {
-                if(_logger.IsEnabled(LogLevel.Error))
-                {
-                    _logger.LogError(ex, "Error retrieving admin dashboard KPIs.");
-                }
+                _logger.LogError(ex, "Error retrieving admin dashboard KPIs.");
                 return StatusCode(500, "Internal server error");
             }
         }

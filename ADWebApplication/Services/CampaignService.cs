@@ -16,12 +16,8 @@ namespace ADWebApplication.Services
 
         public CampaignService(ICampaignRepository campaignRepository, ILogger<CampaignService> logger)
         {
-            _campaignRepository = campaignRepository??throw new ArgumentNullException(nameof(campaignRepository));
-            if(logger.IsEnabled(LogLevel.Information))
-            {
-                _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            }
-            
+            _campaignRepository = campaignRepository ?? throw new ArgumentNullException(nameof(campaignRepository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<IEnumerable<Campaign>> GetAllCampaignsAsync()
