@@ -128,9 +128,17 @@ namespace ADWebApplication.Controllers
                 return View(model);
             }
 
-            await _collectorService.SubmitIssueAsync(model, username);
-            TempData["SuccessMessage"] = $"Issue reported for Bin #{model.BinId} - {model.LocationName}";
-            return RedirectToAction("Index");
+            var success = await _collectorService.SubmitIssueAsync(model, username);
+            if (success)
+            {
+                TempData["SuccessMessage"] = $"Issue reported for Bin #{model.BinId} - {model.LocationName}";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Could not find an active route stop for this bin today.";
+            }
+            
+            return RedirectToAction("ReportIssue");
         }
 
         [HttpPost]

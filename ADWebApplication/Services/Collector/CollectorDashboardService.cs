@@ -17,6 +17,7 @@ namespace ADWebApplication.Services.Collector
         public async Task<CollectorRoute> GetDailyRouteAsync(string username)
         {
             var today = DateTime.Today;
+            var normalizedUsername = username.Trim().ToUpper();
             var assignment = await _db.RouteAssignments
                 .Include(ra => ra.RoutePlans)
                     .ThenInclude(rp => rp.RouteStops)
@@ -25,7 +26,8 @@ namespace ADWebApplication.Services.Collector
                 .Include(ra => ra.RoutePlans)
                     .ThenInclude(rp => rp.RouteStops)
                         .ThenInclude(rs => rs.CollectionDetails)
-                .Where(ra => ra.AssignedTo == username
+                .AsSplitQuery()
+                .Where(ra => ra.AssignedTo.Trim().ToUpper() == normalizedUsername
                           && ra.RoutePlans.Any(rp => rp.PlannedDate.HasValue && rp.PlannedDate.Value.Date == today))
                 .FirstOrDefaultAsync();
 
@@ -56,7 +58,10 @@ namespace ADWebApplication.Services.Collector
                 };
             }
 
+            // Deduplicate stops by StopId to handle potential data issues or EF product join artifacts
             var orderedStops = routePlan.RouteStops
+                .GroupBy(rs => rs.StopId)
+                .Select(g => g.First())
                 .OrderBy(rs => rs.StopSequence)
                 .ToList();
 
@@ -109,6 +114,7 @@ namespace ADWebApplication.Services.Collector
 
         public async Task<CollectionConfirmationVM?> GetCollectionConfirmationAsync(int stopId, string username)
         {
+            var normalizedUsername = username.Trim().ToUpper();
             var stop = await _db.RouteStops
                 .Include(rs => rs.CollectionBin)
                     .ThenInclude(cb => cb!.Region)
@@ -116,7 +122,7 @@ namespace ADWebApplication.Services.Collector
                 .Include(rs => rs.RoutePlan)
                     .ThenInclude(rp => rp!.RouteAssignment)
                 .Where(rs => rs.StopId == stopId && rs.RoutePlan != null && rs.RoutePlan.RouteAssignment != null)
-                .Where(rs => rs.RoutePlan!.RouteAssignment!.AssignedTo == username)
+                .Where(rs => rs.RoutePlan!.RouteAssignment!.AssignedTo.Trim().ToUpper() == normalizedUsername)
                 .FirstOrDefaultAsync();
 
             if (stop == null) return null;
@@ -143,6 +149,7 @@ namespace ADWebApplication.Services.Collector
 
         public async Task<bool> ConfirmCollectionAsync(CollectionConfirmationVM model, string username)
         {
+            var normalizedUsername = username.Trim().ToUpper();
             var today = DateTime.Today;
             var stop = await _db.RouteStops
                 .Include(rs => rs.CollectionDetails)
@@ -151,7 +158,7 @@ namespace ADWebApplication.Services.Collector
                 .Where(rs => rs.StopId == model.StopId 
                           && rs.RoutePlan != null 
                           && rs.RoutePlan.RouteAssignment != null
-                          && rs.RoutePlan.RouteAssignment.AssignedTo == username
+                          && rs.RoutePlan.RouteAssignment.AssignedTo.Trim().ToUpper() == normalizedUsername
                           && rs.RoutePlan.PlannedDate.HasValue
                           && rs.RoutePlan.PlannedDate!.Value.Date == today)
                 .FirstOrDefaultAsync();

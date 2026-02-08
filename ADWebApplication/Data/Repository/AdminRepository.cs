@@ -22,7 +22,9 @@ namespace ADWebApplication.Data.Repository
         Task<List<AssignedCollectionOfficerDto>> GetAssignedCollectionOfficersCalendarAsync(DateTime from, DateTime to);
     }
 
+
    public class AdminRepository(In5niteDbContext infDb) : IAdminRepository
+
     {
 
         private readonly In5niteDbContext _infDb = infDb;

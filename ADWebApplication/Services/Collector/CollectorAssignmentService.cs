@@ -15,69 +15,81 @@ namespace ADWebApplication.Services.Collector
 
         public async Task<RouteAssignmentSearchViewModel> GetRouteAssignmentsAsync(string username, string? search, int? regionId, DateTime? date, string? status, int page, int pageSize)
         {
-            var query = _db.RouteAssignments
-                .AsNoTracking()
-                .Where(ra => ra.AssignedTo == username);
+            var normalizedUsername = username.Trim().ToUpper();
 
+            // Start from RoutePlans to ensure filters apply correctly to the individual daily routes
+            var query = _db.RoutePlans
+                .AsNoTracking()
+                .Include(rp => rp.RouteAssignment)
+                .Include(rp => rp.RouteStops)
+                    .ThenInclude(rs => rs.CollectionBin)
+                        .ThenInclude(cb => cb.Region)
+                .Where(rp => rp.RouteAssignment != null && 
+                           rp.RouteAssignment.AssignedTo.Trim().ToUpper() == normalizedUsername &&
+                           rp.PlannedDate.HasValue);
+
+            // 1. Search Filter (ID or Location)
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(ra =>
-                    ra.RoutePlans.Any(rp =>
-                        rp.RouteId.ToString().Contains(search) ||
-                        rp.RouteStops.Any(rs =>
-                            rs.CollectionBin != null &&
-                            rs.CollectionBin.LocationName != null &&
-                            rs.CollectionBin.LocationName.Contains(search)
-                        )
+                query = query.Where(rp =>
+                    rp.RouteId.ToString().Contains(search) ||
+                    rp.RouteStops.Any(rs =>
+                        rs.CollectionBin != null &&
+                        rs.CollectionBin.LocationName != null &&
+                        rs.CollectionBin.LocationName.Contains(search)
                     )
                 );
             }
 
+            // 2. Region Filter
             if (regionId.HasValue)
             {
-                query = query.Where(ra => ra.RoutePlans.Any(rp =>
-                    rp.RouteStops.Any(rs => rs.CollectionBin!.RegionId == regionId)));
+                query = query.Where(rp => rp.RouteStops.Any(rs => rs.CollectionBin.RegionId == regionId));
             }
 
+            // 3. Date Filter
             if (date.HasValue)
             {
-                query = query.Where(ra => ra.RoutePlans.Any(rp =>
-                    EF.Property<DateTime?>(rp, "PlannedDate") != null &&
-                    rp.PlannedDate.HasValue && rp.PlannedDate.Value.Date == date.Value.Date));
+                var targetDate = date.Value.Date;
+                query = query.Where(rp => rp.PlannedDate.Value.Date == targetDate);
             }
 
+            // 4. Status Filter (including our Pending/Scheduled fix)
             if (!string.IsNullOrWhiteSpace(status))
             {
-                query = query.Where(ra => ra.RoutePlans.Any(rp => rp.RouteStatus == status));
+                if (status == "Pending")
+                {
+                    query = query.Where(rp => rp.RouteStatus == "Pending" || rp.RouteStatus == "Scheduled");
+                }
+                else
+                {
+                    query = query.Where(rp => rp.RouteStatus == status);
+                }
             }
 
-            var totalItems = await query
-                .SelectMany(ra => ra.RoutePlans)
-                .CountAsync(rp => rp.PlannedDate.HasValue);
+            var totalItems = await query.CountAsync();
 
             var displayItems = await query
-                .SelectMany(ra => ra.RoutePlans
-                    .Where(rp => rp.PlannedDate.HasValue)
-                    .Select(rp => new RouteAssignmentDisplayItem
-                    {
-                        AssignmentId = ra.AssignmentId,
-                        AssignedBy = ra.AssignedBy,
-                        AssignedTo = ra.AssignedTo,
-                        Status = rp.RouteStatus ?? "Pending",
-                        RouteId = rp.RouteId,
-                        PlannedDate = rp.PlannedDate ?? DateTime.Today,
-                        RouteStatus = rp.RouteStatus,
-                        RegionName = rp.RouteStops
-                            .Select(rs => rs.CollectionBin != null && rs.CollectionBin.Region != null
-                                ? rs.CollectionBin.Region.RegionName
-                                : null)
-                            .FirstOrDefault(),
-                        TotalStops = rp.RouteStops.Count(),
-                        CompletedStops = rp.RouteStops.Count(rs => rs.CollectionDetails.Any(cd => cd.CollectionStatus == "Collected"))
-                    }))
-                .OrderByDescending(x => x.PlannedDate)
+                .OrderByDescending(rp => rp.PlannedDate)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .Select(rp => new RouteAssignmentDisplayItem
+                {
+                    AssignmentId = rp.AssignmentId,
+                    AssignedBy = rp.RouteAssignment.AssignedBy,
+                    AssignedTo = rp.RouteAssignment.AssignedTo,
+                    Status = rp.RouteStatus ?? "Pending",
+                    RouteId = rp.RouteId,
+                    PlannedDate = rp.PlannedDate ?? DateTime.Today,
+                    RouteStatus = rp.RouteStatus,
+                    RegionName = rp.RouteStops
+                        .Select(rs => rs.CollectionBin != null && rs.CollectionBin.Region != null
+                            ? rs.CollectionBin.Region.RegionName
+                            : null)
+                        .FirstOrDefault(),
+                    TotalStops = rp.RouteStops.Count(),
+                    CompletedStops = rp.RouteStops.Count(rs => rs.CollectionDetails.Any(cd => cd.CollectionStatus == "Collected"))
+                })
                 .ToListAsync();
 
             var availableRegions = await _db.Regions.ToListAsync();
@@ -95,6 +107,8 @@ namespace ADWebApplication.Services.Collector
                 AvailableRegions = availableRegions
             };
         }
+
+
 
         public async Task<RouteAssignmentDetailViewModel?> GetRouteAssignmentDetailsAsync(int assignmentId, string username)
         {
