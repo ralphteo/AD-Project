@@ -24,6 +24,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Google Fonts CSS is generated dynamically, so SRI is not supported here. -->
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="~/css/collector-dashboard.css" asp-append-version="true" />
 
@@ -317,5 +318,6 @@
         const nextAddress = @Html.Raw(JsonSerializer.Serialize(nextPoint?.Address ?? ""));
     </script>
     <script src="~/js/collector-dashboard.js" asp-append-version="true"></script>
+    <!-- Google Maps JS does not support SRI; key is expected to be domain-restricted. -->
     <script src="https://maps.googleapis.com/maps/api/js?key=@ViewBag.GoogleMapsKey&callback=initRouteMap&loading=async" async defer></script>
 }

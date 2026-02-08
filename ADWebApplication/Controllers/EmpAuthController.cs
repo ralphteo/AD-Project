@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Security.Claims;
+using System.Security.Cryptography;
 
 namespace ADWebApplication.Controllers;
 
@@ -134,7 +135,7 @@ public class EmpAuthController : Controller
             return View(model);
         }
 
-        string otp = new Random().Next(100000, 999999).ToString();
+        string otp = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
         StartOtpSession(user.Username, otp);
 
         try
@@ -273,7 +274,7 @@ public class EmpAuthController : Controller
         if (user == null)
             return Json(new { success = false, message = "User not found." });
 
-        string otp = new Random().Next(100000, 999999).ToString();
+        string otp = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
         StartOtpSession(username, otp); // resets attempts too
 
         await _email.SendOtpEmail(user.Email, otp);
