@@ -91,7 +91,7 @@ jobs:
       - name: Install JavaScript dependencies
         run: |
           cd ADWebApplication.Tests/JavaScript
-          npm install
+          npm install --ignore-scripts
           cd ../..
 
       # ---- Run JavaScript Tests with Coverage ----
