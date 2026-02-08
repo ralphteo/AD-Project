@@ -26,58 +26,68 @@ namespace ADWebApplication.Services
 
         if (!existingPlans.Any())
         {
-            var grouped = allStops.GroupBy(s => s.RouteKey);
+            CreateNewRoutePlans(allStops, routeAssignments, adminUsername, date);
+        }
+        else
+        {
+            UpdateExistingRouteAssignments(existingPlans, routeAssignments, adminUsername);
+        }
 
-            foreach (var g in grouped)
+        await _db.SaveChangesAsync();
+    }
+
+    private void CreateNewRoutePlans(List<UiRouteStopDto> allStops, Dictionary<int, string> routeAssignments, string adminUsername, DateTime date)
+    {
+        var grouped = allStops.GroupBy(s => s.RouteKey);
+
+        foreach (var g in grouped)
+        {
+            var route = new RoutePlan
             {
-                var route = new RoutePlan
+                PlannedDate = date,
+                GeneratedBy = adminUsername,
+                RouteStatus = "Scheduled",
+                RouteStops = g.Select(s => new RouteStop
                 {
-                    PlannedDate = date,
-                    GeneratedBy = adminUsername,
-                    RouteStatus = "Scheduled",
-                    RouteStops = g.Select(s => new RouteStop
-                    {
-                        BinId = s.BinId!.Value,
-                        StopSequence = s.StopNumber,
-                        PlannedCollectionTime = date
-                    }).ToList()
-                };
+                    BinId = s.BinId!.Value,
+                    StopSequence = s.StopNumber,
+                    PlannedCollectionTime = date
+                }).ToList()
+            };
 
-                if (routeAssignments.TryGetValue(g.Key, out var officer))
+            if (routeAssignments.TryGetValue(g.Key, out var officer))
+            {
+                route.RouteAssignment = new RouteAssignment
                 {
-                    route.RouteAssignment = new RouteAssignment
+                    AssignedTo = officer,
+                    AssignedBy = adminUsername
+                };
+            }
+
+            _db.RoutePlans.Add(route);
+        }
+    }
+
+    private void UpdateExistingRouteAssignments(List<RoutePlan> existingPlans, Dictionary<int, string> routeAssignments, string adminUsername)
+    {
+        foreach (var plan in existingPlans)
+        {
+            if (routeAssignments.TryGetValue(plan.RouteId, out var officer))
+            {
+                if (plan.RouteAssignment == null)
+                {
+                    plan.RouteAssignment = new RouteAssignment
                     {
                         AssignedTo = officer,
                         AssignedBy = adminUsername
                     };
                 }
-
-                _db.RoutePlans.Add(route);
-            }
-        }
-        else
-        {
-            foreach (var plan in existingPlans)
-            {
-                if (routeAssignments.TryGetValue(plan.RouteId, out var officer))
+                else
                 {
-                    if (plan.RouteAssignment == null)
-                    {
-                        plan.RouteAssignment = new RouteAssignment
-                        {
-                            AssignedTo = officer,
-                            AssignedBy = adminUsername
-                        };
-                    }
-                    else
-                    {
-                        plan.RouteAssignment.AssignedTo = officer;
-                    }
+                    plan.RouteAssignment.AssignedTo = officer;
                 }
             }
         }
-
-        await _db.SaveChangesAsync();
     }
 }
 }
