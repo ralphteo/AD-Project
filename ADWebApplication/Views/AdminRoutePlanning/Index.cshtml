@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "Route Management";
-    Layout = "_DashboardLayout";
+    Layout = "_AdminLayout";
 
     var activeOfficerIds = Model.AllStops
     .Select(s => s.RouteKey)
@@ -173,8 +173,7 @@ else
                     var coStops = route.Stops;
 
                     <div class="card officer-card shadow-sm mb-3" data-officer-id="@route.RouteKey">
-                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center officer-header"
-                            role="button"
+                        <button type="button" class="card-header bg-white py-3 d-flex justify-content-between align-items-center officer-header border-0 w-100 text-start"
                             aria-expanded="true"
                             data-target="stops-@route.RouteKey">
 
@@ -188,7 +187,7 @@ else
                             <span class="badge bg-light text-dark border">
                                 @coStops.Count stops · <span class="route-distance"></span> km
                             </span>
-                        </div>
+                        </button>
 
                         @if (!string.IsNullOrEmpty(route.AssignedOfficerName))
                         {

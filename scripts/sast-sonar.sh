@@ -35,7 +35,7 @@ reportgenerator \
 if command -v node &> /dev/null; then
   echo "Running JavaScript tests with coverage..."
   cd ADWebApplication.Tests/JavaScript
-  if [ ! -d "node_modules" ]; then
+  if [[ ! -d "node_modules" ]]; then
     npm install
   fi
   npm test -- --coverage

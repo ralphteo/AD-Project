@@ -9,6 +9,7 @@ public class Region
 {
     [Key]
     [Column("regionId")]
+    [Required]
     public int RegionId { get; set; }
 
     [Column("regionName")]
