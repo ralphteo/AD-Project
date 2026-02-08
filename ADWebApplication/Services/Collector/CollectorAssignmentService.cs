@@ -8,6 +8,7 @@ namespace ADWebApplication.Services.Collector
     public class CollectorAssignmentService : ICollectorAssignmentService
     {
         private readonly In5niteDbContext _db;
+        private const string StatusCollected = "Collected";
 
         public CollectorAssignmentService(In5niteDbContext db)
         {
@@ -16,8 +17,6 @@ namespace ADWebApplication.Services.Collector
 
         public async Task<RouteAssignmentSearchViewModel> GetRouteAssignmentsAsync(string username, string? search, int? regionId, DateTime? date, string? status, int page, int pageSize)
         {
-            var normalizedUsername = username.Trim().ToUpper();
-
             // Start from RoutePlans to ensure filters apply correctly to the individual daily routes
             var query = _db.RoutePlans
                 .AsNoTracking()
@@ -26,7 +25,7 @@ namespace ADWebApplication.Services.Collector
                     .ThenInclude(rs => rs.CollectionBin)
                         .ThenInclude(cb => cb!.Region)
                 .Where(rp => rp.RouteAssignment != null && 
-                           rp.RouteAssignment.AssignedTo.Trim().ToUpper() == normalizedUsername &&
+                           rp.RouteAssignment.AssignedTo.Trim().ToUpper() == username.Trim().ToUpper() &&
                            rp.PlannedDate.HasValue);
 
             // 1. Search Filter (ID or Location)
@@ -51,7 +50,7 @@ namespace ADWebApplication.Services.Collector
             // 4. Status Filter (including our Pending/Scheduled fix)
             if (!string.IsNullOrWhiteSpace(status))
             {
-                if (status == "Pending")
+                if (string.Equals(status, "Pending", StringComparison.OrdinalIgnoreCase))
                 {
                     query = query.Where(rp => rp.RouteStatus == "Pending" || rp.RouteStatus == "Scheduled");
                 }
@@ -81,8 +80,8 @@ namespace ADWebApplication.Services.Collector
                             ? rs.CollectionBin.Region.RegionName
                             : null)
                         .FirstOrDefault(),
-                    TotalStops = rp.RouteStops.Count(),
-                    CompletedStops = rp.RouteStops.Count(rs => rs.CollectionDetails.Any(cd => cd.CollectionStatus == "Collected"))
+                    TotalStops = rp.RouteStops.Count,
+                    CompletedStops = rp.RouteStops.Count(rs => rs.CollectionDetails.Any(cd => cd.CollectionStatus == StatusCollected))
                 })
                 .ToListAsync();
 
@@ -138,7 +137,7 @@ namespace ADWebApplication.Services.Collector
                         BinId = rs.CollectionBin?.BinId ?? 0,
                         LocationName = rs.CollectionBin?.LocationName,
                         RegionName = rs.CollectionBin?.Region?.RegionName,
-                        IsCollected = latestCollection?.CollectionStatus == "Collected",
+                        IsCollected = latestCollection?.CollectionStatus == StatusCollected,
                         CollectedAt = latestCollection?.CurrentCollectionDateTime?.DateTime,
                         CollectionStatus = latestCollection?.CollectionStatus,
                         BinFillLevel = latestCollection?.BinFillLevel
@@ -180,7 +179,7 @@ namespace ADWebApplication.Services.Collector
             if (route == null) return null;
 
             var nextStops = route.RouteStops
-                .Where(rs => !rs.CollectionDetails.Any(cd => cd.CollectionStatus == "Collected"))
+                .Where(rs => !rs.CollectionDetails.Any(cd => cd.CollectionStatus == StatusCollected))
                 .OrderBy(rs => rs.StopSequence)
                 .Take(top)
                 .Select(rs => new RouteStopDisplayItem
@@ -194,7 +193,7 @@ namespace ADWebApplication.Services.Collector
                 }).ToList();
 
             var totalPending = route.RouteStops
-                .Count(rs => !rs.CollectionDetails.Any(cd => cd.CollectionStatus == "Collected"));
+                .Count(rs => !rs.CollectionDetails.Any(cd => cd.CollectionStatus == StatusCollected));
 
             return new NextStopsViewModel
             {
