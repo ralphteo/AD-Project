@@ -36,7 +36,7 @@ namespace ADWebApplication.Controllers
                 .ToListAsync();
 
             var latestCollectionByBin = latestCollections
-                .GroupBy(cd => cd.BinId!.Value)
+                .GroupBy(cd => cd.BinId.Value)
                 .ToDictionary(g => g.Key, g => g.First());
 
             var bins = await _context.CollectionBins
@@ -52,7 +52,7 @@ namespace ADWebApplication.Controllers
                 if (latestByBin.TryGetValue(bin.BinId, out var prediction) &&
                     latestCollectionByBin.TryGetValue(bin.BinId, out var lastCollection))
                 {
-                    var daysElapsed = Math.Max((today - lastCollection.CurrentCollectionDateTime!.Value).TotalDays, 0);
+                    var daysElapsed = Math.Max((today - lastCollection.CurrentCollectionDateTime.Value).TotalDays, 0);
                     estimatedFillLevel = Math.Clamp(prediction.PredictedAvgDailyGrowth * daysElapsed, 0, 100);
 
                     var remaining = 80 - estimatedFillLevel.Value;

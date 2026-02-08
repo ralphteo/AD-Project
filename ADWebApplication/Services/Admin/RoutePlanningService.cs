@@ -176,8 +176,8 @@ namespace ADWebApplication.Services
             {
                 RouteKey = r.RouteId,
                 BinId = rs.BinId,
-                Latitude = rs.CollectionBin!.Latitude!.Value,
-                Longitude = rs.CollectionBin!.Longitude!.Value,
+                Latitude = rs.CollectionBin!.Latitude.Value,
+                Longitude = rs.CollectionBin!.Longitude.Value,
                 StopNumber = rs.StopSequence,
                 AssignedOfficerName = r.RouteAssignment != null ? (r.RouteAssignment!.AssignedTo ?? "") : ""
             }))
