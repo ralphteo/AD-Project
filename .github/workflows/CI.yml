@@ -29,20 +29,20 @@ jobs:
 
       - name: Add .NET global tools to PATH
         run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+      
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
 
       - name: Run SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_ORG: ${{ secrets.SONAR_ORG }}
         run: ./scripts/sast-sonar.sh
-      
-      - name: Check SonarCloud Quality Gate
-        uses: sonarsource/sonarcloud-github-action@master
-        with:
-          args: >
-            /d:sonar.login=${{ secrets.SONAR_TOKEN }}
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       
       - name: Upload Sonar Artifacts
         if: always()
@@ -51,6 +51,14 @@ jobs:
           name: sonar-report
           path: .sonarqube/out
           if-no-files-found: warn
+          
+      - name: Check SonarCloud Quality Gate
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          curl -s -u "${SONAR_TOKEN}:" \
+            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=GDipSA-Team-5_AD-Project" \
+            | jq -e '.projectStatus.status == "OK"'
 
       #- name: Install OWASP Dependency-Check (This uses sca-dependency-check.sh instead of using the Owasp GitHub Action directly)
       #  run: |
