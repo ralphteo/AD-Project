@@ -186,7 +186,7 @@ namespace ADWebApplication.Services
 
 
         //helpers to calculate distance matrix
-    private long[,] CreateDistanceMatrix(List<RoutePlanDto> locations)
+    private static long[,] CreateDistanceMatrix(List<RoutePlanDto> locations)
     {
         int count = locations.Count;
         long[,] distanceMatrix = new long[count, count];
