@@ -27,7 +27,7 @@ dotnet test ./ADWebApplication.Tests/ADWebApplication.Tests.csproj \
 # Convert coverage to Cobertura format for SonarCloud
 dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.1
 reportgenerator \
-  -reports:./TestResults/*/coverage.cobertura.xml \
+  -reports:./TestResults/**/coverage.cobertura.xml \
   -targetdir:./TestResults/CoverageReport \
   -reporttypes:Cobertura
 
