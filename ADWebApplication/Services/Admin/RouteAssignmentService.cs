@@ -37,9 +37,9 @@ namespace ADWebApplication.Services
                     RouteStatus = "Scheduled",
                     RouteStops = g.Select(s => new RouteStop
                     {
-                        BinId = s.BinId!.Value,
+                        BinId = s.BinId,
                         StopSequence = s.StopNumber,
-                        PlannedCollectionTime = date
+                        PlannedCollectionTime = new DateTimeOffset(date, TimeZoneInfo.Local.GetUtcOffset(date))
                     }).ToList()
                 };
 

@@ -20,7 +20,10 @@ namespace ADWebApplication.Services
 
         public async Task<IEnumerable<RewardCatalogue>> GetAllRewardsAsync()
         {
-            _logger.LogInformation("Fetching all rewards from the catalogue.");
+            if(_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Fetching all rewards from the catalogue.");
+            }
             return await _repository.GetAllRewardsAsync();
         }
         public async Task<RewardCatalogue?> GetRewardByIdAsync(int rewardId)
@@ -79,12 +82,18 @@ namespace ADWebApplication.Services
         }
         public async Task<IEnumerable<RewardCatalogue>> GetAvailableRewardsAsync()
         {
-            _logger.LogInformation("Fetching all available rewards from the catalogue.");
+            if(_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Fetching all available rewards from the catalogue.");
+            }
             return await _repository.GetAvailableRewardsAsync();
         }
         public async Task<IEnumerable<string>> GetAllRewardCategoriesAsync()
         {
-            _logger.LogInformation("Fetching all reward categories from the catalogue.");
+            if(_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Fetching all reward categories from the catalogue.");
+            }
             return await _repository.GetAllRewardCategoriesAsync();
         }
         public async Task<bool> CheckRewardAvailabilityAsync(int rewardId, int quantity = 1)

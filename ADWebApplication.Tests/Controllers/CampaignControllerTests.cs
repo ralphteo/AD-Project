@@ -23,7 +23,7 @@ namespace ADWebApplication.Tests.Controllers
             public Task<Campaign?> GetCurrentCampaignAsync() => Task.FromResult<Campaign?>(null);
             public Task<bool> ActivateCampaignAsync(int campaignId) => Task.FromResult(true);
             public Task<bool> DeactivateCampaignAsync(int campaignId) => Task.FromResult(true);
-            public Task<decimal> CalculateTotalIncentivesAsync(int campaignId) => Task.FromResult(0m);
+            public Task<decimal> CalculateTotalIncentivesAsync(int basePoints, int? campaignId = null) => Task.FromResult(0m);
         }
 
         [Fact]

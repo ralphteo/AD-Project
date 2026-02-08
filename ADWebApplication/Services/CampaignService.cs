@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ADWebApplication.Models;
 using ADWebApplication.Data.Repository;
-using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Identity.Client.Extensibility;
 
 namespace ADWebApplication.Services
 {
@@ -41,9 +39,9 @@ namespace ADWebApplication.Services
 
         public async Task<int> AddCampaignAsync(Campaign campaign)
         {
-            if(_logger.IsEnabled(LogLevel.Information))
+            if (_logger.IsEnabled(LogLevel.Information))
             {
-                _logger.LogInformation("Adding a new campaign: {@Campaign}", campaign.CampaignName);
+                _logger.LogInformation("Adding a new campaign: {CampaignName}", campaign.CampaignName);
             }
             if (campaign.EndDate < campaign.StartDate)
             {
@@ -54,7 +52,7 @@ namespace ADWebApplication.Services
                 throw new InvalidOperationException("IncentiveValue cannot be negative.");
             }
             var now = DateTime.UtcNow;
-            if (campaign.StartDate >  now)
+            if (campaign.StartDate > now)
             {
                 campaign.Status = "Planned";
             }
@@ -119,9 +117,9 @@ namespace ADWebApplication.Services
             var campaign = await _campaignRepository.GetCampaignByIdAsync(campaignId);
             if (campaign == null)
             {
-                if(_logger.IsEnabled(LogLevel.Warning))
+                if (_logger.IsEnabled(LogLevel.Warning))
                 {
-                _logger.LogWarning("Campaign with ID: {campaignId} not found.", campaignId);
+                    _logger.LogWarning("Campaign with ID: {campaignId} not found.", campaignId);
                 }
                 return false;
             }
@@ -234,32 +232,25 @@ namespace ADWebApplication.Services
             
             return result;
         }
-        public async Task<decimal> CalculateTotalIncentivesAsync(int basePoints)
-     {
-            var currentCampaign = await GetCurrentCampaignAsync();
-                if (currentCampaign == null)
-                {
-                    if(_logger.IsEnabled(LogLevel.Warning))
-                    {
-                    _logger.LogWarning("No active campaign found, returning base points");
-                    }
-                    return basePoints;
-                }
-                
-                var totalPoints = currentCampaign.IncentiveType switch
-                {
-                    "Multiplier" => basePoints * currentCampaign.IncentiveValue,
-                    "Bonus" => basePoints + currentCampaign.IncentiveValue,
-                    _ => basePoints
-                };
-                
-                if(_logger.IsEnabled(LogLevel.Debug))
-                {
-                _logger.LogDebug("Calculated incentive points: {TotalPoints} (Base: {BasePoints}, Campaign: {CampaignId}, Type: {IncentiveType}, Value: {IncentiveValue})",
-                    totalPoints, basePoints, currentCampaign.CampaignId, currentCampaign.IncentiveType, currentCampaign.IncentiveValue);
-                }
-                
-                return totalPoints;
+        public async Task<decimal> CalculateTotalIncentivesAsync(int basePoints, int? campaignId = null)
+        {
+            Campaign? currentCampaign = null;
+            if (campaignId.HasValue)
+            {
+                currentCampaign = await GetCampaignByIdAsync(campaignId.Value);
+            }
+            else
+            {
+                currentCampaign = await GetCurrentCampaignAsync();
+            }
+            if (currentCampaign == null)
+                return (decimal)basePoints;
+            return currentCampaign.IncentiveType switch
+            {
+                "Multiplier" => basePoints * currentCampaign.IncentiveValue,
+                "Bonus" => basePoints + currentCampaign.IncentiveValue,
+                _ => (decimal)basePoints
+            };
         }
     }
 }
