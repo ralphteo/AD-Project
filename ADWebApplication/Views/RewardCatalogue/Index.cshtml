@@ -51,10 +51,10 @@
                     @if (!string.IsNullOrEmpty(reward.ImageUrl))
                     {
                         <img src="@reward.ImageUrl" 
-                             class="card-img-top" 
+                             class="card-img-top reward-image" 
                              alt="@reward.RewardName" 
                              style="height: 200px; object-fit: cover;"
-                             onerror="this.src='https://via.placeholder.com/400x200?text=No+Image'">
+                             data-fallback="https://via.placeholder.com/400x200?text=No+Image">
                     }
                     else
                     {
@@ -217,3 +217,15 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Handle image load errors
+    document.addEventListener('DOMContentLoaded', function() {
+        const rewardImages = document.querySelectorAll('.reward-image');
+        rewardImages.forEach(function(img) {
+            img.addEventListener('error', function() {
+                this.src = this.getAttribute('data-fallback');
+            });
+        });
+    });
+</script>
