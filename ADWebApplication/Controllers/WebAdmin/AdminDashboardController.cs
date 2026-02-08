@@ -3,11 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using ADWebApplication.Data.Repository;
 using ADWebApplication.Models.DTOs;
 using ADWebApplication.Services;
-using System.Runtime.CompilerServices;
-using System.Diagnostics.Tracing;
-using System.Threading.Tasks.Sources;
-using System.Text;
-using System.Runtime.Serialization.Json;
 
 namespace ADWebApplication.Controllers
 {
@@ -120,9 +115,6 @@ namespace ADWebApplication.Controllers
                     TotalBinsCount = binCounts.TotalBins,
                     Alerts = alerts
                 };
-
-
-                viewModel.Alerts = alerts;
 
                 return View(viewModel);
             }
