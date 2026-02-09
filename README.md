@@ -16,28 +16,27 @@ The system enables data-driven decision making for improved planning and operati
 ⸻
 
 Key Features
-	•	ASP.NET Core backend with MVC & REST APIs
-	•	Role-based access (Admin, Collector)
-	•	Session-based authentication
-	•	MySQL integration via Entity Framework Core
-	•	ML microservice integration for bin fill prediction
-	•	CI/CD with GitHub Actions and SonarCloud
+- ASP.NET Core backend with MVC & REST APIs
+- Role-based access (Admin, Collector)
+- Session-based authentication
+- MySQL integration via Entity Framework Core
+- ML microservice integration for bin fill prediction
+- CI/CD with GitHub Actions and SonarCloud
 
 Technology Stack
-	•	Backend: ASP.NET Core (.NET), C#
-	•	Database: MySQL, Entity Framework Core
-	•	ML Integration: REST API (Python)
-	•	CI/CD: GitHub Actions, SonarCloud
-      •	Secret Management 
-      •	Security Scanning
-          •	SAST (SonarCloud), SCA (OWASP Dependency Checker), DAST (OWASP ZAP)
+- Backend: ASP.NET Core (.NET), C#
+- Database: MySQL, Entity Framework Core
+- ML Integration: REST API (Python)
+- CI/CD: GitHub Actions, SonarCloud
+	- Secret Management 
+	- Security Scanning: SAST (SonarCloud), SCA (OWASP Dependency Checker), DAST (OWASP ZAP)
 
 
 ## AI Tool Declaration
 
 GitHub Copilot (Claude Sonnet 4.5) and ChatGPT-5.2 was used to assist with:
-	•	Generating JUnit test cases
-	•	Refactoring of codes based on issues flagged by SonarCloud
-  •	Cloud Deployment, yml build files, bash scripts
+- Generating JUnit test cases
+- Refactoring of codes based on issues flagged by SonarCloud
+- Cloud Deployment, yml build files, bash scripts
 
 We are responsible for the content and quality of the submitted work.
