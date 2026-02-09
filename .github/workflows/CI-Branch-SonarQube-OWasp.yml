@@ -116,13 +116,14 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end
 
-      # ---- Sonar Quality Gate ----
-      - name: SonarCloud Quality Gate
+      # ---- SonarCloud Quality Gate Check ----
+      - name: SonarCloud Quality Gate check
         uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
         with:
           scanMetadataReportFile: .sonarqube/out/.sonar/report-task.txt
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: "https://sonarcloud.io"
 
       # ---- Upload Sonar Artifacts ----
       - name: Upload SonarCloud artifacts
