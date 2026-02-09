@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-# Copy csproj and restore build for caching
+# Copy csproj and restore for caching
 COPY *.csproj ./
 RUN dotnet restore
 
@@ -14,19 +14,24 @@ RUN dotnet publish -c Release -o out
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 
-# Create non-root user
-RUN addgroup --system appgroup && adduser --system appuser --ingroup appgroup
+# Install adduser so we can create a non-root user
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends adduser passwd && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 USER appuser
 
 # Copy published output from build stage
 COPY --from=build /app/out ./
 
-# Expose port
+# Expose container port
 EXPOSE 8080
 
-# Healthcheck endpoint
+# Healthcheck for container
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:8080/health || exit 1
 
-# Run app
+# Run the app
 ENTRYPOINT ["dotnet", "ADWebApplication.dll"]
