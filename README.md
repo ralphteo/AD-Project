@@ -5,11 +5,11 @@
 In5nite is an AI-enabled e-waste collection and operations management system.
 
 This repository contains the ASP.NET Core backend, which acts as the central orchestration layer for:
-	•	Business logic and workflows
-	•	Secure authentication and role management
-	•	Database persistence
-	•	Integration with a Machine Learning (ML) prediction 
-  •	Support for Android and web-based clients
+- Business logic and workflows
+- Secure authentication and role management
+- Database persistence
+- Integration with a Machine Learning (ML) prediction 
+- Support for Android and web-based clients
 
 The system enables data-driven decision making for improved planning and operations in e-waste collection.
 
@@ -31,6 +31,7 @@ Technology Stack
 	- Secret Management 
 	- Security Scanning: SAST (SonarCloud), SCA (OWASP Dependency Checker), DAST (OWASP ZAP)
 
+Web Application: https://in5nite-e8d9b0g5cad9hrbg.southeastasia-01.azurewebsites.net/
 
 ## AI Tool Declaration
 
