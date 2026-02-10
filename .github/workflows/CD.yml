@@ -62,7 +62,7 @@ jobs:
       # Health check using /health endpoint
       - name: Health check
         run: |
-          URL="https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health"
+          URL="https://in5nite-e8d9b0g5cad9hrbg.southeastasia-01.azurewebsites.net/health"
           echo "Checking health endpoint: $URL"
           for i in {1..10}; do
             if curl -fsS $URL; then
