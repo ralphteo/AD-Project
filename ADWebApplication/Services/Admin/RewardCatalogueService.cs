@@ -119,6 +119,8 @@ namespace ADWebApplication.Services
             }
             return await _repository.GetRewardsByCategoryAsync(category);
         }
+
+        
         
     }
 }

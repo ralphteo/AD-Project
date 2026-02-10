@@ -30,5 +30,12 @@ namespace ADWebApplication.Models
 
         [Column("fulfilledDatetime")]
         public DateTime? FulfilledDatetime { get; set; }
+
+        //Navigation properties
+        [ForeignKey("RewardId")]
+        public virtual RewardCatalogue? RewardCatalogue { get; set; }
+
+        [ForeignKey("UserId")]
+        public virtual PublicUser? User { get; set; }
     }
 }
