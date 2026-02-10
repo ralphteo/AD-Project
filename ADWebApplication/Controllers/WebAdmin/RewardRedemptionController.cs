@@ -17,6 +17,10 @@ namespace ADWebApplication.Controllers
         // GET: RewardRedemption
         public async Task<IActionResult> Index(DateTime? startDate, DateTime? endDate, string? status, int? userId, int? rewardId)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Invalid filter parameters.");
+            }
             var query = _context.RewardRedemptions
                 .Include(rr => rr.RewardCatalogue)
                 .Include(rr => rr.User)
@@ -67,6 +71,10 @@ namespace ADWebApplication.Controllers
         //Export to CSV
         public async Task<IActionResult> ExportToCsv(DateTime? startDate, DateTime? endDate, string? status, int? userId, int? rewardId)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Invalid filter parameters.");
+            }
             var query = _context.RewardRedemptions
                 .Include(rr => rr.RewardCatalogue)
                 .Include(rr => rr.User)
