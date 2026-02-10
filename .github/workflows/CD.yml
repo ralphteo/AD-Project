@@ -78,7 +78,7 @@ jobs:
       - name: Run OWASP ZAP DAST
         uses: zaproxy/action-baseline@4ea3deb659d9a669dc5e5c10c49a423e8bb41420
         with:
-          target: "https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/"
+          target: "https://in5nite-e8d9b0g5cad9hrbg.southeastasia-01.azurewebsites.net/"
           fail_action: false
           artifact_name: zap-live-report
           cmd_options: >
