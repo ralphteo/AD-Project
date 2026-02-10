@@ -257,5 +257,35 @@ namespace ADWebApplication.Controllers
 
             return Ok(redemptions);
         }
+
+        // POST: /api/rewards/redemptions/use
+        [HttpPost("redemptions/use")]
+        public async Task<ActionResult<UseRedemptionResponseDto>> UseRedemption(
+            [FromBody] UseRedemptionRequestDto request)
+        {
+            if (request == null || request.RedemptionId <= 0)
+                return BadRequest(new UseRedemptionResponseDto { Success = false, Message = "Invalid request" });
+
+            if (string.IsNullOrWhiteSpace(request.VendorCode))
+                return BadRequest(new UseRedemptionResponseDto { Success = false, Message = "Vendor code required" });
+
+            if (request.VendorCode != "0000")
+                return Ok(new UseRedemptionResponseDto { Success = false, Message = "Invalid vendor code" });
+
+            var redemption = await _context.RewardRedemptions
+                .FirstOrDefaultAsync(r => r.RedemptionId == request.RedemptionId);
+
+            if (redemption == null)
+                return Ok(new UseRedemptionResponseDto { Success = false, Message = "Redemption not found" });
+
+            if (string.Equals(redemption.RedemptionStatus, "USED", StringComparison.OrdinalIgnoreCase))
+                return Ok(new UseRedemptionResponseDto { Success = false, Message = "Redemption already used" });
+
+            redemption.RedemptionStatus = "USED";
+            redemption.FulfilledDatetime = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Ok(new UseRedemptionResponseDto { Success = true, Message = "Redemption marked as used" });
+        }
     }
 }
