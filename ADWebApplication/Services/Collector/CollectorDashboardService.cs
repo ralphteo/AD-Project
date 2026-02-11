@@ -26,7 +26,7 @@ namespace ADWebApplication.Services.Collector
                     .ThenInclude(rp => rp.RouteStops)
                         .ThenInclude(rs => rs.CollectionDetails)
                 .AsSplitQuery()
-                .Where(ra => ra.AssignedTo.ToUpper() == username.Trim().ToUpper()
+                .Where(ra => ra.AssignedTo == username.Trim()
                           && ra.RoutePlans!.Any(rp => rp.PlannedDate.HasValue && rp.PlannedDate.Value.Date == today))
                 .FirstOrDefaultAsync();
 
@@ -120,7 +120,7 @@ namespace ADWebApplication.Services.Collector
                 .Include(rs => rs.RoutePlan)
                     .ThenInclude(rp => rp!.RouteAssignment)
                 .Where(rs => rs.StopId == stopId && rs.RoutePlan != null && rs.RoutePlan.RouteAssignment != null)
-                .Where(rs => rs.RoutePlan!.RouteAssignment!.AssignedTo.ToUpper() == username.Trim().ToUpper())
+                .Where(rs => rs.RoutePlan!.RouteAssignment!.AssignedTo == username.Trim())
                 .FirstOrDefaultAsync();
 
             if (stop == null) return null;
@@ -192,7 +192,7 @@ namespace ADWebApplication.Services.Collector
                 .Where(rs => rs.StopId == stopId
                           && rs.RoutePlan != null
                           && rs.RoutePlan.RouteAssignment != null
-                          && rs.RoutePlan.RouteAssignment.AssignedTo.ToUpper() == username.Trim().ToUpper()
+                          && rs.RoutePlan.RouteAssignment.AssignedTo == username.Trim()
                           && rs.RoutePlan.PlannedDate.HasValue
                           && rs.RoutePlan.PlannedDate.Value.Date == today)
                 .FirstOrDefaultAsync();
