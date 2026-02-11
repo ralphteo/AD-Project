@@ -159,53 +159,54 @@ jobs:
 # JOB 2: DAST
 # =========================================================
   dast-scan:
-    runs-on: ubuntu-latest   
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Publish App
-        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -o publish
+        run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output publish
 
-      - name: Run App
+      - name: Run App Locally
         run: |
           ASPNETCORE_URLS=http://localhost:5000 nohup dotnet publish/ADWebApplication.dll &
-          sleep 20
+          echo "Waiting for app to start..."
+          until curl -s http://localhost:5000 > /dev/null; do
+            sleep 2
+          done
+          echo "App is running!"
 
-      - name: Fix workspace permissions
-        run: |
-          sudo chmod -R 777 .
-
-      - name: Run OWASP ZAP Baseline
-        uses: zaproxy/action-baseline@v0.12.0
+      - name: Run OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@4ea3deb659d9a669dc5e5c10c49a423e8bb41420
         with:
           target: 'http://localhost:5000'
-          cmd_options: '-J zap-report.json -r zap-report.html'
           fail_action: false
+          artifact_name: zap-report
+          cmd_options: >
+            -J report_json.json
+            -r report_html.html
           allow_issue_writing: false
 
       - name: Copy ZAP reports
         run: |
-          if [ -f zap-report.json ]; then
-            cp zap-report.json ./zap.json
-          elif [ -f /zap/wrk/zap-report.json ]; then
-            sudo cp /zap/wrk/zap-report.json ./zap.json
+          if [ -f report_json.json ]; then
+            cp report_json.json ./zap.json
+          elif [ -f /zap/wrk/report_json.json ]; then
+            sudo cp /zap/wrk/report_json.json ./zap.json
           else
             echo "Warning: ZAP JSON report not found"
             echo '{"site":[{"alerts":[]}]}' > zap.json
           fi
-          
-          if [ -f zap-report.html ]; then
-            cp zap-report.html ./zap.html
-          elif [ -f /zap/wrk/zap-report.html ]; then
-            sudo cp /zap/wrk/zap-report.html ./zap.html
+
+          if [ -f report_html.html ]; then
+            cp report_html.html ./zap.html
+          elif [ -f /zap/wrk/report_html.html ]; then
+            sudo cp /zap/wrk/report_html.html ./zap.html
           fi
-          
-          echo "Report status:"
-          ls -la zap.json zap.html 2>/dev/null || echo "Some reports missing"
 
       - name: Parse ZAP
         id: zap

@@ -52,14 +52,22 @@ if (!builder.Environment.IsDevelopment() && !shouldSkipKeyVault)
     );
 }
 
-var mySqlConn = builder.Configuration.GetConnectionString("DefaultConnection");
+if (builder.Environment.IsEnvironment("CI"))
+{
+    builder.Services.AddDbContext<In5niteDbContext>(options =>
+        options.UseInMemoryDatabase("TestDb"));
+}
+else
+{
+    var mySqlConn = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<In5niteDbContext>(options =>
-    options.UseMySql(
-        mySqlConn,
-        new MySqlServerVersion(new Version(8, 0, 36))
-    )
-);
+    builder.Services.AddDbContext<In5niteDbContext>(options =>
+        options.UseMySql(
+            mySqlConn,
+            new MySqlServerVersion(new Version(8, 0, 36))
+        )
+    );
+}
 
 // Session (needed for OTP)
 builder.Services.AddSession(opt =>
@@ -67,6 +75,8 @@ builder.Services.AddSession(opt =>
     opt.IdleTimeout = TimeSpan.FromMinutes(10);
     opt.Cookie.HttpOnly = true;
     opt.Cookie.IsEssential = true;
+    opt.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    opt.Cookie.SameSite = SameSiteMode.Strict;
 });
 // Antiforgery (needed if your JS uses header token)
 builder.Services.AddAntiforgery(opt =>
@@ -145,6 +155,18 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    context.Response.Headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()";
+
+    context.Response.Headers["Cross-Origin-Opener-Policy"] = "same-origin";
+    context.Response.Headers["Cross-Origin-Embedder-Policy"] = "require-corp";
+
+    await next();
+});
 
 app.MapGet("/health", async (In5niteDbContext db) =>
 {
