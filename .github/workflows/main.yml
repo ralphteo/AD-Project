@@ -16,3 +16,5 @@ jobs:
         uses: zaproxy/action-baseline@v0.12.0
         with:
           target: 'https://in5nite-e8d9b0g5cad9hrbg.southeastasia-01.azurewebsites.net/'
+          issue_title: 'ZAP Scan Report'
+          fail_action: false
