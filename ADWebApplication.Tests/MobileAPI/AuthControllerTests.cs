@@ -9,11 +9,45 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using ADWebApplication.Services;
 
 namespace ADWebApplication.Tests.MobileAPI
 {
     public class AuthControllerTests
     {
+        private static JwtTokenService CreateJwtTokenService()
+        {
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Jwt:Key"] = "test-secret-key-1234567890-1234567890-123456",
+                    ["Jwt:Issuer"] = "ADWebApplication",
+                    ["Jwt:Audience"] = "ADWebApplicationMobile",
+                    ["Jwt:ExpiryMinutes"] = "60"
+                })
+                .Build();
+            return new JwtTokenService(config);
+        }
+
+        private static AuthController CreateController(In5niteDbContext dbContext)
+        {
+            return new AuthController(dbContext, CreateJwtTokenService());
+        }
+
+        private static void SetUser(AuthController controller, int userId)
+        {
+            var identity = new ClaimsIdentity(
+                new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) },
+                "TestAuth");
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) }
+            };
+        }
+
         private static In5niteDbContext CreateInMemoryDbContext()
         {
             var options = new DbContextOptionsBuilder<In5niteDbContext>()
@@ -39,7 +73,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.Regions.AddRange(regions);
             await dbContext.SaveChangesAsync();
 
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
 
             // Act
             var result = await controller.GetRegions();
@@ -56,7 +90,7 @@ namespace ADWebApplication.Tests.MobileAPI
         {
             // Arrange
             var dbContext = CreateInMemoryDbContext();
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
 
             // Act
             var result = await controller.GetRegions();
@@ -76,7 +110,7 @@ namespace ADWebApplication.Tests.MobileAPI
         {
             // Arrange
             var dbContext = CreateInMemoryDbContext();
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
             var request = new RegisterRequest
             {
                 Email = "test@example.com",
@@ -107,7 +141,7 @@ namespace ADWebApplication.Tests.MobileAPI
         {
             // Arrange
             var dbContext = CreateInMemoryDbContext();
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
             var request = new RegisterRequest
             {
                 Email = "wallet@example.com",
@@ -134,7 +168,7 @@ namespace ADWebApplication.Tests.MobileAPI
         {
             // Arrange
             var dbContext = CreateInMemoryDbContext();
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
             var request = new RegisterRequest
             {
                 Email = "secure@example.com",
@@ -159,7 +193,7 @@ namespace ADWebApplication.Tests.MobileAPI
         {
             // Arrange
             var dbContext = CreateInMemoryDbContext();
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
             var request = new RegisterRequest
             {
                 Email = "  UPPER@Example.COM  ",
@@ -193,7 +227,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.PublicUser.Add(existingUser);
             await dbContext.SaveChangesAsync();
 
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
             var request = new RegisterRequest
             {
                 Email = "existing@example.com",
@@ -218,7 +252,7 @@ namespace ADWebApplication.Tests.MobileAPI
         {
             // Arrange
             var dbContext = CreateInMemoryDbContext();
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
             var request = new RegisterRequest
             {
                 Email = "active@example.com",
@@ -257,7 +291,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.PublicUser.Add(user);
             await dbContext.SaveChangesAsync();
 
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
             var request = new LoginRequest
             {
                 Email = "login@example.com",
@@ -280,7 +314,7 @@ namespace ADWebApplication.Tests.MobileAPI
         {
             // Arrange
             var dbContext = CreateInMemoryDbContext();
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
             var request = new LoginRequest
             {
                 Email = "notfound@example.com",
@@ -314,7 +348,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.PublicUser.Add(user);
             await dbContext.SaveChangesAsync();
 
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
             var request = new LoginRequest
             {
                 Email = "wrongpass@example.com",
@@ -348,7 +382,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.PublicUser.Add(user);
             await dbContext.SaveChangesAsync();
 
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
             var request = new LoginRequest
             {
                 Email = "inactive@example.com",
@@ -382,7 +416,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.PublicUser.Add(user);
             await dbContext.SaveChangesAsync();
 
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
             var request = new LoginRequest
             {
                 Email = "  TRIMTEST@Example.COM  ",
@@ -418,7 +452,8 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.PublicUser.Add(user);
             await dbContext.SaveChangesAsync();
 
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
+            SetUser(controller, user.Id);
 
             // Act
             var result = await controller.GetProfile(user.Id);
@@ -437,7 +472,8 @@ namespace ADWebApplication.Tests.MobileAPI
         {
             // Arrange
             var dbContext = CreateInMemoryDbContext();
-            var controller = new AuthController(dbContext);
+            var controller = CreateController(dbContext);
+            SetUser(controller, 999);
 
             // Act
             var result = await controller.GetProfile(999);
