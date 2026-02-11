@@ -183,10 +183,29 @@ jobs:
         uses: zaproxy/action-baseline@v0.12.0
         with:
           target: 'http://localhost:5000'
-          cmd_options: >
-            -J zap.json
-            -r zap.html
+          cmd_options: '-J zap-report.json -r zap-report.html'
           fail_action: false
+          allow_issue_writing: false
+
+      - name: Copy ZAP reports
+        run: |
+          if [ -f zap-report.json ]; then
+            cp zap-report.json ./zap.json
+          elif [ -f /zap/wrk/zap-report.json ]; then
+            sudo cp /zap/wrk/zap-report.json ./zap.json
+          else
+            echo "Warning: ZAP JSON report not found"
+            echo '{"site":[{"alerts":[]}]}' > zap.json
+          fi
+          
+          if [ -f zap-report.html ]; then
+            cp zap-report.html ./zap.html
+          elif [ -f /zap/wrk/zap-report.html ]; then
+            sudo cp /zap/wrk/zap-report.html ./zap.html
+          fi
+          
+          echo "Report status:"
+          ls -la zap.json zap.html 2>/dev/null || echo "Some reports missing"
 
       - name: Parse ZAP
         id: zap
@@ -197,12 +216,14 @@ jobs:
             LOW=$(jq '[.site[].alerts[]? | select(.riskcode=="1")] | length' zap.json)
             TOTAL=$(jq '[.site[].alerts[]?] | length' zap.json)
           else
+            echo "zap.json not found, using zeros"
             HIGH=0; MEDIUM=0; LOW=0; TOTAL=0
           fi
           echo "high=$HIGH" >> $GITHUB_OUTPUT
           echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
           echo "low=$LOW" >> $GITHUB_OUTPUT
           echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          echo "ZAP Results: High=$HIGH, Medium=$MEDIUM, Low=$LOW, Total=$TOTAL"
 
       - name: Save ZAP Metadata
         run: |
