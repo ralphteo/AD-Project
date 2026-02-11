@@ -208,8 +208,8 @@ jobs:
         with:
           target: 'http://localhost:5000'
           fail_action: false
-          artifact_name: ''  # Disable artifact upload
-          cmd_options: '-J zap-dotnet.json -r zap-dotnet.html'
+          # artifact_name: ''  # Disable artifact upload
+          # cmd_options: '-J zap-dotnet.json -r zap-dotnet.html'
           allow_issue_writing: false
 
       - name: ZAP Scan ML Service
@@ -230,14 +230,14 @@ jobs:
           sudo ls -la /zap/wrk/ 2>/dev/null || echo "/zap/wrk not accessible"
           
           # Copy .NET report
-          if [ -f "zap-dotnet.json" ]; then
-            echo "Found zap-dotnet.json in root"
-            cp zap-dotnet.json zap.json
-          elif [ -f "/zap/wrk/zap-dotnet.json" ]; then
-            echo "Found zap-dotnet.json in /zap/wrk"
-            sudo cp /zap/wrk/zap-dotnet.json zap.json
+          if [ -f "report_json.json" ]; then
+            echo "Found report_json.json in root"
+            cp report_json.json zap.json
+          elif [ -f "/zap/wrk/report_json.json" ]; then
+            echo "Found report_json.json in /zap/wrk"
+            sudo cp /zap/wrk/report_json.json zap.json
           else
-            echo "WARNING: zap-dotnet.json not found, creating empty"
+            echo "WARNING: report_json.json not found, creating empty"
             echo '{"site":[{"alerts":[]}]}' > zap.json
           fi
           
@@ -266,9 +266,9 @@ jobs:
           # ---------------- DOTNET ----------------
           echo "Parsing .NET results..."
           if [ -f zap.json ]; then
-            HIGH_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="3")] | length' zap.json)
-            MEDIUM_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="2")] | length' zap.json)
-            LOW_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="1")] | length' zap.json)
+            HIGH_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="3") | .instances[]?] | length' zap.json)
+            MEDIUM_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="2") | .instances[]?] | length' zap.json)
+            LOW_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="1") | .instances[]?] | length' zap.json)
             INFO_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="0")] | length' zap.json)
             echo ".NET - High: $HIGH_DOTNET, Medium: $MEDIUM_DOTNET, Low: $LOW_DOTNET, Info: $INFO_DOTNET"
           else
@@ -279,9 +279,9 @@ jobs:
           # ---------------- ML ----------------
           echo "Parsing ML results..."
           if [ -f zap-ml.json ]; then
-            HIGH_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="3")] | length' zap-ml.json)
-            MEDIUM_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="2")] | length' zap-ml.json)
-            LOW_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="1")] | length' zap-ml.json)
+            HIGH_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="3") | .instances[]?] | length' zap-ml.json)
+            MEDIUM_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="2") | .instances[]?] | length' zap-ml.json)
+            LOW_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="1") | .instances[]?] | length' zap-ml.json)
             INFO_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="0")] | length' zap-ml.json)
             echo "ML - High: $HIGH_ML, Medium: $MEDIUM_ML, Low: $LOW_ML, Info: $INFO_ML"
           else
