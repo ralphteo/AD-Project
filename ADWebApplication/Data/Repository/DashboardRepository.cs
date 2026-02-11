@@ -117,7 +117,11 @@ namespace ADWebApplication.Data.Repository
         }
         private async Task<decimal> GetAverageBinFillRateAsync(DateTime month)
         {
-            var nextMonthStart = DateTime.SpecifyKind(new DateTime(month.Year, month.Month, 1).AddMonths(1), DateTimeKind.Utc);
+            var nextMonthStart = new DateTime(
+                month.Year, 
+                month.Month,
+                1, 0, 0, 0, DateTimeKind.Utc) //Day, Hr, Min, Sec
+                .AddMonths(1);
             var latestCollectionPerBin = await _db.CollectionDetails
                 .Where(cd => cd.CurrentCollectionDateTime != null 
                         && cd.CurrentCollectionDateTime < nextMonthStart

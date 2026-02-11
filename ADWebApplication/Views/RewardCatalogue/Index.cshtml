@@ -152,9 +152,8 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                <form asp-action="Delete" method="post" class="d-inline">
+                                <form asp-action="Delete" asp-route-id="@reward.RewardId" method="post" class="d-inline">
                                     @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@reward.RewardId" />
                                     <button type="submit" class="btn btn-danger">Delete Reward</button>
                                 </form>
                             </div>

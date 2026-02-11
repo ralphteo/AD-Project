@@ -167,8 +167,9 @@ namespace ADWebApplication.Controllers
                 return View(reward);
             }
         }
+ 
         //Post: Delete
-        [HttpPost("Delete/{id}")]
+        [HttpPost("Delete/{id:int}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
