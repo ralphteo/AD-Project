@@ -21,7 +21,7 @@ namespace ADWebApplication.Services.Collector
         {
             var today = DateTime.Today;
             var todaysBins = await _db.RouteAssignments
-                .Where(ra => ra.AssignedTo.ToUpper() == username.Trim().ToUpper())
+                .Where(ra => ra.AssignedTo == username.Trim())
                 .SelectMany(ra => ra.RoutePlans)
                 .Where(rp => rp.PlannedDate.HasValue && rp.PlannedDate.Value.Date == today)
                 .SelectMany(rp => rp.RouteStops)
@@ -43,7 +43,7 @@ namespace ADWebApplication.Services.Collector
                     .ThenInclude(rp => rp!.RouteAssignment)
                 .Where(rs => rs.RoutePlan != null
                           && rs.RoutePlan.RouteAssignment != null
-                          && rs.RoutePlan.RouteAssignment.AssignedTo.ToUpper() == username.Trim().ToUpper())
+                          && rs.RoutePlan.RouteAssignment.AssignedTo == username.Trim())
                 .OrderByDescending(rs => rs.RoutePlan!.PlannedDate!)
                 .ToListAsync();
 
@@ -107,7 +107,7 @@ namespace ADWebApplication.Services.Collector
                 .Where(rs => rs.BinId == model.BinId
                           && rs.RoutePlan != null
                           && rs.RoutePlan.RouteAssignment != null
-                          && rs.RoutePlan.RouteAssignment.AssignedTo.ToUpper() == username.Trim().ToUpper()
+                          && rs.RoutePlan.RouteAssignment.AssignedTo == username.Trim()
                           && rs.RoutePlan.PlannedDate.HasValue
                           && rs.RoutePlan.PlannedDate.Value.Date == today)
                 .FirstOrDefaultAsync();
@@ -134,7 +134,7 @@ namespace ADWebApplication.Services.Collector
                 .Where(rs => rs.StopId == stopId
                           && rs.RoutePlan != null
                           && rs.RoutePlan.RouteAssignment != null
-                          && rs.RoutePlan.RouteAssignment.AssignedTo.ToUpper() == username.Trim().ToUpper())
+                          && rs.RoutePlan.RouteAssignment.AssignedTo == username.Trim())
                 .FirstOrDefaultAsync();
 
             if (stop == null) return "Issue not found for this route.";

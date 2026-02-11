@@ -51,7 +51,7 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml" \
             /d:sonar.exclusions="**/.github/workflows/*.yml" \
-            /d:sonar.coverage.exclusions="**/Models/**,**/ViewModels/**,**/*VM.cs,**/scripts/**,**/wwwroot/**,**/Dockerfile"
+            /d:sonar.coverage.exclusions="**/Models/**,**/ViewModels/**,**/*VM.cs,**/scripts/**,**/wwwroot/**,**/Dockerfile,**/Program.cs"
       
       - name: Restore & Build
         run: |
@@ -120,110 +120,146 @@ jobs:
         with:
           sarif_file: snyk-container.sarif
 
-      # Save metadata for dashboard
-      - name: Save SAST/SCA Metadata
-        run: |
-          mkdir -p scan-data
-          cat > scan-data/sast-sca-metadata.json << EOF
-          {
-            "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-            "run_id": "${{ github.run_id }}",
-            "run_number": "${{ github.run_number }}",
-            "branch": "${{ github.ref_name }}",
-            "commit": "${{ github.sha }}",
-            "sonarcloud": {
-              "bugs": "0",
-              "vulnerabilities": "0",
-              "code_smells": "0",
-              "security_hotspots": "0",
-              "coverage": "0",
-              "duplications": "0",
-              "lines_of_code": "0"
-            },
-            "dependency_check": {
-              "critical": "0",
-              "high": "${{ steps.snyk_results.outputs.high }}",
-              "medium": "${{ steps.snyk_results.outputs.medium }}",
-              "low": "${{ steps.snyk_results.outputs.low }}",
-              "total": "${{ steps.snyk_results.outputs.total }}"
-            }
-          }
-          EOF
+      # # Save metadata for dashboard
+      # - name: Save SAST/SCA Metadata
+      #   run: |
+      #     mkdir -p scan-data
+      #     cat > scan-data/sast-sca-metadata.json << EOF
+      #     {
+      #       "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+      #       "run_id": "${{ github.run_id }}",
+      #       "run_number": "${{ github.run_number }}",
+      #       "branch": "${{ github.ref_name }}",
+      #       "commit": "${{ github.sha }}",
+      #       "sonarcloud": {
+      #         "bugs": "${{ steps.sonar_results.outputs.bugs }}",
+      #         "vulnerabilities": "${{ steps.sonar_results.outputs.vulnerabilities }}",
+      #         "code_smells": "${{ steps.sonar_results.outputs.code_smells }}",
+      #         "security_hotspots": "${{ steps.sonar_results.outputs.hotspots }}",
+      #         "coverage": "${{ steps.sonar_results.outputs.coverage }}",
+      #         "duplications": "${{ steps.sonar_results.outputs.duplications }}"
+      #       },
+      #       "dependency_check": {
+      #         "critical": "0",
+      #         "high": "${{ steps.snyk_results.outputs.high }}",
+      #         "medium": "${{ steps.snyk_results.outputs.medium }}",
+      #         "low": "${{ steps.snyk_results.outputs.low }}",
+      #         "total": "${{ steps.snyk_results.outputs.total }}"
+      #       }
+      #     }
+      #     EOF
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: sast-sca-metadata
-          path: scan-data/
+      # - uses: actions/upload-artifact@v4
+      #   with:
+      #     name: sast-sca-metadata
+      #     path: scan-data/
 
 # =========================================================
 # JOB 2: DAST
 # =========================================================
   dast-scan:
-    runs-on: ubuntu-latest   
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Publish App
-        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -o publish
+        run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output publish
 
-      - name: Run App
+      - name: Run App Locally
         run: |
           ASPNETCORE_URLS=http://localhost:5000 nohup dotnet publish/ADWebApplication.dll &
-          sleep 20
+          echo "Waiting for app to start..."
+          until curl -s http://localhost:5000 > /dev/null; do
+            sleep 2
+          done
+          echo "App is running!"
 
-      - name: Fix workspace permissions
-        run: |
-          sudo chmod -R 777 .
-
-      - name: Run OWASP ZAP Baseline
-        uses: zaproxy/action-baseline@v0.12.0
+      - name: Run OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@4ea3deb659d9a669dc5e5c10c49a423e8bb41420
         with:
           target: 'http://localhost:5000'
-          cmd_options: '-J zap-report.json -r zap-report.html'
+          fail_action: false
+          artifact_name: zap-report
+          cmd_options: >
+            -J report_json.json
+            -r report_html.html
+          allow_issue_writing: false
+
+      # ZAP Scan ML Service
+      - name: ZAP Scan ML Service
+        uses: zaproxy/action-baseline@4ea3deb659d9a669dc5e5c10c49a423e8bb41420
+        with:
+          target: 'https://in5nite-ml-fdcycfe6gkfnhdg2.southeastasia-01.azurewebsites.net'
+          cmd_options: '-J zap-ml.json'
           fail_action: false
           allow_issue_writing: false
 
       - name: Copy ZAP reports
         run: |
-          if [ -f zap-report.json ]; then
-            cp zap-report.json ./zap.json
-          elif [ -f /zap/wrk/zap-report.json ]; then
-            sudo cp /zap/wrk/zap-report.json ./zap.json
+          # DOTNET
+          if [ -f report_json.json ]; then
+            mv report_json.json zap.json
+          elif [ -f /zap/wrk/report_json.json ]; then
+            sudo mv /zap/wrk/report_json.json zap.json
           else
-            echo "Warning: ZAP JSON report not found"
             echo '{"site":[{"alerts":[]}]}' > zap.json
           fi
-          
-          if [ -f zap-report.html ]; then
-            cp zap-report.html ./zap.html
-          elif [ -f /zap/wrk/zap-report.html ]; then
-            sudo cp /zap/wrk/zap-report.html ./zap.html
-          fi
-          
-          echo "Report status:"
-          ls -la zap.json zap.html 2>/dev/null || echo "Some reports missing"
 
-      - name: Parse ZAP
+          # ML
+          if [ -f /zap/wrk/zap-ml.json ]; then
+            sudo mv /zap/wrk/zap-ml.json zap-ml.json
+          elif [ ! -f zap-ml.json ]; then
+            echo '{"site":[{"alerts":[]}]}' > zap-ml.json
+          fi
+
+      - name: Parse ZAP (Aggregate .NET + ML)
         id: zap
         run: |
+
+          # ---------------- DOTNET ----------------
           if [ -f zap.json ]; then
-            HIGH=$(jq '[.site[].alerts[]? | select(.riskcode=="3")] | length' zap.json)
-            MEDIUM=$(jq '[.site[].alerts[]? | select(.riskcode=="2")] | length' zap.json)
-            LOW=$(jq '[.site[].alerts[]? | select(.riskcode=="1")] | length' zap.json)
-            TOTAL=$(jq '[.site[].alerts[]?] | length' zap.json)
+            HIGH_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="3") | .instances[]?] | length' zap.json)
+            MEDIUM_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="2") | .instances[]?] | length' zap.json)
+            LOW_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="1") | .instances[]?] | length' zap.json)
           else
-            echo "zap.json not found, using zeros"
-            HIGH=0; MEDIUM=0; LOW=0; TOTAL=0
+            HIGH_DOTNET=0; MEDIUM_DOTNET=0; LOW_DOTNET=0
           fi
+
+          # ---------------- ML ----------------
+          if [ -f zap-ml.json ]; then
+            HIGH_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="3") | .instances[]?] | length' zap-ml.json)
+            MEDIUM_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="2") | .instances[]?] | length' zap-ml.json)
+            LOW_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="1") | .instances[]?] | length' zap-ml.json)
+          else
+            HIGH_ML=0; MEDIUM_ML=0; LOW_ML=0
+          fi
+
+          # ---------------- AGGREGATE ----------------
+          HIGH=$((HIGH_DOTNET + HIGH_ML))
+          MEDIUM=$((MEDIUM_DOTNET + MEDIUM_ML))
+          LOW=$((LOW_DOTNET + LOW_ML))
+          TOTAL=$((HIGH + MEDIUM + LOW))
+
+          # expose aggregated
           echo "high=$HIGH" >> $GITHUB_OUTPUT
           echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
           echo "low=$LOW" >> $GITHUB_OUTPUT
           echo "total=$TOTAL" >> $GITHUB_OUTPUT
-          echo "ZAP Results: High=$HIGH, Medium=$MEDIUM, Low=$LOW, Total=$TOTAL"
+
+          # expose dotnet
+          echo "high_dotnet=$HIGH_DOTNET" >> $GITHUB_OUTPUT
+          echo "medium_dotnet=$MEDIUM_DOTNET" >> $GITHUB_OUTPUT
+          echo "low_dotnet=$LOW_DOTNET" >> $GITHUB_OUTPUT
+
+          # expose ml
+          echo "high_ml=$HIGH_ML" >> $GITHUB_OUTPUT
+          echo "medium_ml=$MEDIUM_ML" >> $GITHUB_OUTPUT
+          echo "low_ml=$LOW_ML" >> $GITHUB_OUTPUT
 
       - name: Save ZAP Metadata
         run: |
@@ -235,10 +271,22 @@ jobs:
             "branch": "${{ github.ref_name }}",
             "commit": "${{ github.sha }}",
             "zap": {
-              "high": "${{ steps.zap.outputs.high }}",
-              "medium": "${{ steps.zap.outputs.medium }}",
-              "low": "${{ steps.zap.outputs.low }}",
-              "total": "${{ steps.zap.outputs.total }}"
+              "dotnet": {
+                "high": "${{ steps.zap.outputs.high_dotnet }}",
+                "medium": "${{ steps.zap.outputs.medium_dotnet }}",
+                "low": "${{ steps.zap.outputs.low_dotnet }}"
+              },
+              "ml": {
+                "high": "${{ steps.zap.outputs.high_ml }}",
+                "medium": "${{ steps.zap.outputs.medium_ml }}",
+                "low": "${{ steps.zap.outputs.low_ml }}"
+              },
+              "total": {
+                "high": "${{ steps.zap.outputs.high }}",
+                "medium": "${{ steps.zap.outputs.medium }}",
+                "low": "${{ steps.zap.outputs.low }}",
+                "total": "${{ steps.zap.outputs.total }}"
+              }
             }
           }
           EOF
@@ -252,7 +300,7 @@ jobs:
 # JOB 3: Dashboard
 # =========================================================
   generate-dashboard:
-    needs: [build-and-sast-sca-scan, dast-scan]
+    needs: [dast-scan]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
 
@@ -264,10 +312,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: sast-sca-metadata
-          path: scan-data/
+      # - uses: actions/download-artifact@v4
+      #   with:
+      #     name: sast-sca-metadata
+      #     path: scan-data/
 
       - uses: actions/download-artifact@v4
         with:

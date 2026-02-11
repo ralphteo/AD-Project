@@ -90,14 +90,18 @@
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h6 class="mb-0">Route Progress</h6>
-                <span
-                    class="badge bg-@(Model.RouteStatus == "Completed" ? "success" : Model.RouteStatus == "Active" ? "primary" : "secondary")">
+                @{
+                    var statusClass = Model.RouteStatus == "Completed" ? "success" : 
+                                    Model.RouteStatus == "Active" ? "primary" : "secondary";
+                }
+                <span class="badge bg-@statusClass">
                     @Model.RouteStatus
                 </span>
             </div>
             <div class="progress" style="height: 25px;">
-                <div class="progress-bar bg-success" role="progressbar" style="width: @Model.ProgressPercentage%"
-                    aria-valuenow="@Model.ProgressPercentage" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar bg-success" style="width: @Model.ProgressPercentage%"
+                    aria-valuenow="@Model.ProgressPercentage" aria-valuemin="0" aria-valuemax="100"
+                    aria-label="Route progress @Model.ProgressPercentage percent">
                     @Model.ProgressPercentage%
                 </div>
             </div>
@@ -169,9 +173,9 @@
                                             var fillLevel = stop.BinFillLevel.Value;
                                             var fillClass = fillLevel >= 80 ? "danger" : fillLevel >= 50 ? "warning" : "success";
                                             <div class="progress" style="height: 20px;">
-                                                <div class="progress-bar bg-@fillClass" role="progressbar"
+                                                <div class="progress-bar bg-@fillClass"
                                                     style="width: @fillLevel%" aria-valuenow="@fillLevel" aria-valuemin="0"
-                                                    aria-valuemax="100">
+                                                    aria-valuemax="100" aria-label="Bin fill level @fillLevel percent">
                                                     @fillLevel%
                                                 </div>
                                             </div>
