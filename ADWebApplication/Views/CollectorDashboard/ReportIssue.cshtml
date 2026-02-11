@@ -121,8 +121,12 @@
                     <form asp-action="StartIssueWork" asp-controller="CollectorDashboard" method="post">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="stopId" value="@issue.StopId" />
+                        @{
+                            var buttonText = issue.Status == "In Progress" ? "Mark Resolved" : 
+                                           issue.Status == "Resolved" ? "Resolved" : "Start Working";
+                        }
                         <button class="btn btn-outline-secondary btn-sm" type="submit" @(issue.Status == "Resolved" ? "disabled" : "")>
-                            @(issue.Status == "In Progress" ? "Mark Resolved" : issue.Status == "Resolved" ? "Resolved" : "Start Working")
+                            @buttonText
                         </button>
                     </form>
                 </div>
