@@ -1,4 +1,4 @@
-name: ZAP Scanv2
+name: ZAP Scan
 
 on:
   push:
@@ -11,26 +11,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         
-      - name: Create output directory
-        run: mkdir -p zap-output
+      - name: Create reports directory
+        run: mkdir -p reports && chmod 777 reports
         
-      - name: Run ZAP Scan with full output
+      - name: Run ZAP Baseline Scan
         run: |
-          docker run -v $(pwd)/zap-output:/zap/wrk/:rw \
+          docker run --user root \
+            -v $(pwd)/reports:/zap/wrk/:rw \
             -t ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
             -t https://in5nite-e8d9b0g5cad9hrbg.southeastasia-01.azurewebsites.net/ \
             -r report.html \
-            -d || true
+            -J report.json \
+            -w report.md || true
       
-      - name: Debug - Show everything
+      - name: List generated reports
         if: always()
         run: |
-          echo "=== ZAP output directory ==="
-          ls -laR zap-output/
-          echo ""
-          echo "=== Current directory ==="
-          ls -la
-          echo ""
-          echo "=== Docker containers ==="
-          docker ps -a
+          echo "Generated reports:"
+          ls -la reports/
+          
+      - name: Upload ZAP Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-scan-reports
+          path: reports/
+          if-no-files-found: warn
