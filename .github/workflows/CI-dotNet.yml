@@ -49,10 +49,10 @@ jobs:
             /k:"GDipSA-Team-5_AD-Project" \
             /o:"gdipsa-team-5" \
             /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml"
+            /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml" \
             /d:sonar.exclusions="**/.github/workflows/*.yml" \
-            /d:sonar.coverage.exclusions="**/Models/Entities/**,**/Models/DTOs/**,**/ViewModels/**,**/*VM.cs,**/scripts/**,**/wwwroot/**,**/Dockerfile"
-
+            /d:sonar.coverage.exclusions="**/Models/**,**/ViewModels/**,**/*VM.cs,**/scripts/**,**/wwwroot/**,**/Dockerfile"
+      
       - name: Restore & Build
         run: |
           dotnet restore ${{ env.PROJECT_PATH }}
