@@ -208,7 +208,7 @@ jobs:
         with:
           target: 'http://localhost:5000'
           fail_action: false
-          # artifact_name: ''  # Disable artifact upload
+          artifact_name: ''  # Disable artifact upload
           # cmd_options: '-J zap-dotnet.json -r zap-dotnet.html'
           allow_issue_writing: false
 
