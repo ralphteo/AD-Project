@@ -227,19 +227,17 @@ jobs:
         run: |
           # DOTNET
           if [ -f report_json.json ]; then
-            cp report_json.json ./zap.json
+            mv report_json.json zap.json
           elif [ -f /zap/wrk/report_json.json ]; then
-            sudo cp /zap/wrk/report_json.json ./zap.json
+            sudo mv /zap/wrk/report_json.json zap.json
           else
             echo '{"site":[{"alerts":[]}]}' > zap.json
           fi
 
           # ML
-          if [ -f zap-ml.json ]; then
-            cp zap-ml.json ./zap-ml.json
-          elif [ -f /zap/wrk/zap-ml.json ]; then
-            sudo cp /zap/wrk/zap-ml.json ./zap-ml.json
-          else
+          if [ -f /zap/wrk/zap-ml.json ]; then
+            sudo mv /zap/wrk/zap-ml.json zap-ml.json
+          elif [ ! -f zap-ml.json ]; then
             echo '{"site":[{"alerts":[]}]}' > zap-ml.json
           fi
 
