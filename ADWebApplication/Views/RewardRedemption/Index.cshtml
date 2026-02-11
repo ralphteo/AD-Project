@@ -97,11 +97,13 @@
                     <label for="status" class="filter-label">Status</label>
                     <select id="status" name="status" class="form-select">
                         <option value="">All Statuses</option>
-                        @if (ViewBag.Statuses != null)
+                        @if (ViewBag.Statuses is List<string> statuses)
                         {
-                            @foreach (string stat in ViewBag.Statuses as List<string>)
+                            foreach (var stat in statuses)
                             {
-                                <option value="@stat" selected="@(stat == ViewBag.Status)">@stat</option>
+                                <option value="@stat" selected="@(stat == ViewBag.Status)">
+                                    @stat
+                                </option>
                             }
                         }
                     </select>

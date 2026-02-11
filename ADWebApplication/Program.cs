@@ -48,7 +48,6 @@ if (!builder.Environment.IsDevelopment() && !shouldSkipKeyVault)
 
 var mySqlConn = builder.Configuration.GetConnectionString("DefaultConnection");
 
-
 builder.Services.AddDbContext<In5niteDbContext>(options =>
     options.UseMySql(
         mySqlConn,
@@ -152,7 +151,7 @@ app.Run();
 #pragma warning restore S6966
 
 // Expose Program for integration tests (e.g., WebApplicationFactory<Program>).
-namespace ADWebApplication
-{
-    public partial class Program { }
-}
+// namespace ADWebApplication
+// {
+//     public partial class Program { }
+// }

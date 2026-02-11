@@ -211,7 +211,7 @@ jobs:
           path: scan-data/
 
 # =========================================================
-# JOB 3: Dashboard (Waits for Both)
+# JOB 3: Dashboard
 # =========================================================
   generate-dashboard:
     needs: [build-and-sast-sca-scan, dast-scan]
@@ -238,7 +238,7 @@ jobs:
       - name: Generate Dashboard
         run: |
           mkdir -p dashboard
-          node .github/scripts/generate-dashboard.js
+          node scripts/generate-dashboard.js
 
       - uses: actions/configure-pages@v4
 
