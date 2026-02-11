@@ -11,6 +11,9 @@ namespace ADWebApplication.Services.Collector
 
         // SonarQube: prevent potential Regex DoS by enforcing a match timeout
         private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(200);
+        
+        // Collation for case-insensitive string comparisons in database queries
+        private const string CaseInsensitiveCollation = "NOCASE";
 
         public CollectorIssueService(In5niteDbContext db)
         {
@@ -21,7 +24,7 @@ namespace ADWebApplication.Services.Collector
         {
             var today = DateTime.Today;
             var todaysBins = await _db.RouteAssignments
-                .Where(ra => ra.AssignedTo.ToUpper() == username.Trim().ToUpper())
+                .Where(ra => EF.Functions.Collate(ra.AssignedTo, CaseInsensitiveCollation) == EF.Functions.Collate(username.Trim(), CaseInsensitiveCollation))
                 .SelectMany(ra => ra.RoutePlans)
                 .Where(rp => rp.PlannedDate.HasValue && rp.PlannedDate.Value.Date == today)
                 .SelectMany(rp => rp.RouteStops)
@@ -43,7 +46,7 @@ namespace ADWebApplication.Services.Collector
                     .ThenInclude(rp => rp!.RouteAssignment)
                 .Where(rs => rs.RoutePlan != null
                           && rs.RoutePlan.RouteAssignment != null
-                          && rs.RoutePlan.RouteAssignment.AssignedTo.ToUpper() == username.Trim().ToUpper())
+                          && EF.Functions.Collate(rs.RoutePlan.RouteAssignment.AssignedTo, CaseInsensitiveCollation) == EF.Functions.Collate(username.Trim(), CaseInsensitiveCollation))
                 .OrderByDescending(rs => rs.RoutePlan!.PlannedDate!)
                 .ToListAsync();
 
@@ -107,7 +110,7 @@ namespace ADWebApplication.Services.Collector
                 .Where(rs => rs.BinId == model.BinId
                           && rs.RoutePlan != null
                           && rs.RoutePlan.RouteAssignment != null
-                          && rs.RoutePlan.RouteAssignment.AssignedTo.ToUpper() == username.Trim().ToUpper()
+                          && EF.Functions.Collate(rs.RoutePlan.RouteAssignment.AssignedTo, CaseInsensitiveCollation) == EF.Functions.Collate(username.Trim(), CaseInsensitiveCollation)
                           && rs.RoutePlan.PlannedDate.HasValue
                           && rs.RoutePlan.PlannedDate.Value.Date == today)
                 .FirstOrDefaultAsync();
@@ -134,7 +137,7 @@ namespace ADWebApplication.Services.Collector
                 .Where(rs => rs.StopId == stopId
                           && rs.RoutePlan != null
                           && rs.RoutePlan.RouteAssignment != null
-                          && rs.RoutePlan.RouteAssignment.AssignedTo.ToUpper() == username.Trim().ToUpper())
+                          && EF.Functions.Collate(rs.RoutePlan.RouteAssignment.AssignedTo, CaseInsensitiveCollation) == EF.Functions.Collate(username.Trim(), CaseInsensitiveCollation))
                 .FirstOrDefaultAsync();
 
             if (stop == null) return "Issue not found for this route.";
