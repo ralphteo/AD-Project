@@ -14,24 +14,23 @@ jobs:
       - name: Create output directory
         run: mkdir -p zap-output
         
-      - name: Run ZAP Scan
+      - name: Run ZAP Scan with full output
         run: |
           docker run -v $(pwd)/zap-output:/zap/wrk/:rw \
             -t ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
             -t https://in5nite-e8d9b0g5cad9hrbg.southeastasia-01.azurewebsites.net/ \
-            -r report.html || true
+            -r report.html \
+            -d || true
       
-      - name: List generated files
+      - name: Debug - Show everything
         if: always()
         run: |
-          echo "Files in zap-output:"
-          ls -la zap-output/
-          
-      - name: Upload ZAP Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-scan-report
-          path: zap-output/
-          if-no-files-found: error
+          echo "=== ZAP output directory ==="
+          ls -laR zap-output/
+          echo ""
+          echo "=== Current directory ==="
+          ls -la
+          echo ""
+          echo "=== Docker containers ==="
+          docker ps -a
