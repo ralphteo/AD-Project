@@ -3,33 +3,16 @@ name: ZAP Scan
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
+
+permissions:
+  contents: read
+  issues: write
 
 jobs:
   zap_scan:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        
-      - name: Run ZAP Baseline Scan
-        run: |
-          docker run --user $(id -u):$(id -g) \
-            -v ${{ github.workspace }}:/zap/wrk/:rw \
-            -t ghcr.io/zaproxy/zaproxy:stable \
-            zap-baseline.py \
-            -t https://in5nite-e8d9b0g5cad9hrbg.southeastasia-01.azurewebsites.net/ \
-            -r report_html.html \
-            -J report_json.json \
-            -w report_md.md || true
-          
-      - name: Upload ZAP results
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
         with:
-          name: zap-scan-results
-          path: |
-            report_html.html
-            report_json.json
-            report_md.md
+          target: 'https://in5nite-e8d9b0g5cad9hrbg.southeastasia-01.azurewebsites.net/'
