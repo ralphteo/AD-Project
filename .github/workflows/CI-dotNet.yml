@@ -1,0 +1,292 @@
+name: CI-dotNet
+
+on:
+  push:
+    branches:
+      - main 
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  PROJECT_PATH: './ADWebApplication/ADWebApplication.csproj'
+  SKIP_KEYVAULT_IN_TESTS: "true"
+
+# =========================================================
+# JOB 1: SAST + SCA (SonarCloud + Snyk)
+# =========================================================
+jobs:
+  build-and-sast-sca-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      security-events: write
+      pages: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ---------------- SonarCloud ----------------
+      - name: Install SonarScanner
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Sonar Begin
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet sonarscanner begin \
+            /k:"GDipSA-Team-5_AD-Project" \
+            /o:"gdipsa-team-5" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml" \
+            /d:sonar.exclusions="**/.github/workflows/*.yml" \
+            /d:sonar.coverage.exclusions="**/Models/**,**/ViewModels/**,**/*VM.cs,**/scripts/**,**/wwwroot/**,**/Dockerfile"
+      
+      - name: Restore & Build
+        run: |
+          dotnet restore ${{ env.PROJECT_PATH }}
+          dotnet build ${{ env.PROJECT_PATH }} --no-restore
+
+      - name: Test with Coverage
+        run: |
+          dotnet test ./ADWebApplication.Tests/ADWebApplication.Tests.csproj \
+            --collect:"XPlat Code Coverage" \
+            --settings coverlet.runsettings \
+            --results-directory ./TestResults
+
+      - name: Sonar End
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end
+
+      # ---------------- Snyk .NET Dependency Scan ----------------
+      - name: Install Snyk CLI
+        run: npm install -g snyk --ignore-scripts
+
+      - name: Authenticate Snyk
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk auth "$SNYK_TOKEN"
+
+      - name: Run Snyk Test
+        working-directory: ADWebApplication
+        run: snyk test --severity-threshold=high --sarif-file-output=../snyk-dotnet.sarif
+      
+      - name: Upload Snyk SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: snyk-dotnet.sarif
+
+      - name: Parse Snyk Results
+        id: snyk_results
+        run: |
+          if [ -f snyk-dotnet.sarif ]; then
+            HIGH=$(jq '[.runs[].results[]? | select(.level=="error")] | length' snyk-dotnet.sarif)
+            MEDIUM=$(jq '[.runs[].results[]? | select(.level=="warning")] | length' snyk-dotnet.sarif)
+            LOW=$(jq '[.runs[].results[]? | select(.level=="note")] | length' snyk-dotnet.sarif)
+            TOTAL=$(jq '[.runs[].results[]?] | length' snyk-dotnet.sarif)
+          else
+            HIGH=0; MEDIUM=0; LOW=0; TOTAL=0
+          fi
+          echo "high=$HIGH" >> $GITHUB_OUTPUT
+          echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
+          echo "low=$LOW" >> $GITHUB_OUTPUT
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: docker build -t in5nite-dotnet:snyk ./ADWebApplication
+
+      - name: Snyk Container Scan
+        run: |
+          snyk container test in5nite-dotnet:snyk \
+            --severity-threshold=high \
+            --sarif-file-output=snyk-container.sarif
+
+      - name: Upload Container SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: snyk-container.sarif
+
+      # Save metadata for dashboard
+      - name: Save SAST/SCA Metadata
+        run: |
+          mkdir -p scan-data
+          cat > scan-data/sast-sca-metadata.json << EOF
+          {
+            "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "run_id": "${{ github.run_id }}",
+            "run_number": "${{ github.run_number }}",
+            "branch": "${{ github.ref_name }}",
+            "commit": "${{ github.sha }}",
+            "sonarcloud": {
+              "bugs": "0",
+              "vulnerabilities": "0",
+              "code_smells": "0",
+              "security_hotspots": "0",
+              "coverage": "0",
+              "duplications": "0",
+              "lines_of_code": "0"
+            },
+            "dependency_check": {
+              "critical": "0",
+              "high": "${{ steps.snyk_results.outputs.high }}",
+              "medium": "${{ steps.snyk_results.outputs.medium }}",
+              "low": "${{ steps.snyk_results.outputs.low }}",
+              "total": "${{ steps.snyk_results.outputs.total }}"
+            }
+          }
+          EOF
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sast-sca-metadata
+          path: scan-data/
+
+# =========================================================
+# JOB 2: DAST
+# =========================================================
+  dast-scan:
+    runs-on: ubuntu-latest   
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Publish App
+        run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -o publish
+
+      - name: Run App
+        run: |
+          ASPNETCORE_URLS=http://localhost:5000 nohup dotnet publish/ADWebApplication.dll &
+          sleep 20
+
+      - name: Fix workspace permissions
+        run: |
+          sudo chmod -R 777 .
+
+      - name: Run OWASP ZAP Baseline
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'http://localhost:5000'
+          cmd_options: '-J zap-report.json -r zap-report.html'
+          fail_action: false
+          allow_issue_writing: false
+
+      - name: Copy ZAP reports
+        run: |
+          if [ -f zap-report.json ]; then
+            cp zap-report.json ./zap.json
+          elif [ -f /zap/wrk/zap-report.json ]; then
+            sudo cp /zap/wrk/zap-report.json ./zap.json
+          else
+            echo "Warning: ZAP JSON report not found"
+            echo '{"site":[{"alerts":[]}]}' > zap.json
+          fi
+          
+          if [ -f zap-report.html ]; then
+            cp zap-report.html ./zap.html
+          elif [ -f /zap/wrk/zap-report.html ]; then
+            sudo cp /zap/wrk/zap-report.html ./zap.html
+          fi
+          
+          echo "Report status:"
+          ls -la zap.json zap.html 2>/dev/null || echo "Some reports missing"
+
+      - name: Parse ZAP
+        id: zap
+        run: |
+          if [ -f zap.json ]; then
+            HIGH=$(jq '[.site[].alerts[]? | select(.riskcode=="3")] | length' zap.json)
+            MEDIUM=$(jq '[.site[].alerts[]? | select(.riskcode=="2")] | length' zap.json)
+            LOW=$(jq '[.site[].alerts[]? | select(.riskcode=="1")] | length' zap.json)
+            TOTAL=$(jq '[.site[].alerts[]?] | length' zap.json)
+          else
+            echo "zap.json not found, using zeros"
+            HIGH=0; MEDIUM=0; LOW=0; TOTAL=0
+          fi
+          echo "high=$HIGH" >> $GITHUB_OUTPUT
+          echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
+          echo "low=$LOW" >> $GITHUB_OUTPUT
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          echo "ZAP Results: High=$HIGH, Medium=$MEDIUM, Low=$LOW, Total=$TOTAL"
+
+      - name: Save ZAP Metadata
+        run: |
+          mkdir -p scan-data
+          cat > scan-data/zap-metadata.json << EOF
+          {
+            "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "run_id": "${{ github.run_id }}",
+            "branch": "${{ github.ref_name }}",
+            "commit": "${{ github.sha }}",
+            "zap": {
+              "high": "${{ steps.zap.outputs.high }}",
+              "medium": "${{ steps.zap.outputs.medium }}",
+              "low": "${{ steps.zap.outputs.low }}",
+              "total": "${{ steps.zap.outputs.total }}"
+            }
+          }
+          EOF
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zap-metadata
+          path: scan-data/
+
+# =========================================================
+# JOB 3: Dashboard
+# =========================================================
+  generate-dashboard:
+    needs: [build-and-sast-sca-scan, dast-scan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+
+    permissions:
+        contents: read
+        pages: write
+        id-token: write 
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: sast-sca-metadata
+          path: scan-data/
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: zap-metadata
+          path: scan-data/
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate Dashboard
+        run: |
+          mkdir -p dashboard
+          node scripts/generate-dashboard.js
+
+      - uses: actions/configure-pages@v4
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dashboard
+
+      - uses: actions/deploy-pages@v4
