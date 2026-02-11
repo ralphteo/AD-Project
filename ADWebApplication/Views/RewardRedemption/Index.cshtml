@@ -1,5 +1,8 @@
 @model IEnumerable<ADWebApplication.Models.RewardRedemption>
-
+@{
+    ViewData["Title"] = "Rewards Redemptions";
+    Layout = "_AdminLayout"; 
+}
 @{
     ViewData["Title"] = "Reward Redemptions";
 }
@@ -54,15 +57,6 @@
         <button type="button" class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#filterPanel">
             <i class="bi bi-funnel"></i> Filters
         </button>
-        <a asp-action="ExportCsv" 
-           asp-route-startDate="@ViewBag.StartDate" 
-           asp-route-endDate="@ViewBag.EndDate"
-           asp-route-status="@ViewBag.Status"
-           asp-route-userId="@ViewBag.UserId"
-           asp-route-rewardId="@ViewBag.RewardId"
-           class="btn btn-success">
-            <i class="bi bi-download"></i> Export CSV
-        </a>
     </div>
 </div>
 
@@ -92,30 +86,33 @@
         <form method="get" asp-action="Index" id="filterForm">
             <div class="row g-3">
                 <div class="col-md-3">
-                    <label class="filter-label">Start Date</label>
-                    <input type="date" name="startDate" class="form-control" value="@ViewBag.StartDate" />
+                    <label for="startDate" class="filter-label">Start Date</label>
+                    <input type="date" id="startDate" name="startDate" class="form-control" value="@ViewBag.StartDate" />
                 </div>
                 <div class="col-md-3">
-                    <label class="filter-label">End Date</label>
-                    <input type="date" name="endDate" class="form-control" value="@ViewBag.EndDate" />
+                    <label for="endDate" class="filter-label">End Date</label>
+                    <input type="date" id="endDate" name="endDate" class="form-control" value="@ViewBag.EndDate" />
                 </div>
                 <div class="col-md-2">
-                    <label class="filter-label">Status</label>
-                    <select name="status" class="form-select">
+                    <label for="status" class="filter-label">Status</label>
+                    <select id="status" name="status" class="form-select">
                         <option value="">All Statuses</option>
-                        @foreach (var stat in ViewBag.Statuses as List<string>)
+                        @if (ViewBag.Statuses != null)
                         {
-                            <option value="@stat" selected="@(stat == ViewBag.Status)">@stat</option>
+                            @foreach (string stat in ViewBag.Statuses as List<string>)
+                            {
+                                <option value="@stat" selected="@(stat == ViewBag.Status)">@stat</option>
+                            }
                         }
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="filter-label">User ID</label>
-                    <input type="number" name="userId" class="form-control" placeholder="User ID" value="@ViewBag.UserId" />
+                    <label for="userId" class="filter-label">User ID</label>
+                    <input type="number" id="userId" name="userId" class="form-control" placeholder="User ID" value="@ViewBag.UserId" />
                 </div>
                 <div class="col-md-2">
-                    <label class="filter-label">Reward ID</label>
-                    <input type="number" name="rewardId" class="form-control" placeholder="Reward ID" value="@ViewBag.RewardId" />
+                    <label for="rewardId" class="filter-label">Reward ID</label>
+                    <input type="number" id="rewardId" name="rewardId" class="form-control" placeholder="Reward ID" value="@ViewBag.RewardId" />
                 </div>
             </div>
             <div class="mt-3 d-flex gap-2">
