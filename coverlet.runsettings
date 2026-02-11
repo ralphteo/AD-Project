@@ -5,9 +5,30 @@
       <DataCollector friendlyName="XPlat code coverage">
         <Configuration>
           <Format>opencover,cobertura</Format>
-          <Include>[ADWebApplication]*</Include>
-          <Exclude>[ADWebApplication.Tests]*,[*]*.Program,[*]*Migrations*</Exclude>
-          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+
+          <Include>
+            [ADWebApplication]*
+          </Include>
+
+          <Exclude>
+            [ADWebApplication.Tests]*
+            [ADWebApplication]*.Program
+            [ADWebApplication]*Migrations*
+            [ADWebApplication]*ViewModels*
+            [ADWebApplication]*Models.DTOs*
+            [ADWebApplication]*Models.Entities*
+          </Exclude>
+
+          <ExcludeByFile>
+            **/wwwroot/**
+            **/scripts/**
+          </ExcludeByFile>
+
+          <ExcludeByAttribute>
+            Obsolete,
+            GeneratedCodeAttribute,
+            CompilerGeneratedAttribute
+          </ExcludeByAttribute>
         </Configuration>
       </DataCollector>
     </DataCollectors>

@@ -126,9 +126,20 @@ jobs:
           {
             "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
             "run_id": "${{ github.run_id }}",
+            "run_number": "${{ github.run_number }}",
             "branch": "${{ github.ref_name }}",
             "commit": "${{ github.sha }}",
-            "snyk_sca": {
+            "sonarcloud": {
+              "bugs": "0",
+              "vulnerabilities": "0",
+              "code_smells": "0",
+              "security_hotspots": "0",
+              "coverage": "0",
+              "duplications": "0",
+              "lines_of_code": "0"
+            },
+            "dependency_check": {
+              "critical": "0",
               "high": "${{ steps.snyk_results.outputs.high }}",
               "medium": "${{ steps.snyk_results.outputs.medium }}",
               "low": "${{ steps.snyk_results.outputs.low }}",
