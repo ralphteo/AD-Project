@@ -21,16 +21,17 @@ env:
   PROJECT_PATH: './ADWebApplication/ADWebApplication.csproj'
   SKIP_KEYVAULT_IN_TESTS: "true"
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
+
 
 jobs:
   # =========================================================
   # JOB 1: CI + SonarCloud + OWASP DEPENDENCY-CHECK
   # =========================================================
   build-and-sast-sca-scan:
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
     runs-on: ubuntu-latest
 
     steps:
