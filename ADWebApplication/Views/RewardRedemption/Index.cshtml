@@ -1,5 +1,8 @@
 @model IEnumerable<ADWebApplication.Models.RewardRedemption>
-
+@{
+    ViewData["Title"] = "Rewards Redemptions";
+    Layout = "_AdminLayout"; 
+}
 @{
     ViewData["Title"] = "Reward Redemptions";
 }
@@ -54,15 +57,6 @@
         <button type="button" class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#filterPanel">
             <i class="bi bi-funnel"></i> Filters
         </button>
-        <a asp-action="ExportCsv" 
-           asp-route-startDate="@ViewBag.StartDate" 
-           asp-route-endDate="@ViewBag.EndDate"
-           asp-route-status="@ViewBag.Status"
-           asp-route-userId="@ViewBag.UserId"
-           asp-route-rewardId="@ViewBag.RewardId"
-           class="btn btn-success">
-            <i class="bi bi-download"></i> Export CSV
-        </a>
     </div>
 </div>
 
