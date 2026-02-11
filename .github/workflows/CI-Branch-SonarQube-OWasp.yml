@@ -1,216 +1,216 @@
-name: CI-Branch + SonarCloud + SCA
+# name: CI-Branch + SonarCloud + SCA
 
-on:
-  push:
-    branches: 
-    - angeline/**
-    - thengyi/**
-    - ralph/**
-    - nyunt/**
-    - danglam/**
-    - sara*/**
-    - andrew/**
+# on:
+#   push:
+#     branches: 
+#     - angeline/**
+#     - thengyi/**
+#     - ralph/**
+#     - nyunt/**
+#     - danglam/**
+#     - sara*/**
+#     - andrew/**
 
-  pull_request:
-  workflow_dispatch:
+#   pull_request:
+#   workflow_dispatch:
 
-env:
-  AZURE_WEBAPP_NAME: in5nite
-  DOTNET_VERSION: '8.0.x'
-  PROJECT_PATH: './ADWebApplication/ADWebApplication.csproj'
-  SKIP_KEYVAULT_IN_TESTS: "true"
+# env:
+#   AZURE_WEBAPP_NAME: in5nite
+#   DOTNET_VERSION: '8.0.x'
+#   PROJECT_PATH: './ADWebApplication/ADWebApplication.csproj'
+#   SKIP_KEYVAULT_IN_TESTS: "true"
 
-jobs:
-  # =========================================================
-  # JOB 1: CI + SonarCloud + OWASP DEPENDENCY-CHECK
-  # =========================================================
-  build-and-sast-sca-scan:
-    runs-on: ubuntu-latest
+# jobs:
+#   # =========================================================
+#   # JOB 1: CI + SonarCloud + OWASP DEPENDENCY-CHECK
+#   # =========================================================
+#   build-and-sast-sca-scan:
+#     runs-on: ubuntu-latest
 
-    steps:
-      # ---- Checkout ----
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+#     steps:
+#       # ---- Checkout ----
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
 
-      # ---- Setup .NET ----
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+#       # ---- Setup .NET ----
+#       - name: Setup .NET
+#         uses: actions/setup-dotnet@v4
+#         with:
+#           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # ---- Setup Node.js for JavaScript tests ----
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+#       # ---- Setup Node.js for JavaScript tests ----
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
 
-      # ---- Install SonarScanner ----
-      - name: Install SonarScanner
-        run: dotnet tool install --global dotnet-sonarscanner
+#       # ---- Install SonarScanner ----
+#       - name: Install SonarScanner
+#         run: dotnet tool install --global dotnet-sonarscanner
 
-      # ---- SonarCloud Begin ----
-      - name: SonarCloud Begin
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          dotnet sonarscanner begin \
-            /k:"GDipSA-Team-5_AD-Project" \
-            /o:"gdipsa-team-5" \
-            /d:sonar.host.url="https://sonarcloud.io" \
-            /d:sonar.projectBaseDir="$GITHUB_WORKSPACE" \
-            /d:sonar.sources="ADWebApplication" \
-            /d:sonar.tests="ADWebApplication.Tests" \
-            /d:sonar.javascript.lcov.reportPaths="ADWebApplication.Tests/JavaScript/coverage/lcov.info" \
-            /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml" \
-            /d:sonar.cs.vstest.reportsPaths="TestResults/**/*.trx" \
-            /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**,**/wwwroot/lib/**,**/*.min.js,**/wwwroot/js/collector-dashboard.js,**/Models/Entities/**,**/Models/DTOs/**" \
-            /d:sonar.exclusions="**/wwwroot/lib/**,**/*.min.js" \
-            /d:sonar.test.inclusions="**/*.test.js" \
-            /d:sonar.verbose=true
+#       # ---- SonarCloud Begin ----
+#       - name: SonarCloud Begin
+#         env:
+#           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#         run: |
+#           dotnet sonarscanner begin \
+#             /k:"GDipSA-Team-5_AD-Project" \
+#             /o:"gdipsa-team-5" \
+#             /d:sonar.host.url="https://sonarcloud.io" \
+#             /d:sonar.projectBaseDir="$GITHUB_WORKSPACE" \
+#             /d:sonar.sources="ADWebApplication" \
+#             /d:sonar.tests="ADWebApplication.Tests" \
+#             /d:sonar.javascript.lcov.reportPaths="ADWebApplication.Tests/JavaScript/coverage/lcov.info" \
+#             /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml" \
+#             /d:sonar.cs.vstest.reportsPaths="TestResults/**/*.trx" \
+#             /d:sonar.coverage.exclusions="**/Program.cs,**/Migrations/**,**/wwwroot/lib/**,**/*.min.js,**/wwwroot/js/collector-dashboard.js,**/Models/Entities/**,**/Models/DTOs/**" \
+#             /d:sonar.exclusions="**/wwwroot/lib/**,**/*.min.js" \
+#             /d:sonar.test.inclusions="**/*.test.js" \
+#             /d:sonar.verbose=true
 
-      # ---- Restore & Build main project ----
-      - name: Restore Main Project
-        run: dotnet restore ${{ env.PROJECT_PATH }}
+#       # ---- Restore & Build main project ----
+#       - name: Restore Main Project
+#         run: dotnet restore ${{ env.PROJECT_PATH }}
 
-      - name: Build Main Project
-        run: dotnet build ${{ env.PROJECT_PATH }} --no-restore
+#       - name: Build Main Project
+#         run: dotnet build ${{ env.PROJECT_PATH }} --no-restore
 
-      # ---- Build Test Project ----
-      - name: Build Test Project
-        run: dotnet build ./ADWebApplication.Tests/ADWebApplication.Tests.csproj
+#       # ---- Build Test Project ----
+#       - name: Build Test Project
+#         run: dotnet build ./ADWebApplication.Tests/ADWebApplication.Tests.csproj
 
-      # ---- Run .NET Tests with Coverage ----
-      - name: Test with Coverage
-        run: |
-          dotnet test ./ADWebApplication.Tests/ADWebApplication.Tests.csproj \
-            --collect:"XPlat Code Coverage" \
-            --settings coverlet.runsettings \
-            --results-directory ./TestResults \
-            --logger "trx;LogFileName=test-results.trx"
+#       # ---- Run .NET Tests with Coverage ----
+#       - name: Test with Coverage
+#         run: |
+#           dotnet test ./ADWebApplication.Tests/ADWebApplication.Tests.csproj \
+#             --collect:"XPlat Code Coverage" \
+#             --settings coverlet.runsettings \
+#             --results-directory ./TestResults \
+#             --logger "trx;LogFileName=test-results.trx"
 
-      - name: Debug coverage files
-        run: find TestResults -name "coverage.opencover.xml" -o -name "*.trx"
+#       - name: Debug coverage files
+#         run: find TestResults -name "coverage.opencover.xml" -o -name "*.trx"
 
-      # ---- Install JavaScript test dependencies ----
-      - name: Install JavaScript dependencies
-        run: |
-          cd ADWebApplication.Tests/JavaScript
-          npm install --ignore-scripts
-          cd ../..
+#       # ---- Install JavaScript test dependencies ----
+#       - name: Install JavaScript dependencies
+#         run: |
+#           cd ADWebApplication.Tests/JavaScript
+#           npm install --ignore-scripts
+#           cd ../..
 
-      # ---- Run JavaScript Tests with Coverage ----
-      - name: Run JavaScript Tests
-        run: |
-          cd ADWebApplication.Tests/JavaScript
-          npm test -- --coverage
-          cd ../..
+#       # ---- Run JavaScript Tests with Coverage ----
+#       - name: Run JavaScript Tests
+#         run: |
+#           cd ADWebApplication.Tests/JavaScript
+#           npm test -- --coverage
+#           cd ../..
 
-      - name: Debug JavaScript coverage files
-        run: find ADWebApplication.Tests/JavaScript/coverage -type f
+#       - name: Debug JavaScript coverage files
+#         run: find ADWebApplication.Tests/JavaScript/coverage -type f
 
-      # ---- SonarCloud End ----
-      - name: SonarCloud End
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet sonarscanner end
+#       # ---- SonarCloud End ----
+#       - name: SonarCloud End
+#         env:
+#           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#         run: dotnet sonarscanner end
 
-      # ---- SonarCloud Quality Gate Check ----
-      - name: SonarCloud Quality Gate check
-        uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
-        with:
-          scanMetadataReportFile: .sonarqube/out/.sonar/report-task.txt
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: "https://sonarcloud.io"
+#       # ---- SonarCloud Quality Gate Check ----
+#       - name: SonarCloud Quality Gate check
+#         uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
+#         with:
+#           scanMetadataReportFile: .sonarqube/out/.sonar/report-task.txt
+#         env:
+#           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#           SONAR_HOST_URL: "https://sonarcloud.io"
 
-      # ---- Upload Sonar Artifacts ----
-      - name: Upload SonarCloud artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: sonarcloud-artifacts
-          path: |
-            .sonarqube/out
-            TestResults/**/coverage.opencover.xml
-            ADWebApplication.Tests/JavaScript/coverage/
+#       # ---- Upload Sonar Artifacts ----
+#       - name: Upload SonarCloud artifacts
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: sonarcloud-artifacts
+#           path: |
+#             .sonarqube/out
+#             TestResults/**/coverage.opencover.xml
+#             ADWebApplication.Tests/JavaScript/coverage/
 
-      # ---- OWASP Dependency-Check ----
-      - name: Run OWASP Dependency-Check SCA
-        uses: dependency-check/Dependency-Check_Action@1e54355a8b4c8abaa8cc7d0b70aa655a3bb15a6c
-        with:
-          project: ADWebApplication
-          path: .
-          format: ALL
-          out: ./dependency-check-report
-          args: >
-            --failOnCVSS 12
-            --suppression dependency-check-suppressions.xml
-            --exclude '**/test/**'
+#       # ---- OWASP Dependency-Check ----
+#       - name: Run OWASP Dependency-Check SCA
+#         uses: dependency-check/Dependency-Check_Action@1e54355a8b4c8abaa8cc7d0b70aa655a3bb15a6c
+#         with:
+#           project: ADWebApplication
+#           path: .
+#           format: ALL
+#           out: ./dependency-check-report
+#           args: >
+#             --failOnCVSS 12
+#             --suppression dependency-check-suppressions.xml
+#             --exclude '**/test/**'
 
-      - name: Upload Dependency-Check report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dependency-check-report
-          path: ./dependency-check-report
+#       - name: Upload Dependency-Check report
+#         if: always()
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: dependency-check-report
+#           path: ./dependency-check-report
 
-# =========================================================
-# JOB 2: OWASP ZAP Scan
-# =========================================================
-  dast-scan:
-    needs: build-and-sast-sca-scan
-    runs-on: ubuntu-latest
+# # =========================================================
+# # JOB 2: OWASP ZAP Scan
+# # =========================================================
+#   dast-scan:
+#     needs: build-and-sast-sca-scan
+#     runs-on: ubuntu-latest
 
-    steps:
-      # ---- Checkout code ----
-      - name: Checkout code
-        uses: actions/checkout@v4
+#     steps:
+#       # ---- Checkout code ----
+#       - name: Checkout code
+#         uses: actions/checkout@v4
 
-      # ---- Setup .NET ----
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+#       # ---- Setup .NET ----
+#       - name: Setup .NET
+#         uses: actions/setup-dotnet@v4
+#         with:
+#           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # ---- Publish app locally ----
-      - name: Publish App
-        run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output publish
+#       # ---- Publish app locally ----
+#       - name: Publish App
+#         run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output publish
 
-      # ---- Start app locally in the background ----
-      - name: Run App Locally
-        env:
-          SKIP_KEYVAULT_IN_TESTS: "true"
-          ASPNETCORE_ENVIRONMENT: "Development"
-        run: |
-          nohup dotnet publish/ADWebApplication.dll &
-          echo "Waiting for app to start..."
+#       # ---- Start app locally in the background ----
+#       - name: Run App Locally
+#         env:
+#           SKIP_KEYVAULT_IN_TESTS: "true"
+#           ASPNETCORE_ENVIRONMENT: "Development"
+#         run: |
+#           nohup dotnet publish/ADWebApplication.dll &
+#           echo "Waiting for app to start..."
           
-          # Wait up to 60 seconds for the app to start
-          timeout=60
-          elapsed=0
-          until curl -s http://localhost:5000 > /dev/null || [ $elapsed -eq $timeout ]; do
-            echo "Waiting for app to start... ($elapsed/$timeout seconds)"
-            sleep 2
-            elapsed=$((elapsed + 2))
-          done
+#           # Wait up to 60 seconds for the app to start
+#           timeout=60
+#           elapsed=0
+#           until curl -s http://localhost:5000 > /dev/null || [ $elapsed -eq $timeout ]; do
+#             echo "Waiting for app to start... ($elapsed/$timeout seconds)"
+#             sleep 2
+#             elapsed=$((elapsed + 2))
+#           done
           
-          if [ $elapsed -eq $timeout ]; then
-            echo "App failed to start within $timeout seconds"
-            cat nohup.out  # Show error logs
-            exit 1
-          fi
+#           if [ $elapsed -eq $timeout ]; then
+#             echo "App failed to start within $timeout seconds"
+#             cat nohup.out  # Show error logs
+#             exit 1
+#           fi
           
-          echo "App is running!"
+#           echo "App is running!"
 
-      # ---- Run ZAP Baseline Scan ----
-      - name: Run OWASP ZAP Baseline Scan
-        uses: zaproxy/action-baseline@4ea3deb659d9a669dc5e5c10c49a423e8bb41420
-        with:
-          target: 'http://localhost:5000'
-          fail_action: false
-          artifact_name: zap-report
-          cmd_options: >
-            -J report_json.json
-            -r report_html.html
-          allow_issue_writing: false
+#       # ---- Run ZAP Baseline Scan ----
+#       - name: Run OWASP ZAP Baseline Scan
+#         uses: zaproxy/action-baseline@4ea3deb659d9a669dc5e5c10c49a423e8bb41420
+#         with:
+#           target: 'http://localhost:5000'
+#           fail_action: false
+#           artifact_name: zap-report
+#           cmd_options: >
+#             -J report_json.json
+#             -r report_html.html
+#           allow_issue_writing: false
