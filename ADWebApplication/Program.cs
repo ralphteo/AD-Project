@@ -46,26 +46,14 @@ if (!builder.Environment.IsDevelopment() && !shouldSkipKeyVault)
     );
 }
 
-//var mySqlConn = builder.Configuration.GetConnectionString("DefaultConnection");
+var mySqlConn = builder.Configuration.GetConnectionString("DefaultConnection");
 
-if (builder.Environment.IsEnvironment("Testing"))
-{
-    builder.Services.AddDbContext<In5niteDbContext>(options =>
-        options.UseSqlite("DataSource=:memory:"));
-}
-else
-{
-    var mySqlConn = builder.Configuration.GetConnectionString("DefaultConnection");
-    builder.Services.AddDbContext<In5niteDbContext>(options =>
-        options.UseMySql(mySqlConn, ServerVersion.AutoDetect(mySqlConn)));
-}
-
-// builder.Services.AddDbContext<In5niteDbContext>(options =>
-//     options.UseMySql(
-//         mySqlConn,
-//         new MySqlServerVersion(new Version(8, 0, 36))
-//     )
-// );
+builder.Services.AddDbContext<In5niteDbContext>(options =>
+    options.UseMySql(
+        mySqlConn,
+        new MySqlServerVersion(new Version(8, 0, 36))
+    )
+);
 
 // Session (needed for OTP)
 builder.Services.AddSession(opt =>
@@ -163,7 +151,7 @@ app.Run();
 #pragma warning restore S6966
 
 // Expose Program for integration tests (e.g., WebApplicationFactory<Program>).
-namespace ADWebApplication
-{
-    public partial class Program { }
-}
+// namespace ADWebApplication
+// {
+//     public partial class Program { }
+// }
