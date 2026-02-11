@@ -169,23 +169,19 @@
             <!-- Metrics -->
             <div class="col-md-4 mb-3">
                 <div class="metric-card">
-                    <p class="text-muted mb-1">Completed Collections (MTD)</p>
+                    <p class="text-muted mb-1">Completed Deposits (MTD)</p>
                     <div class="d-flex align-items-baseline">
-                        <h3 class="metric-value mb-0">@Model.KPIs.TotalCollections.ToString("N0")</h3>
-                        <span class="metric-change ms-2">
-                            <i class="bi bi-arrow-up"></i> @Model.KPIs.CollectionGrowthPercent.ToString("+0.0;-0.0")%
-                        </span>
+                        <h3 class="metric-value mb-0">@Model.KPIs.CurrentCollectionMTD.ToString("N0")</h3>
+                        
                     </div>
                 </div>
             </div>
             <div class="col-md-4 mb-3">
                 <div class="metric-card">
-                    <p class="text-muted mb-1">E-Waste Collected (MTD)</p>
+                    <p class="text-muted mb-1">E-Waste Weight Deposited (MTD)</p>
                     <div class="d-flex align-items-baseline">
-                        <h3 class="metric-value mb-0">@Model.KPIs.TotalWeightRecycled.ToString("N1") kg</h3>
-                        <span class="metric-change ms-2">
-                            <i class="bi bi-arrow-up"></i> @Model.KPIs.WeightGrowthPercent.ToString("+0.0;-0.0")%
-                        </span>
+                        <h3 class="metric-value mb-0">@Model.KPIs.CurrentWeightMTD.ToString("N1") kg</h3>
+                       
                     </div>
                 </div>
             </div>

@@ -11,6 +11,8 @@ namespace ADWebApplication.Models.DTOs
         public decimal WeightGrowthPercent { get; set; }
         public decimal AvgBinFillRate { get; set; }
         public decimal BinFillRateChange { get; set; }
+        public int CurrentCollectionMTD { get; set; }
+        public int CurrentWeightMTD { get; set; }
     }
 
 }
