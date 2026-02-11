@@ -105,21 +105,16 @@ jobs:
         run: docker build -t in5nite-dotnet:snyk ./ADWebApplication
 
       - name: Snyk Container Scan
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          image: in5nite-dotnet:snyk
-          sarif: true
-          args: >
-            --file=ADWebApplication/Dockerfile
-            --severity-threshold=high
-      
+        run: |
+          snyk container test in5nite-dotnet:snyk \
+            --severity-threshold=high \
+            --sarif-file-output=snyk-container.sarif
+
       - name: Upload Container SARIF
         uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
-          sarif_file: snyk.sarif
+          sarif_file: snyk-container.sarif
 
       # Save metadata for dashboard
       - name: Save SAST/SCA Metadata
