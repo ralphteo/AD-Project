@@ -8,11 +8,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace ADWebApplication.Tests.MobileAPI
 {
     public class LookupControllerTests
     {
+        private static void SetUser(LookupController controller, int userId)
+        {
+            var identity = new ClaimsIdentity(
+                new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) },
+                "TestAuth");
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) }
+            };
+        }
         private static In5niteDbContext CreateInMemoryDbContext()
         {
             var options = new DbContextOptionsBuilder<In5niteDbContext>()
@@ -59,6 +71,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new LookupController(dbContext);
+            SetUser(controller, 1);
 
             // Act
             var result = await controller.GetBins();
@@ -74,6 +87,7 @@ namespace ADWebApplication.Tests.MobileAPI
             // Arrange
             var dbContext = CreateInMemoryDbContext();
             var controller = new LookupController(dbContext);
+            SetUser(controller, 1);
 
             // Act
             var result = await controller.GetBins();
@@ -114,6 +128,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new LookupController(dbContext);
+            SetUser(controller, 1);
 
             // Act
             var result = await controller.GetBins();
@@ -142,6 +157,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new LookupController(dbContext);
+            SetUser(controller, 1);
 
             // Act
             var result = await controller.GetCategories();
@@ -157,6 +173,7 @@ namespace ADWebApplication.Tests.MobileAPI
             // Arrange
             var dbContext = CreateInMemoryDbContext();
             var controller = new LookupController(dbContext);
+            SetUser(controller, 1);
 
             // Act
             var result = await controller.GetCategories();
@@ -189,6 +206,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new LookupController(dbContext);
+            SetUser(controller, 1);
 
             // Act
             var result = await controller.GetItemTypes(1);
@@ -204,6 +222,7 @@ namespace ADWebApplication.Tests.MobileAPI
             // Arrange
             var dbContext = CreateInMemoryDbContext();
             var controller = new LookupController(dbContext);
+            SetUser(controller, 1);
 
             // Act
             var result = await controller.GetItemTypes(999);
@@ -234,6 +253,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new LookupController(dbContext);
+            SetUser(controller, 1);
 
             // Act
             var result = await controller.GetItemTypes(1);

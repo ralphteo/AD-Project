@@ -9,11 +9,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace ADWebApplication.Tests.MobileAPI
 {
     public class RewardsControllerTests
     {
+        private static void SetUser(RewardsController controller, int userId)
+        {
+            var identity = new ClaimsIdentity(
+                new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) },
+                "TestAuth");
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) }
+            };
+        }
         private static In5niteDbContext CreateInMemoryDbContext()
         {
             var options = new DbContextOptionsBuilder<In5niteDbContext>()
@@ -38,6 +50,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new RewardsController(dbContext);
+            SetUser(controller, user.Id);
 
             // Act
             var result = await controller.GetSummary(user.Id);
@@ -54,6 +67,7 @@ namespace ADWebApplication.Tests.MobileAPI
             // Arrange
             var dbContext = CreateInMemoryDbContext();
             var controller = new RewardsController(dbContext);
+            SetUser(controller, 999);
 
             // Act
             var result = await controller.GetSummary(999);
@@ -74,6 +88,7 @@ namespace ADWebApplication.Tests.MobileAPI
             // Arrange
             var dbContext = CreateInMemoryDbContext();
             var controller = new RewardsController(dbContext);
+            SetUser(controller, 999);
 
             // Act
             var result = await controller.GetHistory(999);
@@ -104,6 +119,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new RewardsController(dbContext);
+            SetUser(controller, user.Id);
 
             // Act
             var result = await controller.GetHistory(user.Id);
@@ -130,6 +146,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new RewardsController(dbContext);
+            SetUser(controller, user.Id);
 
             // Act
             var result = await controller.GetWallet(user.Id);
@@ -147,6 +164,7 @@ namespace ADWebApplication.Tests.MobileAPI
             // Arrange
             var dbContext = CreateInMemoryDbContext();
             var controller = new RewardsController(dbContext);
+            SetUser(controller, 999);
 
             // Act
             var result = await controller.GetWallet(999);
@@ -177,6 +195,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new RewardsController(dbContext);
+            SetUser(controller, 1);
 
             // Act
             var result = await controller.GetCatalogue();
@@ -193,6 +212,7 @@ namespace ADWebApplication.Tests.MobileAPI
             // Arrange
             var dbContext = CreateInMemoryDbContext();
             var controller = new RewardsController(dbContext);
+            SetUser(controller, 1);
 
             // Act
             var result = await controller.GetCatalogue();
@@ -233,6 +253,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new RewardsController(dbContext);
+            SetUser(controller, user.Id);
             var request = new RedeemRequestDto { UserId = user.Id, RewardId = reward.RewardId };
 
             // Act
@@ -271,6 +292,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new RewardsController(dbContext);
+            SetUser(controller, user.Id);
             var request = new RedeemRequestDto { UserId = user.Id, RewardId = reward.RewardId };
 
             // Act
@@ -309,6 +331,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new RewardsController(dbContext);
+            SetUser(controller, user.Id);
             var request = new RedeemRequestDto { UserId = user.Id, RewardId = reward.RewardId };
 
             // Act
@@ -327,6 +350,7 @@ namespace ADWebApplication.Tests.MobileAPI
             // Arrange
             var dbContext = CreateInMemoryDbContext();
             var controller = new RewardsController(dbContext);
+            SetUser(controller, 999);
             var request = new RedeemRequestDto { UserId = 999, RewardId = 1 };
 
             // Act
@@ -345,6 +369,7 @@ namespace ADWebApplication.Tests.MobileAPI
             // Arrange
             var dbContext = CreateInMemoryDbContext();
             var controller = new RewardsController(dbContext);
+            SetUser(controller, 1);
 
             // Act
             var result = await controller.Redeem(null!);
@@ -397,6 +422,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new RewardsController(dbContext);
+            SetUser(controller, user.Id);
 
             // Act
             var result = await controller.GetRedemptions(user.Id);
@@ -413,6 +439,7 @@ namespace ADWebApplication.Tests.MobileAPI
             // Arrange
             var dbContext = CreateInMemoryDbContext();
             var controller = new RewardsController(dbContext);
+            SetUser(controller, 999);
 
             // Act
             var result = await controller.GetRedemptions(999);
