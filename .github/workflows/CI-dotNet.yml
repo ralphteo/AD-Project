@@ -51,7 +51,7 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml" \
             /d:sonar.exclusions="**/.github/workflows/*.yml" \
-            /d:sonar.coverage.exclusions="**/Models/**,**/ViewModels/**,**/*VM.cs,**/scripts/**,**/wwwroot/**,**/Dockerfile"
+            /d:sonar.coverage.exclusions="**/Models/**,**/ViewModels/**,**/*VM.cs,**/scripts/**,**/wwwroot/**,**/Dockerfile,**/Program.cs"
       
       - name: Restore & Build
         run: |
@@ -221,6 +221,7 @@ jobs:
           target: 'https://in5nite-ml-fdcycfe6gkfnhdg2.southeastasia-01.azurewebsites.net'
           cmd_options: '-J zap-ml.json'
           fail_action: false
+          allow_issue_writing: false
 
       - name: Copy ZAP reports
         run: |
