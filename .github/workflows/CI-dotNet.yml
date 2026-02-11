@@ -223,18 +223,18 @@ jobs:
 
           # ---------------- DOTNET ----------------
           if [ -f zap.json ]; then
-            HIGH_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="3")] | length' zap.json)
-            MEDIUM_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="2")] | length' zap.json)
-            LOW_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="1")] | length' zap.json)
+            HIGH_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="3") | .instances[]?] | length' zap.json)
+            MEDIUM_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="2") | .instances[]?] | length' zap.json)
+            LOW_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="1") | .instances[]?] | length' zap.json)
           else
             HIGH_DOTNET=0; MEDIUM_DOTNET=0; LOW_DOTNET=0
           fi
 
           # ---------------- ML ----------------
           if [ -f zap-ml.json ]; then
-            HIGH_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="3")] | length' zap-ml.json)
-            MEDIUM_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="2")] | length' zap-ml.json)
-            LOW_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="1")] | length' zap-ml.json)
+            HIGH_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="3") | .instances[]?] | length' zap-ml.json)
+            MEDIUM_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="2") | .instances[]?] | length' zap-ml.json)
+            LOW_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="1") | .instances[]?] | length' zap-ml.json)
           else
             HIGH_ML=0; MEDIUM_ML=0; LOW_ML=0
           fi
