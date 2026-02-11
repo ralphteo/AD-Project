@@ -1,14 +1,11 @@
 const fs = require('fs');
 
+// ===============================
 // Load ZAP metadata
+// ===============================
 const zapData = JSON.parse(
   fs.readFileSync('scan-data/zap-metadata.json', 'utf8')
 );
-
-// Safe access helper
-function safe(value) {
-  return value ? parseInt(value) : 0;
-}
 
 const currentScan = {
   timestamp: zapData.timestamp,
@@ -18,7 +15,9 @@ const currentScan = {
   zap: zapData.zap
 };
 
+// ===============================
 // Load historical data
+// ===============================
 let historicalData = [];
 const historyFile = 'dashboard/history.json';
 
@@ -34,21 +33,27 @@ if (historicalData.length > 30) {
   historicalData = historicalData.slice(-30);
 }
 
-// Save history
+// Ensure dashboard folder exists
 fs.mkdirSync('dashboard', { recursive: true });
+
+// Save updated history
 fs.writeFileSync(historyFile, JSON.stringify(historicalData, null, 2));
 
+// ===============================
 // Trend Calculation
+// ===============================
 const latest = currentScan;
 const previous =
   historicalData.length > 1
     ? historicalData[historicalData.length - 2]
     : null;
 
-const latestTotal = safe(latest.zap?.total?.total);
-const previousTotal = previous ? safe(previous.zap?.total?.total) : 0;
+const latestTotal = parseInt(latest.zap.total.total);
+const previousTotal = previous
+  ? parseInt(previous.zap.total.total)
+  : latestTotal;
 
-const trend = previous ? latestTotal - previousTotal : 0;
+const trend = latestTotal - previousTotal;
 
 const trendIcon =
   trend > 0
@@ -58,11 +63,36 @@ const trendIcon =
     : "→ No Change";
 
 const trendColor =
-  trend > 0 ? "danger" :
-  trend < 0 ? "success" :
-  "secondary";
+  trend > 0
+    ? "danger"
+    : trend < 0
+    ? "success"
+    : "secondary";
 
-// HTML Generation
+// ===============================
+// Build Chart Data
+// ===============================
+const labels = historicalData.map(h => h.commit);
+
+const dotnetTotals = historicalData.map(h =>
+  parseInt(h.zap.dotnet.high) +
+  parseInt(h.zap.dotnet.medium) +
+  parseInt(h.zap.dotnet.low)
+);
+
+const mlTotals = historicalData.map(h =>
+  parseInt(h.zap.ml.high) +
+  parseInt(h.zap.ml.medium) +
+  parseInt(h.zap.ml.low)
+);
+
+const aggregatedTotals = historicalData.map(h =>
+  parseInt(h.zap.total.total)
+);
+
+// ===============================
+// Generate HTML
+// ===============================
 const html = `
 <!DOCTYPE html>
 <html>
@@ -102,132 +132,146 @@ const html = `
       font-weight: bold;
     }
 
-    .trend-badge {
-      font-size: 0.9rem;
-      padding: 0.4rem 0.8rem;
-      border-radius: 20px;
-    }
-
     canvas {
       max-height: 300px;
     }
   </style>
 </head>
+
 <body>
 
 <div class="container-fluid px-4">
 
   <div class="header text-center">
     <h1>OWASP ZAP Security Dashboard</h1>
-    <p>.NET + ML Aggregated DAST Monitoring</p>
+    <p>.NET + ML DAST Monitoring</p>
   </div>
 
   <div class="container">
 
-    <!-- Latest Scan Info -->
+    <!-- Latest Info -->
     <div class="card p-4 mb-4">
       <h5>Latest Scan</h5>
       <p><strong>Branch:</strong> ${latest.branch}</p>
       <p><strong>Commit:</strong> ${latest.commit}</p>
       <p><strong>Date:</strong> ${new Date(latest.timestamp).toLocaleString()}</p>
 
-      <div class="mt-3">
-        <span class="badge bg-${trendColor} trend-badge">
-          ${trendIcon} (${trend > 0 ? "+" + trend : trend})
-        </span>
-      </div>
+      <span class="badge bg-${trendColor}">
+        ${trendIcon} (${trend > 0 ? "+" + trend : trend})
+      </span>
     </div>
 
-    <!-- Aggregated Totals -->
+    <!-- ===================== -->
+    <!-- .NET SECTION -->
+    <!-- ===================== -->
+    <h4>.NET Alerts</h4>
     <div class="row text-center mb-4">
-
-      <div class="col-md-3">
+      <div class="col-md-4">
         <div class="card card-stat p-3">
-          <div class="stat-value text-danger">${safe(latest.zap?.total?.high)}</div>
-          <small>High Severity</small>
+          <div class="stat-value text-danger">${latest.zap.dotnet.high}</div>
+          <small>High</small>
         </div>
       </div>
-
-      <div class="col-md-3">
+      <div class="col-md-4">
         <div class="card card-stat p-3">
-          <div class="stat-value text-warning">${safe(latest.zap?.total?.medium)}</div>
-          <small>Medium Severity</small>
+          <div class="stat-value text-warning">${latest.zap.dotnet.medium}</div>
+          <small>Medium</small>
         </div>
       </div>
-
-      <div class="col-md-3">
+      <div class="col-md-4">
         <div class="card card-stat p-3">
-          <div class="stat-value text-info">${safe(latest.zap?.total?.low)}</div>
-          <small>Low Severity</small>
+          <div class="stat-value text-info">${latest.zap.dotnet.low}</div>
+          <small>Low</small>
         </div>
       </div>
-
-      <div class="col-md-3">
-        <div class="card card-stat p-3">
-          <div class="stat-value">${safe(latest.zap?.total?.total)}</div>
-          <small>Total Alerts</small>
-        </div>
-      </div>
-
     </div>
 
+    <!-- ===================== -->
+    <!-- ML SECTION -->
+    <!-- ===================== -->
+    <h4>ML Service Alerts</h4>
+    <div class="row text-center mb-4">
+      <div class="col-md-4">
+        <div class="card card-stat p-3">
+          <div class="stat-value text-danger">${latest.zap.ml.high}</div>
+          <small>High</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card card-stat p-3">
+          <div class="stat-value text-warning">${latest.zap.ml.medium}</div>
+          <small>Medium</small>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card card-stat p-3">
+          <div class="stat-value text-info">${latest.zap.ml.low}</div>
+          <small>Low</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== -->
+    <!-- Aggregated -->
+    <!-- ===================== -->
+    <h4>Aggregated Total</h4>
+    <div class="row text-center mb-4">
+      <div class="col-md-12">
+        <div class="card card-stat p-3">
+          <div class="stat-value">${latest.zap.total.total}</div>
+          <small>Total Alerts (.NET + ML)</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== -->
     <!-- Trend Chart -->
+    <!-- ===================== -->
     <div class="card p-4 mb-4">
       <h5>Alert Trend Over Commits</h5>
       <canvas id="trendChart"></canvas>
-    </div>
-
-    <!-- Severity Breakdown -->
-    <div class="card p-4">
-      <h5>Latest Severity Breakdown</h5>
-      <canvas id="pieChart"></canvas>
     </div>
 
   </div>
 </div>
 
 <script>
-const history = ${JSON.stringify(historicalData)};
-
-const labels = history.map(h => h.commit);
-const totals = history.map(h => parseInt(h.zap?.total?.total || 0));
+const labels = ${JSON.stringify(labels)};
+const dotnetTotals = ${JSON.stringify(dotnetTotals)};
+const mlTotals = ${JSON.stringify(mlTotals)};
+const aggregatedTotals = ${JSON.stringify(aggregatedTotals)};
 
 new Chart(document.getElementById('trendChart'), {
   type: 'line',
   data: {
     labels: labels,
-    datasets: [{
-      label: 'Total Alerts',
-      data: totals,
-      borderColor: '#667eea',
-      backgroundColor: 'rgba(102,126,234,0.2)',
-      fill: true,
-      tension: 0.3
-    }]
+    datasets: [
+      {
+        label: '.NET Total',
+        data: dotnetTotals,
+        borderColor: '#0d6efd',
+        tension: 0.3
+      },
+      {
+        label: 'ML Total',
+        data: mlTotals,
+        borderColor: '#20c997',
+        tension: 0.3
+      },
+      {
+        label: 'Aggregated Total',
+        data: aggregatedTotals,
+        borderColor: '#6f42c1',
+        borderDash: [5,5],
+        tension: 0.3
+      }
+    ]
   },
   options: {
     responsive: true,
-    plugins: { legend: { display: false } },
-    scales: { y: { beginAtZero: true } }
-  }
-});
-
-new Chart(document.getElementById('pieChart'), {
-  type: 'doughnut',
-  data: {
-    labels: ['High', 'Medium', 'Low'],
-    datasets: [{
-      data: [
-        ${safe(latest.zap?.total?.high)},
-        ${safe(latest.zap?.total?.medium)},
-        ${safe(latest.zap?.total?.low)}
-      ],
-      backgroundColor: ['#dc3545', '#ffc107', '#0dcaf0']
-    }]
-  },
-  options: {
-    responsive: true,
-    plugins: { legend: { position: 'bottom' } }
+    scales: {
+      y: { beginAtZero: true }
+    }
   }
 });
 </script>
@@ -237,4 +281,4 @@ new Chart(document.getElementById('pieChart'), {
 `;
 
 fs.writeFileSync('dashboard/index.html', html);
-console.log("ZAP Dashboard generated successfully.");
+console.log("Dashboard generated successfully.");
