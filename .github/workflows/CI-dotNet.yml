@@ -70,30 +70,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end
 
-      # - name: Fetch SonarCloud Metrics
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      #   run: |
-      #     curl -u "${SONAR_TOKEN}:" \
-      #       "https://sonarcloud.io/api/measures/component?component=GDipSA-Team-5_AD-Project&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,security_hotspots" \
-      #       -o sonar.json
-
-      # - name: Parse Sonar Results
-      #   id: sonar_results
-      #   run: |
-      #     BUGS=$(jq -r '.component.measures[]? | select(.metric=="bugs") | .value // "0"' sonar.json)
-      #     VULN=$(jq -r '.component.measures[]? | select(.metric=="vulnerabilities") | .value // "0"' sonar.json)
-      #     SMELLS=$(jq -r '.component.measures[]? | select(.metric=="code_smells") | .value // "0"' sonar.json)
-      #     COVERAGE=$(jq -r '.component.measures[]? | select(.metric=="coverage") | .value // "0"' sonar.json)
-      #     DUP=$(jq -r '.component.measures[]? | select(.metric=="duplicated_lines_density") | .value // "0"' sonar.json)
-      #     HOTSPOTS=$(jq -r '.component.measures[]? | select(.metric=="security_hotspots") | .value // "0"' sonar.json)
-      #     echo "bugs=$BUGS" >> $GITHUB_OUTPUT
-      #     echo "vulnerabilities=$VULN" >> $GITHUB_OUTPUT
-      #     echo "code_smells=$SMELLS" >> $GITHUB_OUTPUT
-      #     echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
-      #     echo "duplications=$DUP" >> $GITHUB_OUTPUT
-      #     echo "hotspots=$HOTSPOTS" >> $GITHUB_OUTPUT
-
       # ---------------- Snyk .NET Dependency Scan ----------------
       - name: Install Snyk CLI
         run: npm install -g snyk --ignore-scripts
@@ -208,118 +184,82 @@ jobs:
         with:
           target: 'http://localhost:5000'
           fail_action: false
-          artifact_name: ''  # Disable artifact upload
-          # cmd_options: '-J zap-dotnet.json -r zap-dotnet.html'
+          artifact_name: zap-report
+          cmd_options: >
+            -J report_json.json
+            -r report_html.html
           allow_issue_writing: false
 
+      # ZAP Scan ML Service
       - name: ZAP Scan ML Service
         uses: zaproxy/action-baseline@4ea3deb659d9a669dc5e5c10c49a423e8bb41420
         with:
           target: 'https://in5nite-ml-fdcycfe6gkfnhdg2.southeastasia-01.azurewebsites.net'
-          cmd_options: '-J zap-ml.json -r zap-ml.html'
+          cmd_options: '-J zap-ml.json'
           fail_action: false
-          artifact_name: ''  # Disable artifact upload
           allow_issue_writing: false
 
-      - name: Check and copy ZAP reports
+      - name: Copy ZAP reports
         run: |
-          echo "=== Checking current directory ==="
-          ls -la *.json *.html 2>/dev/null || echo "No reports in root"
-          
-          echo "=== Checking /zap/wrk ==="
-          sudo ls -la /zap/wrk/ 2>/dev/null || echo "/zap/wrk not accessible"
-          
-          # Copy .NET report
-          if [ -f "report_json.json" ]; then
-            echo "Found report_json.json in root"
-            cp report_json.json zap.json
-          elif [ -f "/zap/wrk/report_json.json" ]; then
-            echo "Found report_json.json in /zap/wrk"
-            sudo cp /zap/wrk/report_json.json zap.json
+          # DOTNET
+          if [ -f report_json.json ]; then
+            mv report_json.json zap.json
+          elif [ -f /zap/wrk/report_json.json ]; then
+            sudo mv /zap/wrk/report_json.json zap.json
           else
-            echo "WARNING: report_json.json not found, creating empty"
             echo '{"site":[{"alerts":[]}]}' > zap.json
           fi
-          
-          # Copy ML report
-          if [ -f "zap-ml.json" ]; then
-            echo "Found zap-ml.json in root"
-            # Already in place
-          elif [ -f "/zap/wrk/zap-ml.json" ]; then
-            echo "Found zap-ml.json in /zap/wrk"
-            sudo cp /zap/wrk/zap-ml.json zap-ml.json
-          else
-            echo "WARNING: zap-ml.json not found, creating empty"
+
+          # ML
+          if [ -f /zap/wrk/zap-ml.json ]; then
+            sudo mv /zap/wrk/zap-ml.json zap-ml.json
+          elif [ ! -f zap-ml.json ]; then
             echo '{"site":[{"alerts":[]}]}' > zap-ml.json
           fi
-          
-          echo "=== Final report status ==="
-          ls -la zap.json zap-ml.json
-          echo "=== .NET Report Preview ==="
-          jq '.site[].alerts[]? | {name: .name, risk: .riskcode}' zap.json | head -20
-          echo "=== ML Report Preview ==="
-          jq '.site[].alerts[]? | {name: .name, risk: .riskcode}' zap-ml.json | head -20
 
       - name: Parse ZAP (Aggregate .NET + ML)
         id: zap
         run: |
+
           # ---------------- DOTNET ----------------
-          echo "Parsing .NET results..."
           if [ -f zap.json ]; then
-            HIGH_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="3") | .instances[]?] | length' zap.json)
-            MEDIUM_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="2") | .instances[]?] | length' zap.json)
-            LOW_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="1") | .instances[]?] | length' zap.json)
-            INFO_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="0")] | length' zap.json)
-            echo ".NET - High: $HIGH_DOTNET, Medium: $MEDIUM_DOTNET, Low: $LOW_DOTNET, Info: $INFO_DOTNET"
+            HIGH_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="3")] | length' zap.json)
+            MEDIUM_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="2")] | length' zap.json)
+            LOW_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="1")] | length' zap.json)
           else
-            echo "ERROR: zap.json not found!"
-            HIGH_DOTNET=0; MEDIUM_DOTNET=0; LOW_DOTNET=0; INFO_DOTNET=0
+            HIGH_DOTNET=0; MEDIUM_DOTNET=0; LOW_DOTNET=0
           fi
-          
+
           # ---------------- ML ----------------
-          echo "Parsing ML results..."
           if [ -f zap-ml.json ]; then
-            HIGH_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="3") | .instances[]?] | length' zap-ml.json)
-            MEDIUM_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="2") | .instances[]?] | length' zap-ml.json)
-            LOW_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="1") | .instances[]?] | length' zap-ml.json)
-            INFO_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="0")] | length' zap-ml.json)
-            echo "ML - High: $HIGH_ML, Medium: $MEDIUM_ML, Low: $LOW_ML, Info: $INFO_ML"
+            HIGH_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="3")] | length' zap-ml.json)
+            MEDIUM_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="2")] | length' zap-ml.json)
+            LOW_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="1")] | length' zap-ml.json)
           else
-            echo "ERROR: zap-ml.json not found!"
-            HIGH_ML=0; MEDIUM_ML=0; LOW_ML=0; INFO_ML=0
+            HIGH_ML=0; MEDIUM_ML=0; LOW_ML=0
           fi
-          
+
           # ---------------- AGGREGATE ----------------
           HIGH=$((HIGH_DOTNET + HIGH_ML))
           MEDIUM=$((MEDIUM_DOTNET + MEDIUM_ML))
           LOW=$((LOW_DOTNET + LOW_ML))
           TOTAL=$((HIGH + MEDIUM + LOW))
-          
-          echo "=== AGGREGATED RESULTS ==="
-          echo "High: $HIGH, Medium: $MEDIUM, Low: $LOW, Total: $TOTAL"
-          
-          # Output to GitHub
+
+          # expose aggregated
           echo "high=$HIGH" >> $GITHUB_OUTPUT
           echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
           echo "low=$LOW" >> $GITHUB_OUTPUT
           echo "total=$TOTAL" >> $GITHUB_OUTPUT
+
+          # expose dotnet
           echo "high_dotnet=$HIGH_DOTNET" >> $GITHUB_OUTPUT
           echo "medium_dotnet=$MEDIUM_DOTNET" >> $GITHUB_OUTPUT
           echo "low_dotnet=$LOW_DOTNET" >> $GITHUB_OUTPUT
+
+          # expose ml
           echo "high_ml=$HIGH_ML" >> $GITHUB_OUTPUT
           echo "medium_ml=$MEDIUM_ML" >> $GITHUB_OUTPUT
           echo "low_ml=$LOW_ML" >> $GITHUB_OUTPUT
-
-      - name: Upload ZAP Reports for debugging
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: zap-reports-raw
-          path: |
-            zap.json
-            zap-ml.json
-            zap-dotnet.html
-            zap-ml.html
 
       - name: Save ZAP Metadata
         run: |
