@@ -77,8 +77,7 @@ jobs:
 
       - name: Run Snyk Test
         run: |
-          snyk test \
-            --file=${{ env.PROJECT_PATH }} \
+          snyk test ${{ env.PROJECT_PATH }} \
             --severity-threshold=high \
             --sarif-file-output=snyk-dotnet.sarif
       
