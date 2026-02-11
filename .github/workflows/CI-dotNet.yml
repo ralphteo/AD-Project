@@ -76,10 +76,8 @@ jobs:
         run: snyk auth ${{ secrets.SNYK_TOKEN }}
 
       - name: Run Snyk Test
-        run: |
-          snyk test ${{ env.PROJECT_PATH }} \
-            --severity-threshold=high \
-            --sarif-file-output=snyk-dotnet.sarif
+        working-directory: ADWebApplication
+        run: snyk test --severity-threshold=high --sarif-file-output=../snyk-dotnet.sarif
       
       - name: Upload Snyk SARIF
         uses: github/codeql-action/upload-sarif@v4
