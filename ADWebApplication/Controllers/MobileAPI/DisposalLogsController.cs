@@ -1,14 +1,20 @@
 using ADWebApplication.Data;
 using ADWebApplication.Models.DTOs;
 using ADWebApplication.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
+using System.Security.Claims;
 
 namespace ADWebApplication.Controllers
 {
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/disposallogs")]
+    [EnableRateLimiting("mobile")]
     public class DisposalLogsController : ControllerBase
     {
         private readonly In5niteDbContext _context;
@@ -23,6 +29,12 @@ namespace ADWebApplication.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            var tokenUserId = GetUserIdFromToken();
+            if (tokenUserId == null)
+                return Unauthorized();
+            if (tokenUserId != request.UserId)
+                return Forbid();
 
             using var tx = await _context.Database.BeginTransactionAsync();
 
@@ -101,6 +113,12 @@ namespace ADWebApplication.Controllers
             [FromQuery] string range = "all"
         )
         {
+            var tokenUserId = GetUserIdFromToken();
+            if (tokenUserId == null)
+                return Unauthorized();
+            if (tokenUserId != userId)
+                return Forbid();
+
             DateTime? from = null;
             var now = DateTime.UtcNow;
 
@@ -149,6 +167,12 @@ namespace ADWebApplication.Controllers
                 .ToListAsync();
 
             return Ok(result);
+        }
+
+        private int? GetUserIdFromToken()
+        {
+            var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(claimValue, out var userId) ? userId : null;
         }
     }
 }

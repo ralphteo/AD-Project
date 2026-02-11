@@ -6,5 +6,7 @@ namespace ADWebApplication.Models.DTOs
         public string UserName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string? PhoneNumber { get; set; }
+        public int? RegionId { get; set; }
+        public string? RegionName { get; set; }
     }
 }

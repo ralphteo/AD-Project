@@ -1,11 +1,16 @@
 using ADWebApplication.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace ADWebApplication.Controllers
 {
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/lookup")]
+    [EnableRateLimiting("mobile")]
     public class LookupController : ControllerBase
     {
         private readonly In5niteDbContext _context;

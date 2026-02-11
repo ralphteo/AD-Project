@@ -9,11 +9,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace ADWebApplication.Tests.MobileAPI
 {
     public class DisposalLogsControllerTests
     {
+        private static void SetUser(DisposalLogsController controller, int userId)
+        {
+            var identity = new ClaimsIdentity(
+                new[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) },
+                "TestAuth");
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) }
+            };
+        }
         private static In5niteDbContext CreateInMemoryDbContext()
         {
             var options = new DbContextOptionsBuilder<In5niteDbContext>()
@@ -65,6 +77,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new DisposalLogsController(dbContext);
+            SetUser(controller, user.Id);
             var request = new CreateDisposalLogRequest
             {
                 UserId = user.Id,
@@ -126,6 +139,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new DisposalLogsController(dbContext);
+            SetUser(controller, user.Id);
             var request = new CreateDisposalLogRequest
             {
                 UserId = user.Id,
@@ -173,6 +187,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new DisposalLogsController(dbContext);
+            SetUser(controller, user.Id);
             var request = new CreateDisposalLogRequest
             {
                 UserId = user.Id,
@@ -220,6 +235,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new DisposalLogsController(dbContext);
+            SetUser(controller, user.Id);
             var request = new CreateDisposalLogRequest
             {
                 UserId = user.Id,
@@ -268,6 +284,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new DisposalLogsController(dbContext);
+            SetUser(controller, user.Id);
             var request = new CreateDisposalLogRequest
             {
                 UserId = user.Id,
@@ -338,6 +355,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new DisposalLogsController(dbContext);
+            SetUser(controller, user.Id);
 
             // Act
             var result = await controller.GetHistory(user.Id, "all");
@@ -378,6 +396,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new DisposalLogsController(dbContext);
+            SetUser(controller, user.Id);
 
             // Act
             var result = await controller.GetHistory(user.Id, "month");
@@ -394,6 +413,7 @@ namespace ADWebApplication.Tests.MobileAPI
             // Arrange
             var dbContext = CreateInMemoryDbContext();
             var controller = new DisposalLogsController(dbContext);
+            SetUser(controller, 999);
 
             // Act
             var result = await controller.GetHistory(999, "all");
@@ -436,6 +456,7 @@ namespace ADWebApplication.Tests.MobileAPI
             await dbContext.SaveChangesAsync();
 
             var controller = new DisposalLogsController(dbContext);
+            SetUser(controller, user.Id);
 
             // Act
             var result = await controller.GetHistory(user.Id, "last 3");

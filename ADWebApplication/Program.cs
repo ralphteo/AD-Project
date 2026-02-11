@@ -5,8 +5,13 @@ using ADWebApplication.Models;
 using ADWebApplication.Services;
 using ADWebApplication.Services.Collector;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using ADWebApplication.Data.Repository;
 using Azure.Identity;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +32,7 @@ builder.Services.AddScoped<ICampaignService, CampaignService>();
 builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
 builder.Services.AddScoped<IRewardCatalogueService, RewardCatalogueService>();
 builder.Services.AddScoped<IRewardCatalogueRepository, RewardCatalogueRepository>();
+builder.Services.AddScoped<JwtTokenService>();
 
 // Azure Key Vault integration
 builder.Configuration.AddEnvironmentVariables();
@@ -75,6 +81,23 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         opt.LoginPath = "/EmpAuth/Login";
         opt.ExpireTimeSpan = TimeSpan.FromMinutes(30);
         opt.SlidingExpiration = true;
+    })
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, opt =>
+    {
+        var key = builder.Configuration["Jwt:Key"] ?? string.Empty;
+        var keyBytes = Encoding.UTF8.GetBytes(key);
+
+        opt.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+            ClockSkew = TimeSpan.FromMinutes(2)
+        };
     });
 
 //ML Flask
@@ -85,6 +108,28 @@ builder.Services.AddHttpClient<IBinPredictionService, BinPredictionService>(clie
 
 
 builder.Services.AddAuthorization();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("mobile", context =>
+    {
+        var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var partitionKey = !string.IsNullOrWhiteSpace(userId)
+            ? $"user:{userId}"
+            : $"ip:{context.Connection.RemoteIpAddress}";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: partitionKey,
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+});
 
 // CORS policy for Android mobile app
 builder.Services.AddCors(options =>
@@ -136,6 +181,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAndroid");
 app.UseSession();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
