@@ -170,8 +170,12 @@ jobs:
 
       - name: Run App
         run: |
-          nohup dotnet publish/ADWebApplication.dll &
-          sleep 15
+          ASPNETCORE_URLS=http://localhost:5000 nohup dotnet publish/ADWebApplication.dll &
+          sleep 20
+
+      - name: Fix workspace permissions
+        run: |
+          sudo chmod -R 777 .
 
       - name: Run OWASP ZAP Baseline
         uses: zaproxy/action-baseline@v0.12.0
