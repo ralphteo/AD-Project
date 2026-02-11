@@ -24,7 +24,7 @@ namespace ADWebApplication.Services.Collector
                     .ThenInclude(rs => rs.CollectionBin)
                         .ThenInclude(cb => cb!.Region)
                 .Where(rp => rp.RouteAssignment != null && 
-                           rp.RouteAssignment.AssignedTo.ToUpper() == username.Trim().ToUpper() &&
+                           EF.Functions.Collate(rp.RouteAssignment.AssignedTo, "NOCASE") == EF.Functions.Collate(username.Trim(), "NOCASE") &&
                            rp.PlannedDate.HasValue);
 
             // 1. Search Filter (ID or Location)
@@ -112,7 +112,7 @@ namespace ADWebApplication.Services.Collector
                 .Include(ra => ra.RoutePlans)
                     .ThenInclude(rp => rp.RouteStops)
                         .ThenInclude(rs => rs!.CollectionDetails)
-                .Where(ra => ra.AssignmentId == assignmentId && ra.AssignedTo.ToUpper() == username.Trim().ToUpper())
+                .Where(ra => ra.AssignmentId == assignmentId && EF.Functions.Collate(ra.AssignedTo, "NOCASE") == EF.Functions.Collate(username.Trim(), "NOCASE"))
                 .FirstOrDefaultAsync();
 
             if (assignment == null) return null;
@@ -164,7 +164,7 @@ namespace ADWebApplication.Services.Collector
                 .Include(ra => ra.RoutePlans)
                     .ThenInclude(rp => rp.RouteStops)
                         .ThenInclude(rs => rs.CollectionDetails)
-                .Where(ra => ra.AssignedTo.ToUpper() == username.Trim().ToUpper()
+                .Where(ra => EF.Functions.Collate(ra.AssignedTo, "NOCASE") == EF.Functions.Collate(username.Trim(), "NOCASE")
                           && ra.RoutePlans.Any(rp => 
                               rp.PlannedDate.HasValue
                               && rp.PlannedDate.Value.Date == DateTime.Today 
