@@ -74,8 +74,8 @@ namespace ADWebApplication.Data.Repository
                 WeightGrowthPercent = prevWeight > 0 ? ((currentWeight - prevWeight) * 100.0m / prevWeight) : 0,
                 AvgBinFillRate = currentBinFillRate,
                 BinFillRateChange = binFillRateChange,
-                CurrentCollectionMTD = collectionMTD, // To be implemented
-                CurrentWeightMTD = weightMTD      // To be implemented
+                CurrentCollectionMTD = collectionMTD, 
+                CurrentWeightMTD = weightMTD    
             };
         }
 
