@@ -70,30 +70,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end
 
-      # - name: Fetch SonarCloud Metrics
-      #   env:
-      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      #   run: |
-      #     curl -u "${SONAR_TOKEN}:" \
-      #       "https://sonarcloud.io/api/measures/component?component=GDipSA-Team-5_AD-Project&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,security_hotspots" \
-      #       -o sonar.json
-
-      # - name: Parse Sonar Results
-      #   id: sonar_results
-      #   run: |
-      #     BUGS=$(jq -r '.component.measures[]? | select(.metric=="bugs") | .value // "0"' sonar.json)
-      #     VULN=$(jq -r '.component.measures[]? | select(.metric=="vulnerabilities") | .value // "0"' sonar.json)
-      #     SMELLS=$(jq -r '.component.measures[]? | select(.metric=="code_smells") | .value // "0"' sonar.json)
-      #     COVERAGE=$(jq -r '.component.measures[]? | select(.metric=="coverage") | .value // "0"' sonar.json)
-      #     DUP=$(jq -r '.component.measures[]? | select(.metric=="duplicated_lines_density") | .value // "0"' sonar.json)
-      #     HOTSPOTS=$(jq -r '.component.measures[]? | select(.metric=="security_hotspots") | .value // "0"' sonar.json)
-      #     echo "bugs=$BUGS" >> $GITHUB_OUTPUT
-      #     echo "vulnerabilities=$VULN" >> $GITHUB_OUTPUT
-      #     echo "code_smells=$SMELLS" >> $GITHUB_OUTPUT
-      #     echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
-      #     echo "duplications=$DUP" >> $GITHUB_OUTPUT
-      #     echo "hotspots=$HOTSPOTS" >> $GITHUB_OUTPUT
-
       # ---------------- Snyk .NET Dependency Scan ----------------
       - name: Install Snyk CLI
         run: npm install -g snyk --ignore-scripts

@@ -48,9 +48,9 @@ const previous =
     ? historicalData[historicalData.length - 2]
     : null;
 
-const latestTotal = parseInt(latest.zap.total.total);
+const latestTotal = parseInt(latest.zap.total.total, 10);
 const previousTotal = previous
-  ? parseInt(previous.zap.total.total)
+  ? parseInt(previous.zap.total.total, 10)
   : latestTotal;
 
 const trend = latestTotal - previousTotal;
@@ -75,19 +75,19 @@ const trendColor =
 const labels = historicalData.map(h => h.commit);
 
 const dotnetTotals = historicalData.map(h =>
-  parseInt(h.zap.dotnet.high) +
-  parseInt(h.zap.dotnet.medium) +
-  parseInt(h.zap.dotnet.low)
+  parseInt(h.zap.dotnet.high, 10) +
+  parseInt(h.zap.dotnet.medium, 10) +
+  parseInt(h.zap.dotnet.low, 10)
 );
 
 const mlTotals = historicalData.map(h =>
-  parseInt(h.zap.ml.high) +
-  parseInt(h.zap.ml.medium) +
-  parseInt(h.zap.ml.low)
+  parseInt(h.zap.ml.high, 10) +
+  parseInt(h.zap.ml.medium, 10) +
+  parseInt(h.zap.ml.low, 10)
 );
 
 const aggregatedTotals = historicalData.map(h =>
-  parseInt(h.zap.total.total)
+  parseInt(h.zap.total.total, 10)
 );
 
 // ===============================
