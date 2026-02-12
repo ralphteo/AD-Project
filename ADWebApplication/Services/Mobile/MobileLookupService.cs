@@ -1,4 +1,5 @@
 using ADWebApplication.Data;
+using ADWebApplication.Models;
 using ADWebApplication.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
 
@@ -40,50 +41,66 @@ public class MobileLookupService : IMobileLookupService
             .AsNoTracking()
             .ToListAsync();
 
-        var result = bins.Select(bin =>
+        return bins
+            .Select(bin => MapBinDto(bin, latestByBin, latestCollectionByBin, today))
+            .ToList();
+    }
+
+    private static MobileLookupBinDto MapBinDto(
+        CollectionBin bin,
+        Dictionary<int, FillLevelPrediction> latestByBin,
+        Dictionary<int, CollectionDetails> latestCollectionByBin,
+        DateTime today)
+    {
+        var (estimatedFillLevel, riskLevel, daysToThreshold) =
+            ResolveForecast(bin.BinId, latestByBin, latestCollectionByBin, today);
+
+        return new MobileLookupBinDto
         {
-            double? estimatedFillLevel = null;
-            string? riskLevel = null;
-            int? daysToThreshold = null;
+            BinId = bin.BinId,
+            RegionId = bin.RegionId,
+            LocationName = bin.LocationName,
+            LocationAddress = bin.LocationAddress,
+            BinStatus = bin.BinStatus,
+            Latitude = bin.Latitude,
+            Longitude = bin.Longitude,
+            PredictedStatus = riskLevel ?? "Unknown",
+            EstimatedFillLevel = estimatedFillLevel.HasValue
+                ? Math.Round(estimatedFillLevel.Value, 1)
+                : null,
+            RiskLevel = riskLevel,
+            DaysToFull = daysToThreshold,
+            IsNearlyFull = estimatedFillLevel >= 70
+        };
+    }
 
-            if (latestByBin.TryGetValue(bin.BinId, out var prediction) &&
-                latestCollectionByBin.TryGetValue(bin.BinId, out var lastCollection))
-            {
-                var daysElapsed = Math.Max((today - lastCollection.CurrentCollectionDateTime!.Value).TotalDays, 0);
-                estimatedFillLevel = Math.Clamp(prediction.PredictedAvgDailyGrowth * daysElapsed, 0, 100);
+    private static (double? EstimatedFillLevel, string? RiskLevel, int? DaysToThreshold) ResolveForecast(
+        int binId,
+        Dictionary<int, FillLevelPrediction> latestByBin,
+        Dictionary<int, CollectionDetails> latestCollectionByBin,
+        DateTime today)
+    {
+        if (!latestByBin.TryGetValue(binId, out var prediction) ||
+            !latestCollectionByBin.TryGetValue(binId, out var lastCollection))
+        {
+            return (null, null, null);
+        }
 
-                var remaining = 80 - estimatedFillLevel.Value;
-                daysToThreshold = estimatedFillLevel >= 80
-                    ? 0
-                    : (int)Math.Ceiling(remaining / prediction.PredictedAvgDailyGrowth);
+        var daysElapsed = Math.Max((today - lastCollection.CurrentCollectionDateTime!.Value).TotalDays, 0);
+        var estimatedFillLevel = Math.Clamp(prediction.PredictedAvgDailyGrowth * daysElapsed, 0, 100);
 
-                riskLevel = daysToThreshold <= 3
-                    ? "High"
-                    : daysToThreshold <= 7
-                        ? "Medium"
-                        : "Low";
-            }
+        var remaining = 80 - estimatedFillLevel;
+        var daysToThreshold = estimatedFillLevel >= 80
+            ? 0
+            : (int)Math.Ceiling(remaining / prediction.PredictedAvgDailyGrowth);
 
-            return new MobileLookupBinDto
-            {
-                BinId = bin.BinId,
-                RegionId = bin.RegionId,
-                LocationName = bin.LocationName,
-                LocationAddress = bin.LocationAddress,
-                BinStatus = bin.BinStatus,
-                Latitude = bin.Latitude,
-                Longitude = bin.Longitude,
-                PredictedStatus = riskLevel ?? "Unknown",
-                EstimatedFillLevel = estimatedFillLevel.HasValue
-                    ? Math.Round(estimatedFillLevel.Value, 1)
-                    : null,
-                RiskLevel = riskLevel,
-                DaysToFull = daysToThreshold,
-                IsNearlyFull = estimatedFillLevel >= 70
-            };
-        }).ToList();
+        var riskLevel = daysToThreshold <= 3
+            ? "High"
+            : daysToThreshold <= 7
+                ? "Medium"
+                : "Low";
 
-        return result;
+        return (estimatedFillLevel, riskLevel, daysToThreshold);
     }
 
     public async Task<List<MobileLookupCategoryDto>> GetCategoriesAsync()

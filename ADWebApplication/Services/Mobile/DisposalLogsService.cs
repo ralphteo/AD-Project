@@ -82,31 +82,15 @@ public class DisposalLogsService : IDisposalLogsService
 
     public async Task<List<DisposalHistoryDto>> GetHistoryAsync(int userId, string range)
     {
-        DateTime? from = null;
-        var now = DateTime.UtcNow;
-        var normalizedRange = (range ?? "all").Trim().ToLowerInvariant();
+        var from = ResolveFromDate(range, DateTime.UtcNow);
 
-        if (normalizedRange == "month" || normalizedRange == "thismonth")
-        {
-            from = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-        }
-        else if (
-            normalizedRange == "last3" ||
-            normalizedRange == "last 3" ||
-            normalizedRange == "last_3" ||
-            normalizedRange == "last3months")
-        {
-            from = now.AddMonths(-3);
-        }
-
-        var q = _context.DisposalLogs
+        var query = _context.DisposalLogs
             .AsNoTracking()
             .Where(l => l.UserId == userId);
 
-        if (from.HasValue)
-            q = q.Where(l => l.DisposalTimeStamp >= from.Value);
+        query = ApplyFromFilter(query, from);
 
-        return await q
+        return await query
             .OrderByDescending(l => l.DisposalTimeStamp)
             .Select(l => new DisposalHistoryDto
             {
@@ -132,5 +116,49 @@ public class DisposalLogsService : IDisposalLogsService
                     : 0
             })
             .ToListAsync();
+    }
+
+    private static IQueryable<DisposalLogs> ApplyFromFilter(
+        IQueryable<DisposalLogs> query,
+        DateTime? from)
+    {
+        if (!from.HasValue)
+        {
+            return query;
+        }
+
+        return query.Where(l => l.DisposalTimeStamp >= from.Value);
+    }
+
+    private static DateTime? ResolveFromDate(string range, DateTime now)
+    {
+        var normalizedRange = NormalizeRange(range);
+
+        if (IsThisMonthRange(normalizedRange))
+        {
+            return new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        }
+
+        if (IsLastThreeMonthsRange(normalizedRange))
+        {
+            return now.AddMonths(-3);
+        }
+
+        return null;
+    }
+
+    private static string NormalizeRange(string range)
+    {
+        return (range ?? "all").Trim().ToLowerInvariant();
+    }
+
+    private static bool IsThisMonthRange(string normalizedRange)
+    {
+        return normalizedRange == "month" || normalizedRange == "thismonth";
+    }
+
+    private static bool IsLastThreeMonthsRange(string normalizedRange)
+    {
+        return normalizedRange is "last3" or "last 3" or "last_3" or "last3months";
     }
 }
