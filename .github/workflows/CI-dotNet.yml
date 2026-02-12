@@ -120,40 +120,6 @@ jobs:
         with:
           sarif_file: snyk-container.sarif
 
-      # # Save metadata for dashboard
-      # - name: Save SAST/SCA Metadata
-      #   run: |
-      #     mkdir -p scan-data
-      #     cat > scan-data/sast-sca-metadata.json << EOF
-      #     {
-      #       "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-      #       "run_id": "${{ github.run_id }}",
-      #       "run_number": "${{ github.run_number }}",
-      #       "branch": "${{ github.ref_name }}",
-      #       "commit": "${{ github.sha }}",
-      #       "sonarcloud": {
-      #         "bugs": "${{ steps.sonar_results.outputs.bugs }}",
-      #         "vulnerabilities": "${{ steps.sonar_results.outputs.vulnerabilities }}",
-      #         "code_smells": "${{ steps.sonar_results.outputs.code_smells }}",
-      #         "security_hotspots": "${{ steps.sonar_results.outputs.hotspots }}",
-      #         "coverage": "${{ steps.sonar_results.outputs.coverage }}",
-      #         "duplications": "${{ steps.sonar_results.outputs.duplications }}"
-      #       },
-      #       "dependency_check": {
-      #         "critical": "0",
-      #         "high": "${{ steps.snyk_results.outputs.high }}",
-      #         "medium": "${{ steps.snyk_results.outputs.medium }}",
-      #         "low": "${{ steps.snyk_results.outputs.low }}",
-      #         "total": "${{ steps.snyk_results.outputs.total }}"
-      #       }
-      #     }
-      #     EOF
-
-      # - uses: actions/upload-artifact@v4
-      #   with:
-      #     name: sast-sca-metadata
-      #     path: scan-data/
-
 # =========================================================
 # JOB 2: DAST
 # =========================================================
@@ -223,18 +189,18 @@ jobs:
 
           # ---------------- DOTNET ----------------
           if [ -f zap.json ]; then
-            HIGH_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="3")] | length' zap.json)
-            MEDIUM_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="2")] | length' zap.json)
-            LOW_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="1")] | length' zap.json)
+            HIGH_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="3") | .instances[]?] | length' zap.json)
+            MEDIUM_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="2") | .instances[]?] | length' zap.json)
+            LOW_DOTNET=$(jq '[.site[].alerts[]? | select(.riskcode=="1") | .instances[]?] | length' zap.json)
           else
             HIGH_DOTNET=0; MEDIUM_DOTNET=0; LOW_DOTNET=0
           fi
 
           # ---------------- ML ----------------
           if [ -f zap-ml.json ]; then
-            HIGH_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="3")] | length' zap-ml.json)
-            MEDIUM_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="2")] | length' zap-ml.json)
-            LOW_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="1")] | length' zap-ml.json)
+            HIGH_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="3") | .instances[]?] | length' zap-ml.json)
+            MEDIUM_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="2") | .instances[]?] | length' zap-ml.json)
+            LOW_ML=$(jq '[.site[].alerts[]? | select(.riskcode=="1") | .instances[]?] | length' zap-ml.json)
           else
             HIGH_ML=0; MEDIUM_ML=0; LOW_ML=0
           fi
@@ -311,11 +277,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      # - uses: actions/download-artifact@v4
-      #   with:
-      #     name: sast-sca-metadata
-      #     path: scan-data/
 
       - uses: actions/download-artifact@v4
         with:

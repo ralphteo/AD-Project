@@ -33,6 +33,12 @@ builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
 builder.Services.AddScoped<IRewardCatalogueService, RewardCatalogueService>();
 builder.Services.AddScoped<IRewardCatalogueRepository, RewardCatalogueRepository>();
 builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<IMobileAuthService, MobileAuthService>();
+builder.Services.AddScoped<IMobileLookupService, MobileLookupService>();
+builder.Services.AddScoped<IMobileRewardsService, MobileRewardsService>();
+builder.Services.AddScoped<IDisposalLogsService, DisposalLogsService>();
+builder.Services.AddScoped<IWalletService, WalletService>();
+builder.Services.AddScoped<IRewardsRedemptionService, RewardsRedemptionService>();
 
 // Azure Key Vault integration
 builder.Configuration.AddEnvironmentVariables();

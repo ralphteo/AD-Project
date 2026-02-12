@@ -34,7 +34,8 @@ namespace ADWebApplication.Tests.MobileAPI
 
         private static AuthController CreateController(In5niteDbContext dbContext)
         {
-            return new AuthController(dbContext, CreateJwtTokenService());
+            var service = new MobileAuthService(dbContext, CreateJwtTokenService());
+            return new AuthController(service);
         }
 
         private static void SetUser(AuthController controller, int userId)

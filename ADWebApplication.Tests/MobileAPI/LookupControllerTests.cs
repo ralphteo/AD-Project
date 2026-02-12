@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using ADWebApplication.Services;
 
 namespace ADWebApplication.Tests.MobileAPI
 {
@@ -70,7 +71,7 @@ namespace ADWebApplication.Tests.MobileAPI
 
             await dbContext.SaveChangesAsync();
 
-            var controller = new LookupController(dbContext);
+            var controller = new LookupController(new MobileLookupService(dbContext));
             SetUser(controller, 1);
 
             // Act
@@ -86,7 +87,7 @@ namespace ADWebApplication.Tests.MobileAPI
         {
             // Arrange
             var dbContext = CreateInMemoryDbContext();
-            var controller = new LookupController(dbContext);
+            var controller = new LookupController(new MobileLookupService(dbContext));
             SetUser(controller, 1);
 
             // Act
@@ -127,7 +128,7 @@ namespace ADWebApplication.Tests.MobileAPI
 
             await dbContext.SaveChangesAsync();
 
-            var controller = new LookupController(dbContext);
+            var controller = new LookupController(new MobileLookupService(dbContext));
             SetUser(controller, 1);
 
             // Act
@@ -156,7 +157,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.EWasteCategories.AddRange(categories);
             await dbContext.SaveChangesAsync();
 
-            var controller = new LookupController(dbContext);
+            var controller = new LookupController(new MobileLookupService(dbContext));
             SetUser(controller, 1);
 
             // Act
@@ -172,7 +173,7 @@ namespace ADWebApplication.Tests.MobileAPI
         {
             // Arrange
             var dbContext = CreateInMemoryDbContext();
-            var controller = new LookupController(dbContext);
+            var controller = new LookupController(new MobileLookupService(dbContext));
             SetUser(controller, 1);
 
             // Act
@@ -205,7 +206,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.EWasteItemTypes.AddRange(itemTypes);
             await dbContext.SaveChangesAsync();
 
-            var controller = new LookupController(dbContext);
+            var controller = new LookupController(new MobileLookupService(dbContext));
             SetUser(controller, 1);
 
             // Act
@@ -221,7 +222,7 @@ namespace ADWebApplication.Tests.MobileAPI
         {
             // Arrange
             var dbContext = CreateInMemoryDbContext();
-            var controller = new LookupController(dbContext);
+            var controller = new LookupController(new MobileLookupService(dbContext));
             SetUser(controller, 1);
 
             // Act
@@ -252,7 +253,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.EWasteItemTypes.AddRange(itemTypes);
             await dbContext.SaveChangesAsync();
 
-            var controller = new LookupController(dbContext);
+            var controller = new LookupController(new MobileLookupService(dbContext));
             SetUser(controller, 1);
 
             // Act

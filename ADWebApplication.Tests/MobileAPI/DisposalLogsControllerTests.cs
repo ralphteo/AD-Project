@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using ADWebApplication.Services;
 
 namespace ADWebApplication.Tests.MobileAPI
 {
@@ -76,7 +77,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.CollectionBins.Add(bin);
             await dbContext.SaveChangesAsync();
 
-            var controller = new DisposalLogsController(dbContext);
+            var controller = new DisposalLogsController(new DisposalLogsService(dbContext));
             SetUser(controller, user.Id);
             var request = new CreateDisposalLogRequest
             {
@@ -138,7 +139,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.CollectionBins.Add(bin);
             await dbContext.SaveChangesAsync();
 
-            var controller = new DisposalLogsController(dbContext);
+            var controller = new DisposalLogsController(new DisposalLogsService(dbContext));
             SetUser(controller, user.Id);
             var request = new CreateDisposalLogRequest
             {
@@ -186,7 +187,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.CollectionBins.Add(bin);
             await dbContext.SaveChangesAsync();
 
-            var controller = new DisposalLogsController(dbContext);
+            var controller = new DisposalLogsController(new DisposalLogsService(dbContext));
             SetUser(controller, user.Id);
             var request = new CreateDisposalLogRequest
             {
@@ -234,7 +235,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.CollectionBins.Add(bin);
             await dbContext.SaveChangesAsync();
 
-            var controller = new DisposalLogsController(dbContext);
+            var controller = new DisposalLogsController(new DisposalLogsService(dbContext));
             SetUser(controller, user.Id);
             var request = new CreateDisposalLogRequest
             {
@@ -283,7 +284,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.CollectionBins.Add(bin);
             await dbContext.SaveChangesAsync();
 
-            var controller = new DisposalLogsController(dbContext);
+            var controller = new DisposalLogsController(new DisposalLogsService(dbContext));
             SetUser(controller, user.Id);
             var request = new CreateDisposalLogRequest
             {
@@ -354,7 +355,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.DisposalLogItems.Add(item);
             await dbContext.SaveChangesAsync();
 
-            var controller = new DisposalLogsController(dbContext);
+            var controller = new DisposalLogsController(new DisposalLogsService(dbContext));
             SetUser(controller, user.Id);
 
             // Act
@@ -395,7 +396,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.DisposalLogItems.AddRange(item1, item2);
             await dbContext.SaveChangesAsync();
 
-            var controller = new DisposalLogsController(dbContext);
+            var controller = new DisposalLogsController(new DisposalLogsService(dbContext));
             SetUser(controller, user.Id);
 
             // Act
@@ -412,7 +413,7 @@ namespace ADWebApplication.Tests.MobileAPI
         {
             // Arrange
             var dbContext = CreateInMemoryDbContext();
-            var controller = new DisposalLogsController(dbContext);
+            var controller = new DisposalLogsController(new DisposalLogsService(dbContext));
             SetUser(controller, 999);
 
             // Act
@@ -455,7 +456,7 @@ namespace ADWebApplication.Tests.MobileAPI
             dbContext.DisposalLogItems.AddRange(item1, item2, item3);
             await dbContext.SaveChangesAsync();
 
-            var controller = new DisposalLogsController(dbContext);
+            var controller = new DisposalLogsController(new DisposalLogsService(dbContext));
             SetUser(controller, user.Id);
 
             // Act
